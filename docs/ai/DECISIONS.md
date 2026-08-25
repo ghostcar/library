@@ -9,3 +9,4 @@
 | 0003 | accepted | Среда разработки на целевой VPS: порты, изоляция от соседних сервисов |
 | 0004 | accepted | Дизайн: Ghostcar/Astral Gatekeeper + Solar Mode как источник истины |
 | 0005 | accepted | Управление зависимостями: venv на системном Python, pyproject.toml, pip |
+| 0006 | accepted | Общая авторизация макропортала в core.auth (JWT + refresh/device токены, готовность к RS256/JWKS) |

@@ -108,7 +108,7 @@ def test_migration_upgrade_head_on_fresh_database() -> None:
                     "WHERE table_schema = 'public' ORDER BY table_name",
                 )
                 version = await conn.fetchval("SELECT version_num FROM alembic_version")
-                assert version == "0001"
+                assert version == "0002"
                 return [r["table_name"] for r in rows]
             finally:
                 await conn.close()
@@ -116,16 +116,21 @@ def test_migration_upgrade_head_on_fresh_database() -> None:
         tables = asyncio.run(verify())
         expected = {
             "alembic_version",
+            "api_tokens",
             "assets",
             "asset_relations",
+            "audit_log",
             "author_aliases",
             "authors",
+            "jobs",
+            "outbox_events",
             "reading_states",
             "series",
             "series_aliases",
             "series_memberships",
             "source_author_records",
             "source_records",
+            "users",
             "work_authors",
             "works",
         }

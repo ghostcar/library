@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,10 +33,36 @@ class Settings(BaseSettings):
         default="postgresql+asyncpg://library:library@127.0.0.1:55440/library",
     )
     db_echo: bool = False
+    storage_root: str = "./storage"
+
+    # --- Auth (macroportal-level, see ADR-0006) ---
+    jwt_secret: str | None = None
+    jwt_algorithm: str = "HS256"
+    access_token_ttl_minutes: int = 15
+    refresh_token_ttl_days: int = 30
+    device_token_ttl_days: int = 365
+    cookie_secure: bool = True
+    login_rate_limit: int = 5
+    register_rate_limit: int = 3
+    rate_limit_window_seconds: int = 60
+
+    @model_validator(mode="after")
+    def _require_jwt_secret(self) -> Settings:
+        if self.jwt_secret is None:
+            msg = (
+                "LIBRARY_JWT_SECRET is required. "
+                'Generate one: python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+            raise ValueError(msg)
+        return self
 
     @property
     def is_dev(self) -> bool:
         return self.app_env is AppEnv.DEVELOPMENT
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env is AppEnv.PRODUCTION
 
 
 @lru_cache

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block topbar_right %}
+<form method="post" action="/logout">
+  <button type="submit" style="margin:0; width:auto; padding:8px 16px;">Выйти</button>
+</form>
+{% endblock %}
+{% block content %}
+<h1 style="font-family: var(--font-display); font-weight: 400;">Библиотека</h1>
+<p class="meta">Вы вошли как {{ user.email }}{% if user.is_superuser %} · owner{% endif %}</p>
+<div class="card">
+  <p class="meta">МОДУЛЬ: LIBRARY · STATUS: FOUNDATION</p>
+  <p>Каталог пуст. Импорт книг появится в Phase 2.</p>
+</div>
+{% endblock %}

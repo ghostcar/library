@@ -2,22 +2,32 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from pathlib import Path
+
+from fastapi import APIRouter, Request, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from portal.core.auth.dependencies import OptionalUser
 
 router = APIRouter()
 
+_templates = Jinja2Templates(
+    directory=[
+        str(Path(__file__).resolve().parents[1] / "templates"),
+        str(Path(__file__).resolve().parents[3] / "web" / "templates"),
+    ],
+)
+
 
 @router.get("/", response_class=HTMLResponse)
-async def library_index(request: Request) -> HTMLResponse:
-    registry = request.app.state.registry
-    enabled = registry.is_enabled("library")
-    return HTMLResponse(
-        "<!doctype html><html lang='ru'><head><meta charset='utf-8'>"
-        "<title>Библиотека</title></head><body>"
-        "<h1>Библиотека</h1>"
-        f"<p>Модуль зарегистрирован: {enabled}</p>"
-        "</body></html>",
+async def library_index(request: Request, current: OptionalUser) -> Response:
+    if current is None:
+        return RedirectResponse("/login", status_code=303)
+    return _templates.TemplateResponse(
+        request,
+        "library_index.html",
+        {"user": current.user, "title": "Библиотека"},
     )
 
 

@@ -7,47 +7,63 @@
 ```text
 src/portal/
   core/                  — ядро макропортала (общие сервисы)
-    config/              — typed settings (pydantic-settings)
-    database/            — async engine, session, base
-    module_registry/     — регистрация модулей (маршруты, события)
-    auth/                — PLANNED (Phase 1+)
-    events/ jobs/ audit/ notifications/ — PLANNED (Phase 1)
+    config/              — typed settings (pydantic-settings, LIBRARY_*)
+    database/            — async engine, session factory, Base
+    module_registry/     — регистрация модулей (маршруты, флаги)
+    auth/                — ОБЩАЯ АВТОРИЗАЦИЯ МАКРОПОРТАЛА (ADR-0006)
+      domain.py          — User, AuthToken, scopes
+      passwords.py       — argon2id
+      jwt_service.py     — TokenService (HS256; интерфейс готов к RS256/JWKS)
+      repository.py      — UserRepository, AuthTokenRepository, AuditRepository
+      service.py         — AuthService: register/login/refresh/logout/device
+      dependencies.py    — CurrentUser, OptionalUser, CSRFProtected, require_scope
+      routes.py          — /auth/* API
+      rate_limit.py      — in-memory sliding window
+      orm.py             — users, api_tokens, audit_log
+    audit/               — AuditService (failure-события — отдельной транзакцией)
+    events/              — transactional outbox (orm + repository)
+    jobs/                — очередь PostgreSQL, FOR UPDATE SKIP LOCKED + worker
+    storage/             — StorageAdapter порт + LocalStorageAdapter (content-addressed)
   modules/
     library/             — доменный модуль «Библиотека»
       domain/            — сущности, VO, инварианты, события
-      application/       — use cases, порты
-      infrastructure/    — SQLAlchemy модели, репозитории
-      presentation/      — HTML/HTMX, JSON, OPDS (позже)
+      application/       — use cases (CatalogService), порты
+      infrastructure/    — ORM, репозитории, мапперы
+      presentation/      — защищённые HTML-страницы + /library/info
+      templates/         — шаблоны модуля (extends base из web)
       adapters/          — реализации внешних источников (позже)
-  web/                   — FastAPI app factory, маршруты core
-migrations/              — Alembic
-tests/                   — unit / integration / contract / e2e
+  web/                   — app factory, composition root, SSR auth-страницы
+    deps.py              — provide_session (transactional session per request)
+    templates/           — base.html (токены Ghostcar), login.html
+migrations/              — Alembic (0001 library, 0002 auth/audit/outbox/jobs + FK owner)
+tests/                   — unit / integration
 docs/                    — ai/ design/ architecture/ operations/
-deploy/                  — nginx, compose для VPS (позже)
+deploy/                  — nginx (Phase 9)
 scripts/                 — dev/test/lint
 ```
 
 ## Потоки зависимостей
 
-- `web` → `core` + `modules.library.presentation`
-- `modules.library.application` → `domain` (не зависит от infrastructure)
-- `modules.library.infrastructure` → `domain`, `core.database`
-- Модули не импортируют ORM-модели друг друга (правило §4.1).
+- `web` → `core.*` + `modules.library.presentation`
+- `modules.library.*` → `core.auth` (только зависимости/домен), НЕ имеет своего auth
+- `modules.library.application` → `domain` + порты (не infrastructure)
+- Модули не импортируют ORM-модели друг друга (правило §4.1)
 
 ## Entrypoints
 
-- Web: `src/portal/web/app.py:create_app()` → uvicorn, порт 8001 (dev)
-- CLI/worker: PLANNED (Phase 1+)
+- Web: `src/portal/web/app.py:create_app()` → uvicorn 127.0.0.1:8001 (dev)
+- Worker: `python -m portal.core.jobs.worker` (graceful shutdown, poll 2s)
 
 ## Модули
 
 | Модуль | Статус | Маршруты |
 |--------|--------|----------|
-| core.health | IMPLEMENTED | `GET /healthz` |
-| library | PARTIAL (domain+infra) | `GET /library/` (заглушка) |
+| core.auth | IMPLEMENTED | /auth/register, /auth/login, /auth/refresh, /auth/logout, /auth/me, /auth/tokens, /login (SSR), /logout (SSR) |
+| core.health | IMPLEMENTED | GET /healthz, /readyz |
+| library | PARTIAL | GET /library/ (защищено), /library/info |
 
-## База данных
+## База данных (18 таблиц)
 
-- PostgreSQL 15+ (контейнер, порт не публикуется на хост)
-- Alembic: `migrations/versions/0001_library_canonical_core.py`
-- Схема: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, assets, asset_relations, reading_states (детали — в миграции и DOMAIN_GLOSSARY.md)
+- core: users, api_tokens, audit_log, outbox_events, jobs
+- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, assets, asset_relations, reading_states
+- Все пользовательские данные: `owner_id UUID → users.id` (FK CASCADE)

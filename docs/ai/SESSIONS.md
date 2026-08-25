@@ -12,3 +12,15 @@
 - Реализован первый slice: core (config/database/module_registry/app factory/health), library domain+infrastructure (канонические сущности), Alembic 0001, репозитории, тесты.
 - Проверено: ruff, mypy, pytest (результаты в TaskContext tasks/phase-0-foundation.md).
 - Не выполнено (по правилам): git push, deploy, изменения /etc/nginx.
+
+## Сессия 2 — 2026-08-25 — Phase 1: общая авторизация макропортала
+
+- Реализован core.auth по ADR-0006: users/api_tokens/audit_log, argon2id, JWT HS256 (интерфейс готов к RS256/JWKS), refresh-ротация, device-токены (OPDS-ready), CSRF double-submit, rate limit, bootstrap-регистрация.
+- core.audit: failure-события пишутся отдельной транзакцией (иначе откатываются вместе с основной — найдено тестом).
+- core.events (outbox) + core.jobs (SKIP LOCKED + worker skeleton) + core.storage (content-addressed, originals immutable).
+- Миграция 0002: 5 таблиц core + FK owner_id→users.id на 12 таблицах library.
+- SSR: /login, защищённая /library, /logout на inline-токенах Ghostcar (Astral Gatekeeper).
+- CI skeleton (.github/workflows/ci.yml): ruff+mypy+unit+integration+migration check.
+- Найдено/исправлено: provide_session с параметром-фабрикой ломал FastAPI (перенесён в web/deps.py с Request); PK без default в core ORM; users отсутствовал в TRUNCATE-фикстуре.
+- Проверено: ruff/mypy clean, pytest 100 passed, smoke на 127.0.0.1:8001 (bootstrap → login → защищённая страница → refresh → anon register 403).
+- Не выполнено: push, deploy (по правилам).

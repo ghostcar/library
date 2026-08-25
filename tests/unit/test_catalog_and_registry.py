@@ -15,15 +15,22 @@ from portal.modules.library.domain.enums import MembershipType
 
 class TestSettings:
     def test_defaults(self) -> None:
-        settings = Settings(_env_file=None)  # type: ignore[call-arg]
+        settings = Settings(_env_file=None, jwt_secret="test-secret")  # type: ignore[call-arg]  # noqa: S106
         assert settings.port == 8001
         assert settings.host == "127.0.0.1"
         assert settings.app_env is AppEnv.DEVELOPMENT
         assert settings.is_dev
 
+    def test_missing_jwt_secret_rejected(self) -> None:
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError, match="LIBRARY_JWT_SECRET"):
+            Settings(_env_file=None)  # type: ignore[call-arg]
+
     def test_database_url_env_prefix(self) -> None:
         settings = Settings(
             _env_file=None,  # type: ignore[call-arg]
+            jwt_secret="test-secret",  # noqa: S106
             database_url="postgresql+asyncpg://x:x@localhost:1/x",
         )
         assert "localhost:1" in settings.database_url

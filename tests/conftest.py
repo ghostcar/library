@@ -23,12 +23,16 @@ def get_test_database_url() -> str:
     return os.environ.get("LIBRARY_TEST_DATABASE_URL", TEST_DB_URL_DEFAULT)
 
 
-def make_test_settings() -> Settings:
-    return Settings(
-        app_env=AppEnv.TEST,
-        database_url=get_test_database_url(),
-        _env_file=None,  # type: ignore[call-arg]
-    )
+def make_test_settings(**overrides: object):
+    values: dict[str, object] = {
+        "app_env": AppEnv.TEST,
+        "jwt_secret": "integration-test-secret",
+        "database_url": get_test_database_url(),
+        "cookie_secure": False,
+        "_env_file": None,
+    }
+    values.update(overrides)
+    return Settings(**values)  # type: ignore[arg-type]
 
 
 @pytest.fixture

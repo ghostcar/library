@@ -36,8 +36,8 @@ SHA_A = "ab" * 32
 SHA_B = "cd" * 32
 
 
-async def test_register_work_roundtrip(db_session) -> None:
-    owner = uuid4()
+async def test_register_work_roundtrip(db_session, db_owner) -> None:
+    owner = db_owner
     works = WorkRepository(db_session)
     authors = AuthorRepository(db_session)
     series = SeriesRepository(db_session)
@@ -69,8 +69,8 @@ async def test_register_work_roundtrip(db_session) -> None:
     assert memberships[0].index_sort is not None
 
 
-async def test_find_by_title_is_case_and_whitespace_insensitive(db_session) -> None:
-    owner = uuid4()
+async def test_find_by_title_is_case_and_whitespace_insensitive(db_session, db_owner) -> None:
+    owner = db_owner
     works = WorkRepository(db_session)
     await works.add(de.Work(owner_id=owner, title="The  Green Mile"))
 
@@ -78,8 +78,8 @@ async def test_find_by_title_is_case_and_whitespace_insensitive(db_session) -> N
     assert len(found) == 1
 
 
-async def test_owner_isolation(db_session) -> None:
-    owner_a, owner_b = uuid4(), uuid4()
+async def test_owner_isolation(db_session, db_owner) -> None:
+    owner_a, owner_b = db_owner, uuid4()
     works = WorkRepository(db_session)
     await works.add(de.Work(owner_id=owner_a, title="Приватная книга"))
 
@@ -89,8 +89,8 @@ async def test_owner_isolation(db_session) -> None:
     assert await works.find_by_title(owner_b, "Приватная книга") == []
 
 
-async def test_asset_deduplication_by_sha256(db_session) -> None:
-    owner = uuid4()
+async def test_asset_deduplication_by_sha256(db_session, db_owner) -> None:
+    owner = db_owner
     assets = AssetRepository(db_session)
     await assets.add(
         de.Asset(
@@ -111,8 +111,8 @@ async def test_asset_deduplication_by_sha256(db_session) -> None:
     assert other_owner is None
 
 
-async def test_asset_relation_normalized_derivative(db_session) -> None:
-    owner = uuid4()
+async def test_asset_relation_normalized_derivative(db_session, db_owner) -> None:
+    owner = db_owner
     assets = AssetRepository(db_session)
     original = await assets.add(
         de.Asset(
@@ -145,8 +145,8 @@ async def test_asset_relation_normalized_derivative(db_session) -> None:
     assert await assets.get(owner, derivative.id) is not None
 
 
-async def test_source_record_unique_per_adapter_external(db_session) -> None:
-    owner = uuid4()
+async def test_source_record_unique_per_adapter_external(db_session, db_owner) -> None:
+    owner = db_owner
     records = SourceRecordRepository(db_session)
     record = await records.add(
         de.SourceRecord(
@@ -168,8 +168,8 @@ async def test_source_record_unique_per_adapter_external(db_session) -> None:
     assert (await records.get_by_external(owner, "author_today", "12345")).work_id == work.id  # type: ignore[union-attr]
 
 
-async def test_reading_state_upsert_and_transition(db_session) -> None:
-    owner = uuid4()
+async def test_reading_state_upsert_and_transition(db_session, db_owner) -> None:
+    owner = db_owner
     works = WorkRepository(db_session)
     states = ReadingStateRepository(db_session)
     work = de.Work(owner_id=owner, title="Книга с прогрессом")
@@ -189,8 +189,8 @@ async def test_reading_state_upsert_and_transition(db_session) -> None:
     assert again.change_source is ReadingChangeSource.MANUAL
 
 
-async def test_series_memberships_ordered_by_sort_key(db_session) -> None:
-    owner = uuid4()
+async def test_series_memberships_ordered_by_sort_key(db_session, db_owner) -> None:
+    owner = db_owner
     series_repo = SeriesRepository(db_session)
     works = WorkRepository(db_session)
     series = de.Series(owner_id=owner, title="Эпоха мёртвых")
