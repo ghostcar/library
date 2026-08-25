@@ -53,7 +53,7 @@ base_commit: "(пустой репозиторий)"
 ## Итоги (фактические результаты)
 
 - Исправлено в процессе: alembic env.py — run_migrations без begin_transaction откатывал DDL; flush на границах репозиториев (порядок вставки FK без relationship()); test_database_url из conftest собирался pytest'ом как тест.
-- Коммиты: см. git log (локальные, без push).
+- Коммиты: 0c0c7a4 (memory/docs), 7371e1c (core), c7b64e9 (library domain) — локальные, push не выполнялся.
 - Следующий шаг: Phase 1 — auth core, outbox/jobs, storage port, UI shell.
 ```
 
