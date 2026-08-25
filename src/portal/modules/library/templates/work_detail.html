@@ -17,14 +17,25 @@
 <div class="card">
   <p class="meta">ФАЙЛЫ ({{ work.assets | length }})</p>
   {% for asset in work.assets %}
-  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">
-    {{ asset.original_filename or asset.storage_path }}
-    <span class="meta">· {{ asset.format }} · {{ asset.kind }} · {{ (asset.size_bytes / 1024) | round(1) }} KB</span>
-  </p>
+  <div style="display:flex; gap:12px; align-items:center; margin:8px 0; flex-wrap:wrap;">
+    <span style="font-family:var(--font-mono); font-size:13px; flex:1; min-width:200px;">
+      {{ asset.original_filename or asset.storage_path }}
+      <span class="meta">· {{ asset.format }} · {{ asset.kind }}{% if asset.is_preferred %} · <span style="color:var(--secondary);">основной</span>{% endif %}</span>
+    </span>
+    {% if asset.kind == 'original' %}
+    <form method="post" action="/library/assets/{{ asset.id }}/normalize">
+      <button type="submit" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Нормализовать</button>
+    </form>
+    {% endif %}
+    <a href="/library/assets/{{ asset.id }}/download" style="color:var(--primary); font-family:var(--font-mono); font-size:12px;">Скачать</a>
+  </div>
   {% else %}
   <p class="meta">Файлы не привязаны.</p>
   {% endfor %}
 </div>
 
-<p style="margin-top:24px;"><a href="/library/catalog" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Каталог</a></p>
+<p style="margin-top:24px;">
+  <a href="/library/catalog" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Каталог</a>
+  · <a href="/library/normalization" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">Нормализация</a>
+</p>
 {% endblock %}

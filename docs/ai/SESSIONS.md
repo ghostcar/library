@@ -34,3 +34,14 @@
 - Найдено/исправлено: CatalogService не переиспользовал Work по title+авторам (плодил дубликаты); find_by_title не грузил авторов; NoDecode для LIBRARY_IMPORT_ROOTS; JSONB server_default через text().
 - Проверено: lint clean, mypy clean, 126 tests passed, smoke на :8001 (login→upload→catalog→inbox→storage).
 - Push: выполнен в конце сессии (команды пользователя).
+
+## Сессия 4 — 2026-08-25 — Phase 3: детерминированный нормализатор
+
+- Нормализатор по ADR-0008: FB2 (удаление body-изображений/binaries, пустых обёрток, metadata/section-id/TOC-заголовки), EPUB (repack mimetype-first, cover-only, orphans), cover optimizer (Pillow, JPEG/PNG, 1600px).
+- Fingerprints v1: visible-text (контракт канонизации задокументирован в fingerprints.py), structure, images, chapters; инвариант текста проверяется на каждом прогоне.
+- NormalizationService: конвейер §7.2, manifest §7.7, идемпотентность через unique partial index; failure фиксируется в БД до raise (урок Phase 1 повторён).
+- Инфра: миграция 0004 (normalization_runs + assets.is_preferred), worker handler `normalize`, реестр ORM-моделей core/database/models.py (FK-резолюция в worker'е).
+- UI: очередь+отчёт нормализации, «Нормализовать»/«Скачать» на карточке, download с Content-Disposition, review (assign unmatched, resolve duplicates).
+- Найдено/исправлено: binary-элементы попадали в visible-text; worker TimeoutError на пустой очереди; request_normalization не находил run в состоянии received; Jinja2 не знает str().
+- EPUBCheck: Java на VPS нет → валидация помечена skipped (TECH_DEBT).
+- Проверено: lint/mypy clean, 146 tests, smoke через реального воркера (upload→normalize→derivative_ready→download→prefer).

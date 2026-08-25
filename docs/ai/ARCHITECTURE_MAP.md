@@ -24,6 +24,7 @@ src/portal/
     events/              — transactional outbox (orm + repository)
     jobs/                — очередь PostgreSQL, FOR UPDATE SKIP LOCKED + worker
     storage/             — StorageAdapter порт + LocalStorageAdapter (content-addressed)
+    database/models.py   — реестр всех ORM-моделей (для worker/migrations)
   modules/
     library/             — доменный модуль «Библиотека»
       domain/            — сущности, VO, инварианты, события
@@ -32,6 +33,7 @@ src/portal/
       presentation/      — защищённые HTML-страницы + /library/info
       templates/         — шаблоны модуля (extends base из web)
       adapters/          — реализации внешних источников (позже)
+  (normalizer: modules/library/infrastructure/normalizer/{fb2,epub,fingerprints,cover}.py)
   web/                   — app factory, composition root, SSR auth-страницы
     deps.py              — provide_session (transactional session per request)
     templates/           — base.html (токены Ghostcar), login.html
@@ -60,10 +62,10 @@ scripts/                 — dev/test/lint
 |--------|--------|----------|
 | core.auth | IMPLEMENTED | /auth/register, /auth/login, /auth/refresh, /auth/logout, /auth/me, /auth/tokens, /login (SSR), /logout (SSR) |
 | core.health | IMPLEMENTED | GET /healthz, /readyz |
-| library | PARTIAL | /library/ (dashboard), /library/catalog, /library/works/{id}, /library/import (+upload/scan), /library/info |
+| library | PARTIAL | /library/ (dashboard), /library/catalog, /library/works/{id}, /library/import (+upload/scan), /library/normalization (+{id}, prefer), /library/assets/{id}/normalize|download, review (assign/resolve), /library/info |
 
 ## База данных (18 таблиц)
 
 - core: users, api_tokens, audit_log, outbox_events, jobs
-- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, assets (+work_id), asset_relations, reading_states, import_batches, import_items, duplicate_candidates
+- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, assets (+work_id, is_preferred), asset_relations, reading_states, import_batches, import_items, duplicate_candidates, normalization_runs
 - Все пользовательские данные: `owner_id UUID → users.id` (FK CASCADE)

@@ -55,25 +55,38 @@
 </div>
 {% endif %}
 
-{% if candidates %}
-<div class="card">
-  <p class="meta">КАНДИДАТЫ В ДУБЛИКАТЫ ({{ candidates | length }})</p>
-  {% for c in candidates %}
-  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">
-    {{ c.reason }} · asset {{ c.asset_id }} ≈ {{ c.suspected_of_asset_id }}
-  </p>
-  {% endfor %}
-  <p class="meta">Разбор кандидатов появится вместе с review-UI нормализатора (Phase 3).</p>
-</div>
-{% endif %}
-
 {% if unmatched %}
 <div class="card">
   <p class="meta">ТРЕБУЮТ РАЗБОРА ({{ unmatched | length }})</p>
   {% for item in unmatched %}
-  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">{{ item.filename }}</p>
+  <div style="display:flex; gap:12px; align-items:center; margin:6px 0; flex-wrap:wrap;">
+    <span style="font-family:var(--font-mono); font-size:13px; flex:1; min-width:180px;">{{ item.filename }}</span>
+    <form method="post" action="/library/import/items/{{ item.id }}/assign" style="display:flex; gap:8px; align-items:center;">
+      <input type="text" name="work_id" placeholder="UUID произведения"
+             style="width:220px; padding:4px 8px; font-family:var(--font-mono); font-size:11px;">
+      <button type="submit" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Привязать</button>
+    </form>
+  </div>
   {% endfor %}
-  <p class="meta">Автоматический разбор имён (LLM) — Phase 4.</p>
+  <p class="meta">Автоматический разбор имён (LLM) — Phase 4. UUID произведения — на странице карточки в каталоге.</p>
+</div>
+{% endif %}
+
+{% if candidates %}
+<div class="card">
+  <p class="meta">КАНДИДАТЫ В ДУБЛИКАТЫ ({{ candidates | length }})</p>
+  {% for c in candidates %}
+  <div style="display:flex; gap:12px; align-items:center; margin:6px 0; flex-wrap:wrap;">
+    <span style="font-family:var(--font-mono); font-size:12px; flex:1; min-width:220px;">
+      {{ c.reason }} · {{ (c.asset_id|string)[:8] }} ≈ {{ (c.suspected_of_asset_id|string)[:8] }}
+    </span>
+    <form method="post" action="/library/duplicates/{{ c.id }}/resolve" style="display:flex; gap:8px;">
+      <button type="submit" name="decision" value="confirm" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Дубликат</button>
+      <button type="submit" name="decision" value="dismiss" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Разные</button>
+    </form>
+  </div>
+  {% endfor %}
+  <p class="meta">«Дубликат»: новый файл помечается как копия, оригинал остаётся основным. Файлы не удаляются.</p>
 </div>
 {% endif %}
 

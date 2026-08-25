@@ -17,6 +17,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -292,6 +293,11 @@ class AssetModel(Base):
         PG_UUID(as_uuid=True),
         ForeignKey("works.id", ondelete="SET NULL", name="fk_assets_work"),
         nullable=True,
+    )
+    is_preferred: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=False,
+        server_default=text("false"),
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

@@ -11,3 +11,4 @@
 | 0005 | accepted | Управление зависимостями: venv на системном Python, pyproject.toml, pip |
 | 0006 | accepted | Общая авторизация макропортала в core.auth (JWT + refresh/device токены, готовность к RS256/JWKS) |
 | 0007 | accepted | Импортный конвейер: quarantine→детекция→dedup→original→deterministic matching; дубликаты — кандидаты, не удаления |
+| 0008 | accepted | Детерминированный нормализатор: prose_compact, fingerprints-инвариант текста, manifest, идемпотентность |

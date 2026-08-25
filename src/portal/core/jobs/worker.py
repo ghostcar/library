@@ -10,11 +10,14 @@ import asyncio
 import logging
 import signal
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from portal.core.config.config import get_settings
+from portal.core.database import models as _models  # noqa: F401 - register ORM
 from portal.core.database.engine import build_container
 from portal.core.jobs.repository import JobRepository
 
@@ -32,7 +35,35 @@ async def _noop_handler(payload: dict[str, Any]) -> None:
     logger.info("noop job payload=%s", payload)
 
 
+async def _normalize_handler(payload: dict[str, Any]) -> None:
+    from portal.core.config.config import get_settings
+    from portal.core.storage.local import LocalStorageAdapter
+    from portal.modules.library.application.normalization_service import (
+        NormalizationService,
+    )
+    from portal.modules.library.domain import normalization as nz
+
+    settings = get_settings()
+    service = NormalizationService(
+        session_factory=build_container(settings)["session_factory"],
+        storage=LocalStorageAdapter(Path(settings.storage_root)),
+    )
+    owner_id = UUID(payload["owner_id"])
+    run_id = UUID(payload["run_id"])
+    result = await service.execute_run(owner_id, run_id)
+    logger.info(
+        "normalization run %s -> state=%s derivative=%s",
+        run_id,
+        result.state.value,
+        result.derivative_asset_id,
+    )
+    if result.state is nz.RunState.FAILED:
+        msg = "normalization run failed"
+        raise RuntimeError(msg)
+
+
 register_handler("noop", _noop_handler)
+register_handler("normalize", _normalize_handler)
 
 
 async def process_batch(
@@ -74,8 +105,14 @@ async def run_forever(poll_interval_seconds: float = 2.0) -> None:
         try:
             count = await process_batch(session_factory)
             if count == 0:
-                with_any = await asyncio.wait_for(stop.wait(), timeout=poll_interval_seconds)
-                if with_any:
+                try:
+                    stopped: bool = await asyncio.wait_for(
+                        stop.wait(),
+                        timeout=poll_interval_seconds,
+                    )
+                except TimeoutError:
+                    stopped = False
+                if stopped:
                     break
         except Exception:
             logger.exception("worker loop error")

@@ -9,19 +9,14 @@ from alembic import context
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from portal.core.auth import orm as _auth_orm  # noqa: F401
 from portal.core.config.config import get_settings
-from portal.core.database.engine import Base
-from portal.core.events import orm as _events_orm  # noqa: F401
-from portal.core.jobs import orm as _jobs_orm  # noqa: F401
-from portal.modules.library.infrastructure import import_orm as _import_orm  # noqa: F401
-from portal.modules.library.infrastructure import orm as _library_orm  # noqa: F401
+from portal.core.database import models
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = models.metadata
 
 
 def _database_url() -> str:

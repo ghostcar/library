@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from portal.modules.library.domain import entities as de
@@ -247,6 +247,36 @@ class AssetRepository:
         )
         rows = (await self._session.execute(stmt)).all()
         return {sha: asset_id for sha, asset_id in rows}
+
+    async def set_preferred(self, owner_id: UUID, asset_id: UUID) -> bool:
+        """One preferred asset per owner+work: clears the flag on siblings first."""
+        target = await self.get(owner_id, asset_id)
+        if target is None:
+            return False
+        if target.work_id is not None:
+            await self._session.execute(
+                update(orm.AssetModel)
+                .where(
+                    orm.AssetModel.owner_id == owner_id,
+                    orm.AssetModel.work_id == target.work_id,
+                    orm.AssetModel.is_preferred.is_(True),
+                )
+                .values(is_preferred=False),
+            )
+        await self._session.execute(
+            update(orm.AssetModel)
+            .where(orm.AssetModel.owner_id == owner_id, orm.AssetModel.id == asset_id)
+            .values(is_preferred=True),
+        )
+        return True
+
+    async def update_work_link(self, owner_id: UUID, asset_id: UUID, work_id: UUID) -> bool:
+        result = await self._session.execute(
+            update(orm.AssetModel)
+            .where(orm.AssetModel.owner_id == owner_id, orm.AssetModel.id == asset_id)
+            .values(work_id=work_id),
+        )
+        return int(result.rowcount) > 0  # type: ignore[attr-defined]
 
     async def add_relation(self, relation: de.AssetRelation) -> None:
         self._session.add(

@@ -97,6 +97,7 @@ def asset_to_domain(m: orm.AssetModel) -> de.Asset:
         storage_path=m.storage_path,
         original_filename=m.original_filename,
         work_id=m.work_id,
+        is_preferred=m.is_preferred,
         id=m.id,
         created_at=m.created_at,
     )
@@ -203,6 +204,7 @@ def asset_to_orm(e: de.Asset) -> orm.AssetModel:
         storage_path=e.storage_path,
         original_filename=e.original_filename,
         work_id=e.work_id,
+        is_preferred=e.is_preferred,
         created_at=e.created_at,
     )
 

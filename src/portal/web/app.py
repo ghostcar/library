@@ -21,7 +21,13 @@ from portal.core.database.engine import build_container as build_db_container
 from portal.core.module_registry.registry import ModuleRegistry
 from portal.core.storage.local import LocalStorageAdapter
 from portal.modules.library.application.import_service import ImportService
-from portal.modules.library.presentation import catalog_routes, import_routes
+from portal.modules.library.application.normalization_service import NormalizationService
+from portal.modules.library.presentation import (
+    catalog_routes,
+    import_routes,
+    normalization_routes,
+    review_routes,
+)
 from portal.modules.library.presentation.routes import router as library_router
 from portal.web.routes.auth_pages import router as auth_pages_router
 
@@ -60,6 +66,10 @@ def build_container(settings: Settings) -> dict[str, Any]:
                 max_file_bytes=settings.max_file_bytes,
                 max_files_per_batch=settings.max_files_per_batch,
             ),
+            "normalization_service": NormalizationService(
+                session_factory=session_factory,
+                storage=storage,
+            ),
             "rate_limiters": {
                 "login": RateLimiter(settings.login_rate_limit, settings.rate_limit_window_seconds),
                 "register": RateLimiter(
@@ -97,6 +107,8 @@ def create_app(
     app.include_router(auth_pages_router)
     app.include_router(import_routes.router, prefix="/library")
     app.include_router(catalog_routes.router, prefix="/library")
+    app.include_router(normalization_routes.router, prefix="/library")
+    app.include_router(review_routes.router, prefix="/library")
     for router in registry.routers():
         app.include_router(router, prefix="/library")
 

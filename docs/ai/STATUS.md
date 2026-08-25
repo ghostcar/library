@@ -11,7 +11,7 @@
 | Phase 0. Аудит и фиксация источников истины | `IMPLEMENTED` | Аудит, память, дизайн-матрица, ADR-0001..0004 |
 | Phase 1. Foundation | `PARTIAL` | config/db/registry/health/auth/audit/outbox/jobs/storage — готово; UI shell (Tailwind), CI — skeleton; worker-обработчики доменных задач — нет |
 | Phase 2. Catalog and import | `PARTIAL` | upload + локальные каталоги (dry-run/apply), дубликаты-кандидаты, каталог UI; watched inbox и review-UI — позже |
-| Phase 3. Deterministic normalizer | `PLANNED_ONLY` | — |
+| Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `PLANNED_ONLY` | OmniRoute доступен, модель не выбрана |
 | Phase 5. Series and reading state | `PLANNED_ONLY` | Доменные основы (ReadingState, SeriesMembership) есть |
 | Phase 6. Source monitoring | `PLANNED_ONLY` | — |
@@ -44,6 +44,10 @@
 | Import inbox UI | `IMPLEMENTED` | /library/import (upload, scan, unmatched, duplicates) |
 | Duplicate candidates | `IMPLEMENTED` | exact_content + same_work_format; review — Phase 3 |
 | Watched inbox directory | `ABSENT` | Phase 6 (нужен scheduler) |
+| Нормализатор FB2/EPUB | `IMPLEMENTED` | normalizer/, NormalizationService (ADR-0008) |
+| Очередь нормализации + отчёты | `IMPLEMENTED` | /library/normalization, /library/normalization/{id} |
+| Download с Content-Disposition | `IMPLEMENTED` | /library/assets/{id}/download |
+| Review UI (unmatched, duplicates) | `IMPLEMENTED` | assign/resolve на /library/import |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты
