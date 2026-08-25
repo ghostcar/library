@@ -71,6 +71,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "RUF001", "RUF002", "RUF003"]
 "migrations/**" = ["E501"]
+"src/portal/modules/library/ai/omniroute.py" = ["RUF001", "RUF002", "RUF003"]
 
 [tool.mypy]
 python_version = "3.13"

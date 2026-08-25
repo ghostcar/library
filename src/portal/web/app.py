@@ -20,12 +20,16 @@ from portal.core.config.config import Settings, get_settings
 from portal.core.database.engine import build_container as build_db_container
 from portal.core.module_registry.registry import ModuleRegistry
 from portal.core.storage.local import LocalStorageAdapter
+from portal.modules.library.ai.digest import DigestBuilder
+from portal.modules.library.ai.omniroute import OmniRouteAdapter
+from portal.modules.library.ai.proposal_service import ProposalService
 from portal.modules.library.application.import_service import ImportService
 from portal.modules.library.application.normalization_service import NormalizationService
 from portal.modules.library.presentation import (
     catalog_routes,
     import_routes,
     normalization_routes,
+    proposal_routes,
     review_routes,
 )
 from portal.modules.library.presentation.routes import router as library_router
@@ -70,6 +74,11 @@ def build_container(settings: Settings) -> dict[str, Any]:
                 session_factory=session_factory,
                 storage=storage,
             ),
+            "proposal_service": ProposalService(
+                session_factory=session_factory,
+                ai=OmniRouteAdapter(settings),
+                digest_builder=DigestBuilder(),
+            ),
             "rate_limiters": {
                 "login": RateLimiter(settings.login_rate_limit, settings.rate_limit_window_seconds),
                 "register": RateLimiter(
@@ -109,6 +118,7 @@ def create_app(
     app.include_router(catalog_routes.router, prefix="/library")
     app.include_router(normalization_routes.router, prefix="/library")
     app.include_router(review_routes.router, prefix="/library")
+    app.include_router(proposal_routes.router, prefix="/library")
     for router in registry.routers():
         app.include_router(router, prefix="/library")
 

@@ -45,3 +45,13 @@
 - Найдено/исправлено: binary-элементы попадали в visible-text; worker TimeoutError на пустой очереди; request_normalization не находил run в состоянии received; Jinja2 не знает str().
 - EPUBCheck: Java на VPS нет → валидация помечена skipped (TECH_DEBT).
 - Проверено: lint/mypy clean, 146 tests, smoke через реального воркера (upload→normalize→derivative_ready→download→prefer).
+
+## Сессия 5 — 2026-08-25 — Phase 4: LLM-assisted matching
+
+- ADR-0009: OmniRouteAdapter (httpx, без tools), MatchProposal (строгая schema + 1 repair), DigestBuilder (без текста книги, hard cap), PolicyEngine (auto/review/fallback, защита от чужих UUID), ProposalService (кэш ai_proposals, коррекции ai_corrections).
+- Миграция 0005. UI: propose/apply/apply-auto, шаблон proposal.html с предзаполнением.
+- Подтверждён факт: ключ промпта невалиден для completions (AUTH_002) — OPEN_QUESTIONS #3; всё построено на graceful degradation.
+- Тесты: 15 unit (schema/repair/digest/policy) + 7 integration на fake OpenAI-совместимом сервере (валидный/кэш/битый JSON/недоступен/без ключа/кириллица-форма/инъекция).
+- Найдено/исправлено: Request-аннотации в fake-сервере не резолвились из-за __future__ annotations (импорт в функцию); ai_proposals/ai_corrections отсутствовали в TRUNCATE-фикстуре; curl -d без URL-encoding давал mojibake (сервер корректен — регрессионный тест добавлен).
+- Проверено: lint/mypy clean, 168 tests, smoke: fallback при отсутствии ключа + ручное применение с кириллицей.
+- Push: выполнен в конце сессии.

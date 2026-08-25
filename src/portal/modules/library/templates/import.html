@@ -61,6 +61,9 @@
   {% for item in unmatched %}
   <div style="display:flex; gap:12px; align-items:center; margin:6px 0; flex-wrap:wrap;">
     <span style="font-family:var(--font-mono); font-size:13px; flex:1; min-width:180px;">{{ item.filename }}</span>
+    <form method="post" action="/library/import/items/{{ item.id }}/propose">
+      <button type="submit" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Разобрать с LLM</button>
+    </form>
     <form method="post" action="/library/import/items/{{ item.id }}/assign" style="display:flex; gap:8px; align-items:center;">
       <input type="text" name="work_id" placeholder="UUID произведения"
              style="width:220px; padding:4px 8px; font-family:var(--font-mono); font-size:11px;">

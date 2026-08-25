@@ -14,6 +14,8 @@ from portal.web.app import build_container, create_app
 from tests.conftest import get_test_database_url, make_test_settings
 
 ALL_TABLES = [
+    "ai_corrections",
+    "ai_proposals",
     "audit_log",
     "api_tokens",
     "asset_relations",

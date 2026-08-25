@@ -12,7 +12,7 @@
 | Phase 1. Foundation | `PARTIAL` | config/db/registry/health/auth/audit/outbox/jobs/storage — готово; UI shell (Tailwind), CI — skeleton; worker-обработчики доменных задач — нет |
 | Phase 2. Catalog and import | `PARTIAL` | upload + локальные каталоги (dry-run/apply), дубликаты-кандидаты, каталог UI; watched inbox и review-UI — позже |
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
-| Phase 4. LLM-assisted normalization | `PLANNED_ONLY` | OmniRoute доступен, модель не выбрана |
+| Phase 4. LLM-assisted normalization | `PARTIAL` | digest/schema/adapter/policy/cache/corrections готовы; live-вызовы заблокированы невалидным ключом (OPEN_QUESTIONS #3); TOC-proposal — Phase 8 |
 | Phase 5. Series and reading state | `PLANNED_ONLY` | Доменные основы (ReadingState, SeriesMembership) есть |
 | Phase 6. Source monitoring | `PLANNED_ONLY` | — |
 | Phase 7. Delivery (OPDS) | `PLANNED_ONLY` | Device-токены уже реализованы в core.auth |
@@ -48,6 +48,8 @@
 | Очередь нормализации + отчёты | `IMPLEMENTED` | /library/normalization, /library/normalization/{id} |
 | Download с Content-Disposition | `IMPLEMENTED` | /library/assets/{id}/download |
 | Review UI (unmatched, duplicates) | `IMPLEMENTED` | assign/resolve на /library/import |
+| AI matching (digest→proposal→apply) | `IMPLEMENTED` | ai/, ADR-0009; fake-server тесты; live — нужен валидный ключ |
+| Кэш proposals + corrections dataset | `IMPLEMENTED` | ai_proposals, ai_corrections |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты
