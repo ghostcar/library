@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Master prompt contains the OmniRoute API key — local only
+LIBRARY_PORTAL_MASTER_AGENT_PROMPT_RU.md
+
+# Local design assets (reference materials, kept outside VCS)
+design/
+
+# Local tooling indexes / caches
+.codegraph/
+.serena/
+index/
+
+# Books and user data must never be committed
+*.fb2
+*.fb2.zip
+*.epub
+*.mobi
+*.azw3
+storage/
+data/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

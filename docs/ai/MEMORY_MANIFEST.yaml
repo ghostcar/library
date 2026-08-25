@@ -1,0 +1,32 @@
+schema_version: 1
+canonical_root: docs/ai/
+project: library-portal
+last_verified_commit: null
+required_documents:
+  - README.md
+  - MEMORY_MANIFEST.yaml
+  - PROJECT_CONTEXT.md
+  - STATUS.md
+  - ARCHITECTURE_MAP.md
+  - DOMAIN_GLOSSARY.md
+  - DECISIONS.md
+  - OPEN_QUESTIONS.md
+  - TECH_DEBT.md
+  - CHANGELOG.md
+  - SESSIONS.md
+  - TEST_STRATEGY.md
+  - DEPLOYMENT_STATE.md
+  - DESIGN_CONTEXT.md
+optional_documents:
+  - MCP_INVENTORY.md
+directories:
+  - adr
+  - tasks
+  - runbooks
+  - schemas
+invalidation_rules:
+  - "Изменение структуры модулей src/ => обновить ARCHITECTURE_MAP.md"
+  - "Изменение схемы БД => обновить STATUS.md и соответствующий ADR"
+  - "Ввод нового внешнего сервиса => обновить MCP_INVENTORY.md или DEPLOYMENT_STATE.md"
+  - "Документ утверждает реализацию, которой нет в коде => drift, исправить документ"
+master_prompt: LIBRARY_PORTAL_MASTER_AGENT_PROMPT_RU.md
