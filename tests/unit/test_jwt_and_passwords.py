@@ -56,9 +56,8 @@ class TestTokenService:
 
     def test_wrong_secret_rejected(self) -> None:
         token, _ = TokenService(make_settings()).issue_access_token(str(uuid4()), [])
-        other = TokenService(  # noqa: S106
-            make_settings(jwt_secret="another-secret-0123456789abcdef0123456789ab"),
-        )
+        other_secret = "another-secret-0123456789abcdef0123456789ab"  # noqa: S105
+        other = TokenService(make_settings(jwt_secret=other_secret))
         with pytest.raises(pyjwt.InvalidTokenError):
             other.verify(token)
 
