@@ -1,0 +1,21 @@
+# Integration-test database: isolated container/volume, localhost only.
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: library-postgres-test
+    environment:
+      POSTGRES_USER: library
+      POSTGRES_PASSWORD: library
+      POSTGRES_DB: library_test
+    ports:
+      - "127.0.0.1:55441:5432"
+    volumes:
+      - library_pgdata_test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U library -d library_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  library_pgdata_test:

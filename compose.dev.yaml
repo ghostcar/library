@@ -1,0 +1,5 @@
+# Dev overlay: expose PostgreSQL to the host venv on localhost only (ADR-0003).
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:55440:5432"
