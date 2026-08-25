@@ -33,7 +33,11 @@ class AuthorModel(Base):
     __tablename__ = "authors"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     name_normalized: Mapped[str] = mapped_column(Text, nullable=False)
     sort_name: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -58,7 +62,11 @@ class AuthorAliasModel(Base):
     __tablename__ = "author_aliases"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     author_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("authors.id", ondelete="CASCADE"),
@@ -76,7 +84,11 @@ class WorkModel(Base):
     __tablename__ = "works"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     title_normalized: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[str | None] = mapped_column(String(16), nullable=True)
@@ -99,7 +111,11 @@ class WorkAuthorModel(Base):
     __tablename__ = "work_authors"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     work_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("works.id", ondelete="CASCADE"),
@@ -120,7 +136,11 @@ class SeriesModel(Base):
     __tablename__ = "series"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     title: Mapped[str] = mapped_column(Text, nullable=False)
     title_normalized: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -144,7 +164,11 @@ class SeriesAliasModel(Base):
     __tablename__ = "series_aliases"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     series_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("series.id", ondelete="CASCADE"),
@@ -162,7 +186,11 @@ class SeriesMembershipModel(Base):
     __tablename__ = "series_memberships"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     series_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("series.id", ondelete="CASCADE"),
@@ -187,7 +215,11 @@ class SourceRecordModel(Base):
     __tablename__ = "source_records"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     adapter_id: Mapped[str] = mapped_column(String(64), nullable=False)
     external_id: Mapped[str] = mapped_column(Text, nullable=False)
     work_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -215,7 +247,11 @@ class SourceAuthorRecordModel(Base):
     __tablename__ = "source_author_records"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     adapter_id: Mapped[str] = mapped_column(String(64), nullable=False)
     external_id: Mapped[str] = mapped_column(Text, nullable=False)
     author_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -241,13 +277,22 @@ class AssetModel(Base):
     __tablename__ = "assets"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     format: Mapped[str] = mapped_column(String(16), nullable=False)
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     storage_path: Mapped[str] = mapped_column(Text, nullable=False)
     original_filename: Mapped[str | None] = mapped_column(Text, nullable=True)
+    work_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("works.id", ondelete="SET NULL", name="fk_assets_work"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -258,6 +303,7 @@ class AssetModel(Base):
         UniqueConstraint("owner_id", "sha256", name="uq_assets_owner_sha256"),
         CheckConstraint("size_bytes >= 0", name="ck_assets_size_nonnegative"),
         Index("ix_assets_sha256", "sha256"),
+        Index("ix_assets_work", "work_id"),
     )
 
 
@@ -265,7 +311,11 @@ class AssetRelationModel(Base):
     __tablename__ = "asset_relations"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     asset_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("assets.id", ondelete="CASCADE"),
@@ -298,7 +348,11 @@ class ReadingStateModel(Base):
     __tablename__ = "reading_states"
 
     id: Mapped[uuid.UUID] = _uuid_pk()
-    owner_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     work_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
         ForeignKey("works.id", ondelete="CASCADE"),

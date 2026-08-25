@@ -13,6 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from portal.modules.library.domain import entities as de
+from portal.modules.library.domain.enums import AssetFormat
 from portal.modules.library.domain.value_objects import SeriesIndex, Sha256
 from portal.modules.library.infrastructure import mappers as mp
 from portal.modules.library.infrastructure import orm
@@ -90,7 +91,21 @@ class WorkRepository:
             .order_by(orm.WorkModel.created_at)
         )
         rows = (await self._session.execute(stmt)).scalars().all()
-        return [mp.work_to_domain(r) for r in rows]
+        works: list[de.Work] = []
+        for row in rows:
+            author_rows: Sequence[orm.WorkAuthorModel] = (
+                (
+                    await self._session.execute(
+                        select(orm.WorkAuthorModel)
+                        .where(orm.WorkAuthorModel.work_id == row.id)
+                        .order_by(orm.WorkAuthorModel.position),
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            works.append(mp.work_to_domain(row, list(author_rows)))
+        return works
 
     async def list(self, owner_id: UUID, limit: int = 50, offset: int = 0) -> list[de.Work]:
         stmt = (
@@ -207,6 +222,31 @@ class AssetRepository:
         if row is None or row.owner_id != owner_id:
             return None
         return mp.asset_to_domain(row)
+
+    async def find_by_work_and_format(
+        self,
+        owner_id: UUID,
+        work_id: UUID,
+        format_: AssetFormat,
+    ) -> de.Asset | None:
+        stmt = (
+            select(orm.AssetModel)
+            .where(
+                orm.AssetModel.owner_id == owner_id,
+                orm.AssetModel.work_id == work_id,
+                orm.AssetModel.format == format_.value,
+            )
+            .order_by(orm.AssetModel.created_at)
+        )
+        row = (await self._session.execute(stmt)).scalars().first()
+        return mp.asset_to_domain(row) if row else None
+
+    async def all_hashes(self, owner_id: UUID) -> dict[str, UUID]:
+        stmt = select(orm.AssetModel.sha256, orm.AssetModel.id).where(
+            orm.AssetModel.owner_id == owner_id,
+        )
+        rows = (await self._session.execute(stmt)).all()
+        return {sha: asset_id for sha, asset_id in rows}
 
     async def add_relation(self, relation: de.AssetRelation) -> None:
         self._session.add(

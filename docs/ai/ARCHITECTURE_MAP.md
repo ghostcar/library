@@ -60,10 +60,10 @@ scripts/                 — dev/test/lint
 |--------|--------|----------|
 | core.auth | IMPLEMENTED | /auth/register, /auth/login, /auth/refresh, /auth/logout, /auth/me, /auth/tokens, /login (SSR), /logout (SSR) |
 | core.health | IMPLEMENTED | GET /healthz, /readyz |
-| library | PARTIAL | GET /library/ (защищено), /library/info |
+| library | PARTIAL | /library/ (dashboard), /library/catalog, /library/works/{id}, /library/import (+upload/scan), /library/info |
 
 ## База данных (18 таблиц)
 
 - core: users, api_tokens, audit_log, outbox_events, jobs
-- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, assets, asset_relations, reading_states
+- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, assets (+work_id), asset_relations, reading_states, import_batches, import_items, duplicate_candidates
 - Все пользовательские данные: `owner_id UUID → users.id` (FK CASCADE)

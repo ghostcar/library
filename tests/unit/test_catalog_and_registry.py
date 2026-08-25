@@ -67,32 +67,36 @@ class _FakeWorkRepo:
         self.saved.append(work)
         return work
 
+    async def find_by_title(self, owner_id: uuid4, title: str) -> list[de.Work]:
+        normalized = de.normalize_title(title)
+        return [w for w in self.saved if w.title_normalized == normalized]
+
 
 class _FakeAuthorRepo:
     def __init__(self) -> None:
-        self.by_name: dict[str, de.Author] = {}
+        self.by_owner_name: dict[tuple, de.Author] = {}
         self.saved: list[de.Author] = []
 
     async def add(self, author: de.Author) -> de.Author:
         self.saved.append(author)
-        self.by_name[de.normalize_title(author.name)] = author
+        self.by_owner_name[(author.owner_id, de.normalize_title(author.name))] = author
         return author
 
     async def find_by_name(self, owner_id: uuid4, name: str) -> de.Author | None:
-        return self.by_name.get(de.normalize_title(name))
+        return self.by_owner_name.get((owner_id, de.normalize_title(name)))
 
 
 class _FakeSeriesRepo:
     def __init__(self) -> None:
-        self.by_title: dict[str, de.Series] = {}
+        self.by_owner_title: dict[tuple, de.Series] = {}
         self.memberships: list[de.SeriesMembership] = []
 
     async def add(self, series: de.Series) -> de.Series:
-        self.by_title[de.normalize_title(series.title)] = series
+        self.by_owner_title[(series.owner_id, de.normalize_title(series.title))] = series
         return series
 
     async def find_by_title(self, owner_id: uuid4, title: str) -> de.Series | None:
-        return self.by_title.get(de.normalize_title(title))
+        return self.by_owner_title.get((owner_id, de.normalize_title(title)))
 
     async def add_membership(self, membership: de.SeriesMembership) -> None:
         self.memberships.append(membership)
@@ -142,13 +146,41 @@ class TestCatalogService:
     async def test_owner_scoping_between_two_owners(self) -> None:
         works, authors, series = _FakeWorkRepo(), _FakeAuthorRepo(), _FakeSeriesRepo()
         service = CatalogService(works=works, authors=authors, series=series)
+        owner_a, owner_b = uuid4(), uuid4()
+
+        first = await service.register_work(
+            RegisterWorkInput(owner_id=owner_a, title="Книга", author_names=["Автор"]),
+        )
+        second = await service.register_work(
+            RegisterWorkInput(owner_id=owner_b, title="Книга", author_names=["Автор"]),
+        )
+        # same title, different owners: no reuse across owner scope
+        assert first.id != second.id
+        assert len(works.saved) == 2
+
+    async def test_same_title_and_author_reuses_work(self) -> None:
+        works, authors, series = _FakeWorkRepo(), _FakeAuthorRepo(), _FakeSeriesRepo()
+        service = CatalogService(works=works, authors=authors, series=series)
+        owner = uuid4()
+
+        first = await service.register_work(
+            RegisterWorkInput(owner_id=owner, title="Цветы", author_names=["Киз"]),
+        )
+        second = await service.register_work(
+            RegisterWorkInput(owner_id=owner, title="цветы", author_names=["Киз"]),
+        )
+        assert first.id == second.id
+        assert len(works.saved) == 1
+
+    async def test_same_title_different_author_creates_new_work(self) -> None:
+        works, authors, series = _FakeWorkRepo(), _FakeAuthorRepo(), _FakeSeriesRepo()
+        service = CatalogService(works=works, authors=authors, series=series)
+        owner = uuid4()
 
         await service.register_work(
-            RegisterWorkInput(owner_id=uuid4(), title="Книга", author_names=["Автор"]),
+            RegisterWorkInput(owner_id=owner, title="Мгновения", author_names=["Автор Один"]),
         )
         await service.register_work(
-            RegisterWorkInput(owner_id=uuid4(), title="Книга", author_names=["Автор"]),
+            RegisterWorkInput(owner_id=owner, title="Мгновения", author_names=["Автор Два"]),
         )
-        # Fake repos are shared here; scoping is enforced by SQL filters covered
-        # in integration tests. This test documents the intent.
         assert len(works.saved) == 2

@@ -10,7 +10,7 @@
 |------|--------|------------|
 | Phase 0. Аудит и фиксация источников истины | `IMPLEMENTED` | Аудит, память, дизайн-матрица, ADR-0001..0004 |
 | Phase 1. Foundation | `PARTIAL` | config/db/registry/health/auth/audit/outbox/jobs/storage — готово; UI shell (Tailwind), CI — skeleton; worker-обработчики доменных задач — нет |
-| Phase 2. Catalog and import | `PLANNED_ONLY` | Канонические сущности есть, импорт — нет |
+| Phase 2. Catalog and import | `PARTIAL` | upload + локальные каталоги (dry-run/apply), дубликаты-кандидаты, каталог UI; watched inbox и review-UI — позже |
 | Phase 3. Deterministic normalizer | `PLANNED_ONLY` | — |
 | Phase 4. LLM-assisted normalization | `PLANNED_ONLY` | OmniRoute доступен, модель не выбрана |
 | Phase 5. Series and reading state | `PLANNED_ONLY` | Доменные основы (ReadingState, SeriesMembership) есть |
@@ -39,7 +39,11 @@
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `PARTIAL` | lint+mypy+tests; контейнеры — Phase 9 |
 | Tailwind/UI shell | `ABSENT` | Phase 2+ (сейчас inline CSS) |
-| Импорт файлов | `ABSENT` | Phase 2 |
+| Импорт: upload + local dirs | `IMPLEMENTED` | ImportService, ADR-0007 |
+| Каталог UI (список, карточка) | `IMPLEMENTED` | /library/catalog, /library/works/{id} |
+| Import inbox UI | `IMPLEMENTED` | /library/import (upload, scan, unmatched, duplicates) |
+| Duplicate candidates | `IMPLEMENTED` | exact_content + same_work_format; review — Phase 3 |
+| Watched inbox directory | `ABSENT` | Phase 6 (нужен scheduler) |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты

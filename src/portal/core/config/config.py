@@ -4,9 +4,17 @@ from __future__ import annotations
 
 from enum import StrEnum
 from functools import lru_cache
+from typing import Annotated
 
-from pydantic import Field, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+
+def _split_roots(value: object) -> object:
+    """Allow LIBRARY_IMPORT_ROOTS=/a,/b (comma-separated) besides JSON arrays."""
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return value
 
 
 class AppEnv(StrEnum):
@@ -34,6 +42,20 @@ class Settings(BaseSettings):
     )
     db_echo: bool = False
     storage_root: str = "./storage"
+
+    # --- Import (master prompt 6) ---
+    import_roots: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    max_file_mb: int = 50
+    max_files_per_batch: int = 20
+
+    @field_validator("import_roots", mode="before")
+    @classmethod
+    def _parse_import_roots(cls, value: object) -> object:
+        return _split_roots(value)
+
+    @property
+    def max_file_bytes(self) -> int:
+        return self.max_file_mb * 1024 * 1024
 
     # --- Auth (macroportal-level, see ADR-0006) ---
     jwt_secret: str | None = None

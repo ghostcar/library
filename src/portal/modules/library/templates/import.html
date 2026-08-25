@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+  <h1 style="font-family: var(--font-display); font-weight: 400; margin:0;">Импорт</h1>
+  <nav style="display:flex; gap:12px;">
+    <a href="/library/catalog" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px;">Каталог</a>
+    <a href="/library/import" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">Импорт</a>
+  </nav>
+</div>
+
+<div class="card">
+  <p class="meta">ЗАГРУЗКА ФАЙЛОВ · до {{ max_files }} файлов, до {{ max_file_mb }} МБ каждый (FB2/EPUB)</p>
+  <form method="post" action="/library/import/upload" enctype="multipart/form-data">
+    <input type="file" name="files" multiple accept=".fb2,.epub" required
+           style="border:1px solid var(--outline-variant); padding:8px; width:100%; color:var(--on-surface);">
+    <button type="submit">Импортировать</button>
+  </form>
+</div>
+
+<div class="card">
+  <p class="meta">ЛОКАЛЬНЫЕ КАТАЛОГИ</p>
+  {% if scan_roots %}
+  <p class="meta" style="margin:4px 0 12px;">{{ scan_roots | join(" · ") }}</p>
+  <form method="post" action="/library/import/scan" style="display:flex; gap:12px; flex-wrap:wrap;">
+    <button type="submit" name="apply" value="false" style="width:auto; margin:0;">Dry-run скан</button>
+    <button type="submit" name="apply" value="true" style="width:auto; margin:0;">Импортировать новое</button>
+  </form>
+  {% else %}
+  <p class="meta" style="margin:4px 0 0;">Каталоги не настроены. Задайте LIBRARY_IMPORT_ROOTS в .env (через запятую).</p>
+  {% endif %}
+
+  {% if scan_result is not none %}
+  <p class="meta" style="margin-top:16px;">РЕЗУЛЬТАТ СКАНА ({{ scan_result | length }} файлов)</p>
+  <table style="width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:12px;">
+    {% for e in scan_result %}
+    <tr style="border-bottom:1px solid var(--outline-variant);">
+      <td style="padding:6px 4px;">{{ e.path.name }}</td>
+      <td style="padding:6px 4px;">{{ (e.size_bytes / 1048576) | round(2) }} MB</td>
+      <td style="padding:6px 4px; color: {{ 'var(--primary)' if e.verdict == 'new' else 'var(--secondary)' }};">{{ e.verdict }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</div>
+
+{% if duplicates %}
+<div class="card">
+  <p class="meta">ДУБЛИКАТЫ И ОТКЛОНЁННЫЕ ({{ duplicates | length }})</p>
+  {% for item in duplicates %}
+  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">
+    {{ item.filename }} <span class="meta">· {{ item.status }}{% if item.match_evidence.reason %} · {{ item.match_evidence.reason }}{% endif %}{% if item.error %} · {{ item.error }}{% endif %}</span>
+  </p>
+  {% endfor %}
+  <p class="meta">Дубликаты по содержимому не сохраняются повторно; оригинал остаётся в каталоге.</p>
+</div>
+{% endif %}
+
+{% if candidates %}
+<div class="card">
+  <p class="meta">КАНДИДАТЫ В ДУБЛИКАТЫ ({{ candidates | length }})</p>
+  {% for c in candidates %}
+  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">
+    {{ c.reason }} · asset {{ c.asset_id }} ≈ {{ c.suspected_of_asset_id }}
+  </p>
+  {% endfor %}
+  <p class="meta">Разбор кандидатов появится вместе с review-UI нормализатора (Phase 3).</p>
+</div>
+{% endif %}
+
+{% if unmatched %}
+<div class="card">
+  <p class="meta">ТРЕБУЮТ РАЗБОРА ({{ unmatched | length }})</p>
+  {% for item in unmatched %}
+  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">{{ item.filename }}</p>
+  {% endfor %}
+  <p class="meta">Автоматический разбор имён (LLM) — Phase 4.</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <p class="meta">ПОСЛЕДНИЕ ПАРТИИ ИМПОРТА</p>
+  {% for b in batches %}
+  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">
+    {{ b.created_at.strftime("%Y-%m-%d %H:%M") }} · {{ b.source }} · {{ b.status }}
+  </p>
+  {% else %}
+  <p class="meta">Импортов пока не было.</p>
+  {% endfor %}
+</div>
+{% endblock %}

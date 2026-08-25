@@ -47,18 +47,27 @@ class CatalogService:
         self._series = series
 
     async def register_work(self, data: RegisterWorkInput) -> de.Work:
-        work = de.Work(owner_id=data.owner_id, title=data.title, language=data.language)
-        for position, name in enumerate(data.author_names):
+        # resolve/reuse authors first
+        author_ids: list[UUID] = []
+        for name in data.author_names:
             author = await self._authors.find_by_name(data.owner_id, name)
             if author is None:
                 author = de.Author(owner_id=data.owner_id, name=name)
                 await self._authors.add(author)
+            author_ids.append(author.id)
+
+        # reuse an existing work with the same normalized title AND a shared author;
+        # title match alone is not enough (different books may share a title)
+        candidates = await self._works.find_by_title(data.owner_id, data.title)
+        for candidate in candidates:
+            candidate_authors = {wa.author_id for wa in candidate.authors}
+            if candidate_authors & set(author_ids):
+                return candidate
+
+        work = de.Work(owner_id=data.owner_id, title=data.title, language=data.language)
+        for position, author_id in enumerate(author_ids):
             work.authors.append(
-                de.WorkAuthor(
-                    author_id=author.id,
-                    role=WorkAuthorRole.AUTHOR,
-                    position=position,
-                ),
+                de.WorkAuthor(author_id=author_id, role=WorkAuthorRole.AUTHOR, position=position),
             )
         await self._works.add(work)
 

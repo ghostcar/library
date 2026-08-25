@@ -301,7 +301,7 @@ class TestSSR:
 
         library = await client.get("/library/")
         assert library.status_code == 200
-        assert EMAIL in library.text
+        assert "Каталог" in library.text  # dashboard renders for authenticated user
 
     async def test_logout_via_ssr(self, client: httpx.AsyncClient) -> None:
         await _register(client)

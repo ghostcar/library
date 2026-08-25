@@ -96,6 +96,7 @@ def asset_to_domain(m: orm.AssetModel) -> de.Asset:
         size_bytes=m.size_bytes,
         storage_path=m.storage_path,
         original_filename=m.original_filename,
+        work_id=m.work_id,
         id=m.id,
         created_at=m.created_at,
     )
@@ -201,6 +202,7 @@ def asset_to_orm(e: de.Asset) -> orm.AssetModel:
         size_bytes=e.size_bytes,
         storage_path=e.storage_path,
         original_filename=e.original_filename,
+        work_id=e.work_id,
         created_at=e.created_at,
     )
 

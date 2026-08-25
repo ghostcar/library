@@ -14,6 +14,7 @@ from portal.core.config.config import get_settings
 from portal.core.database.engine import Base
 from portal.core.events import orm as _events_orm  # noqa: F401
 from portal.core.jobs import orm as _jobs_orm  # noqa: F401
+from portal.modules.library.infrastructure import import_orm as _import_orm  # noqa: F401
 from portal.modules.library.infrastructure import orm as _library_orm  # noqa: F401
 
 config = context.config

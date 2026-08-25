@@ -20,6 +20,8 @@ from portal.core.config.config import Settings, get_settings
 from portal.core.database.engine import build_container as build_db_container
 from portal.core.module_registry.registry import ModuleRegistry
 from portal.core.storage.local import LocalStorageAdapter
+from portal.modules.library.application.import_service import ImportService
+from portal.modules.library.presentation import catalog_routes, import_routes
 from portal.modules.library.presentation.routes import router as library_router
 from portal.web.routes.auth_pages import router as auth_pages_router
 
@@ -45,12 +47,19 @@ def build_container(settings: Settings) -> dict[str, Any]:
         token_service=token_service,
         settings=settings,
     )
+    storage = LocalStorageAdapter(Path(settings.storage_root))
     container.update(
         {
             "token_service": token_service,
             "audit_service": audit_service,
             "auth_service": auth_service,
-            "storage": LocalStorageAdapter(Path(settings.storage_root)),
+            "storage": storage,
+            "import_service": ImportService(
+                session_factory=session_factory,
+                storage=storage,
+                max_file_bytes=settings.max_file_bytes,
+                max_files_per_batch=settings.max_files_per_batch,
+            ),
             "rate_limiters": {
                 "login": RateLimiter(settings.login_rate_limit, settings.rate_limit_window_seconds),
                 "register": RateLimiter(
@@ -86,6 +95,8 @@ def create_app(
 
     app.include_router(auth_router)
     app.include_router(auth_pages_router)
+    app.include_router(import_routes.router, prefix="/library")
+    app.include_router(catalog_routes.router, prefix="/library")
     for router in registry.routers():
         app.include_router(router, prefix="/library")
 

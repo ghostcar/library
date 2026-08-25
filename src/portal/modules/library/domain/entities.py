@@ -205,6 +205,7 @@ class Asset:
     size_bytes: int
     storage_path: str
     original_filename: str | None = None
+    work_id: UUID | None = None
     id: UUID = field(default_factory=uuid4)
     created_at: datetime = field(default_factory=_utcnow)
 
