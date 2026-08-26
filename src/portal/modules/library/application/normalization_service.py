@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -316,6 +317,20 @@ class NormalizationService:
 
         serialized, actions, cover_info = epub_mod.transform_epub(book, profile)
 
+        import tempfile
+
+        from portal.modules.library.infrastructure.normalizer.epubcheck import (
+            run_epubcheck,
+        )
+
+        with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as tmp:
+            tmp.write(serialized)
+            tmp_path = Path(tmp.name)
+        try:
+            check = run_epubcheck(tmp_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
         new_book = epub_mod.parse_epub(serialized)
         after_text = epub_mod.epub_visible_text(new_book)
         new_images = epub_mod.epub_images(new_book)
@@ -334,6 +349,9 @@ class NormalizationService:
         if profile.strict_text_fingerprint and not invariant_ok:
             msg = "text invariant violated: EPUB visible text changed"
             raise NormalizationError(msg)
+        if check.available and check.valid is False:
+            msg = f"EPUBCheck reported errors: {check.messages[0] if check.messages else 'invalid'}"
+            raise NormalizationError(msg)
 
         manifest = {
             "profile": profile.name.value,
@@ -351,7 +369,16 @@ class NormalizationService:
                 "text_invariant_ok": invariant_ok,
             },
             "cover": cover_info,
-            "warnings": ["EPUBCheck not available; structural validation skipped"],
+            "epubcheck": {
+                "available": check.available,
+                "valid": check.valid,
+                "error_count": check.error_count,
+                "warning_count": check.warning_count,
+                "messages": check.messages[:10],
+            },
+            "warnings": []
+            if check.available
+            else ["EPUBCheck not available; structural validation skipped"],
         }
         review_reason = None
         if cover_info.get("status") == "review":

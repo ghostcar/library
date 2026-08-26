@@ -127,27 +127,22 @@ class TestRefreshRotation:
         old_refresh = client.cookies["library_refresh"]
         client.cookies.clear()
 
-        response = await client.post(
-            "/auth/refresh",
-            cookies={"library_refresh": old_refresh},
-        )
+        client.cookies.set("library_refresh", old_refresh)
+        response = await client.post("/auth/refresh")
         assert response.status_code == 200
         new_refresh = response.cookies["library_refresh"]
         assert new_refresh != old_refresh
 
         # old refresh token must now be revoked
-        replay = await client.post(
-            "/auth/refresh",
-            cookies={"library_refresh": old_refresh},
-        )
+        client.cookies.set("library_refresh", old_refresh)
+        replay = await client.post("/auth/refresh")
         assert replay.status_code == 401
 
         # new one still works
-        again = await client.post(
-            "/auth/refresh",
-            cookies={"library_refresh": new_refresh},
-        )
+        client.cookies.set("library_refresh", new_refresh)
+        again = await client.post("/auth/refresh")
         assert again.status_code == 200
+        client.cookies.clear()
 
     async def test_refresh_without_cookie(self, client: httpx.AsyncClient) -> None:
         assert (await client.post("/auth/refresh")).status_code == 401
@@ -165,11 +160,10 @@ class TestLogout:
         )
         assert response.status_code == 204
 
-        replay = await client.post(
-            "/auth/refresh",
-            cookies={"library_refresh": refresh_cookie},
-        )
+        client.cookies.set("library_refresh", refresh_cookie)
+        replay = await client.post("/auth/refresh")
         assert replay.status_code == 401
+        client.cookies.clear()
 
 
 class TestCSRF:
@@ -310,11 +304,10 @@ class TestSSR:
         assert response.headers["location"] == "/login"
         assert "library_access" not in response.cookies or response.cookies["library_access"] == ""
 
-        replay = await client.post(
-            "/auth/refresh",
-            cookies={"library_refresh": "anything"},
-        )
+        client.cookies.set("library_refresh", "anything")
+        replay = await client.post("/auth/refresh")
         assert replay.status_code == 401
+        client.cookies.clear()
 
 
 class TestJobsAndOutbox:

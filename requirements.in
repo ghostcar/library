@@ -1,0 +1,18 @@
+# Source of truth: pyproject.toml [project.dependencies].
+# Compile: scripts/update-lock.sh (pip-compile)
+#
+fastapi>=0.115
+uvicorn[standard]>=0.34
+pydantic>=2.9
+email-validator>=2.2
+pydantic-settings>=2.6
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.30
+alembic>=1.14
+jinja2>=3.1
+python-multipart>=0.0.20
+argon2-cffi>=23.1
+pyjwt>=2.10
+httpx>=0.28
+lxml>=5.3
+Pillow>=11

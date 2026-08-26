@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     ai_timeout_seconds: float = 30.0
     ai_enabled: bool = True  # local-only policy switch (§8.6)
     ai_max_input_chars: int = 4000  # hard cap on digest size sent to the model
+    epubcheck_jar: str = ""  # path to epubcheck.jar; empty = validation skipped
+    audit_retention_days: int = 0  # 0 = keep forever; else delete older records
+    outbox_retention_days: int = 30  # processed outbox events cleanup
 
     # --- Import (master prompt 6) ---
     import_roots: Annotated[list[str], NoDecode] = Field(default_factory=list)

@@ -82,6 +82,16 @@ register_handler("normalize", _normalize_handler)
 register_handler("poll_watch", _poll_watch_handler)
 
 
+async def run_retention_safe(session_factory: async_sessionmaker[AsyncSession]) -> None:
+    """Daily retention cleanup (audit_log, outbox). Non-fatal."""
+    try:
+        from portal.core.retention import run_retention
+
+        run_retention(session_factory)
+    except Exception:
+        logger.exception("retention tick failed")
+
+
 async def schedule_due_watches(session_factory: async_sessionmaker[AsyncSession]) -> None:
     """Enqueue poll jobs for due watch rules (throttled, non-fatal)."""
     try:
@@ -135,6 +145,7 @@ async def run_forever(poll_interval_seconds: float = 2.0) -> None:
 
     logger.info("worker started (db=%s)", settings.database_url.split("@")[-1])
     last_schedule_check = 0.0
+    last_retention_check = 0.0
     while not stop.is_set():
         try:
             count = await process_batch(session_factory)
@@ -142,6 +153,9 @@ async def run_forever(poll_interval_seconds: float = 2.0) -> None:
             if now - last_schedule_check >= 30.0:
                 last_schedule_check = now
                 await schedule_due_watches(session_factory)
+            if now - last_retention_check >= 6 * 3600.0:
+                last_retention_check = now
+                await run_retention_safe(session_factory)
             if count == 0:
                 try:
                     stopped: bool = await asyncio.wait_for(

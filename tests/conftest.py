@@ -26,7 +26,7 @@ def get_test_database_url() -> str:
 def make_test_settings(**overrides: object):
     values: dict[str, object] = {
         "app_env": AppEnv.TEST,
-        "jwt_secret": "integration-test-secret",
+        "jwt_secret": "integration-test-secret-0123456789abcdef0123456789abcdef",
         "database_url": get_test_database_url(),
         "cookie_secure": False,
         "_env_file": None,

@@ -102,3 +102,13 @@
 - Найдено/исправлено: httpx в dev-зависимостях при использовании в prod-коде (образ не собирался); ui-kit искал base.html в одной папке; backup-контейнер параметризован (LIBRARY_PG_CONTAINER).
 - GHCR push не выполнялся (требуется явная команда владельца, §15.4).
 - Проверено: lint/mypy clean, 225 tests, docker build OK, image imports OK, headers/static/ui-kit smoke OK.
+
+## Сессия 11 — 2026-08-26 — закрытие долгов перед деплоем
+
+- Lock: requirements.lock (pip-compile), Dockerfile ставит из лока (--no-deps для проекта), scripts/update-lock.sh. OQ#1 закрыт.
+- Warnings: 156 → 0 (длинные JWT-секреты во всех тестах, httpx cookies через client.cookies). TECH_DEBT#6 закрыт.
+- EPUBCheck: jar 5.2.1 в Docker-образе (+JRE), epubcheck.py runner (availability/parse/invocation), результат в manifest, errors → run failed; вне образа — skipped. §14.1 выполнен.
+- Retention: LIBRARY_AUDIT_RETENTION_DAYS / OUTBOX_RETENTION_DAYS, worker каждые 6ч. OQ#8 закрыт.
+- Тема: переключатель Astral/Solar (theme.js, CSP-safe), default Astral. OQ#6 закрыт. OQ#5 закрыт (main-only).
+- Rate limiter: принято как есть (деплой = 1 процесс). TECH_DEBT#5 закрыт с триггером на будущее.
+- Проверено: lint/mypy clean, 229 passed, 0 warnings.

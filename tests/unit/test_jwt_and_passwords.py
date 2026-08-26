@@ -17,7 +17,7 @@ from portal.core.config.config import AppEnv, Settings
 def make_settings(**overrides: object) -> Settings:
     base: dict[str, object] = {
         "app_env": AppEnv.TEST,
-        "jwt_secret": "unit-test-secret",
+        "jwt_secret": "unit-test-secret-0123456789abcdef0123456789abcdef",
         "_env_file": None,
     }
     base.update(overrides)

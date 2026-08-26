@@ -7,6 +7,7 @@
   <title>{{ title }}</title>
   <link rel="stylesheet" href="/static/css/tokens.css">
   <link rel="stylesheet" href="/static/css/components.css">
+  <script src="/static/js/theme.js" defer></script>
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -14,6 +15,8 @@
   <header class="topbar">
     <div class="brand">Ghostcar<small>PERSONAL MACROPORTAL</small></div>
     <div style="display:flex; gap:16px; align-items:center;">
+      <button id="theme-toggle" type="button" title="Переключить тему"
+              style="margin:0; width:auto; min-height:0; padding:4px 10px; font-size:10px;">Тема</button>
       <a href="/library/notifications" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
         Уведомления{% if unread_notifications %} <span class="chip chip--warn">[{{ unread_notifications }}]</span>{% endif %}
       </a>
