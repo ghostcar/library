@@ -22,7 +22,9 @@ from portal.modules.library.domain.value_objects import SeriesIndex, Sha256
 _TITLE_RE = re.compile(r"\s+")
 
 _ALLOWED_READING_TRANSITIONS: dict[ReadingStatus, frozenset[ReadingStatus]] = {
-    ReadingStatus.UNREAD: frozenset({ReadingStatus.READING}),
+    # "Отметить прочитанной" is a primary mobile action (§10.2):
+    # unread -> read must be legal alongside unread -> reading
+    ReadingStatus.UNREAD: frozenset({ReadingStatus.READING, ReadingStatus.READ}),
     ReadingStatus.READING: frozenset(
         {ReadingStatus.READ, ReadingStatus.PAUSED, ReadingStatus.ABANDONED},
     ),

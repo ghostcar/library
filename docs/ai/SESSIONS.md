@@ -55,3 +55,13 @@
 - Найдено/исправлено: Request-аннотации в fake-сервере не резолвились из-за __future__ annotations (импорт в функцию); ai_proposals/ai_corrections отсутствовали в TRUNCATE-фикстуре; curl -d без URL-encoding давал mojibake (сервер корректен — регрессионный тест добавлен).
 - Проверено: lint/mypy clean, 168 tests, smoke: fallback при отсутствии ключа + ручное применение с кириллицей.
 - Push: выполнен в конце сессии.
+
+## Сессия 6 — 2026-08-25 — Phase 5: series/reading state
+
+- ADR-0010: DerivedSeriesState (on-read вычисление), caught_up≠completed, override главнее, missing_indices только для целых индексов.
+- ReadingStateService: валидированные переходы + история (reading_state_history), bulk, очередь (in_progress→planned→standalone), события outbox.
+- Миграция 0006: reading_state_history, series_user_states.
+- UI: dashboard (/), /library/queue, /library/series(+{id}), история чтения, кнопки действий на карточке произведения.
+- Домен изменён: unread→read разрешён (главная мобильная кнопка §10.2) — обновлены тесты домена.
+- Найдено/исправлено: ReadingStateModel не импортирован в reading_queue; planned-циклы не попадали в очередь; серия тестов чинила мутации тест-кода (work_ids/series_id путаница).
+- Проверено: lint/mypy clean, 199 tests, smoke: 3 тома → mark read → dashboard «далее том 02».

@@ -15,6 +15,19 @@
 {% endif %}
 
 <div class="card">
+  <p class="meta">ЧТЕНИЕ</p>
+  <form method="post" action="/library/works/{{ work.id }}/status" style="display:flex; gap:8px; flex-wrap:wrap;">
+    <input type="hidden" name="back" value="/library/works/{{ work.id }}">
+    <button type="submit" name="status" value="reading" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Начал читать</button>
+    <button type="submit" name="status" value="read" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Прочитана</button>
+    <button type="submit" name="status" value="paused" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Пауза</button>
+    <button type="submit" name="status" value="abandoned" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Бросил</button>
+    <button type="submit" name="status" value="unread" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">В очередь</button>
+  </form>
+  <p style="margin-top:8px;"><a href="/library/works/{{ work.id }}/history" style="color:var(--primary); font-family:var(--font-mono); font-size:12px;">История чтения</a></p>
+</div>
+
+<div class="card">
   <p class="meta">ФАЙЛЫ ({{ work.assets | length }})</p>
   {% for asset in work.assets %}
   <div style="display:flex; gap:12px; align-items:center; margin:8px 0; flex-wrap:wrap;">

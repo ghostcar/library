@@ -13,3 +13,4 @@
 | 0007 | accepted | Импортный конвейер: quarantine→детекция→dedup→original→deterministic matching; дубликаты — кандидаты, не удаления |
 | 0008 | accepted | Детерминированный нормализатор: prose_compact, fingerprints-инвариант текста, manifest, идемпотентность |
 | 0009 | accepted | LLM-assisted matching через OmniRoute: digest без текста книги, строгая schema, policy engine, кэш, graceful fallback |
+| 0010 | accepted | Производное состояние циклов: caught_up ≠ completed, user override главнее, unread→read разрешён напрямую |

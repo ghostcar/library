@@ -15,6 +15,7 @@ from portal.modules.library.ai import orm as _ai_orm  # noqa: F401
 from portal.modules.library.infrastructure import import_orm as _import_orm  # noqa: F401
 from portal.modules.library.infrastructure import normalization_orm as _norm_orm  # noqa: F401
 from portal.modules.library.infrastructure import orm as _library_orm  # noqa: F401
+from portal.modules.library.infrastructure import series_orm as _series_orm  # noqa: F401
 
 # fmt: on
 

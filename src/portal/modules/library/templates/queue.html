@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="font-family: var(--font-display); font-weight: 400;">Очередь чтения</h1>
+{% if queue %}
+{% for item in queue %}
+<div class="card" style="margin-top:12px;">
+  <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <div style="flex:1; min-width:200px;">
+      <a href="/library/works/{{ item.work_id }}" style="color:var(--on-surface); text-decoration:none;">{{ item.title }}</a>
+      {% if item.series_title %}
+      <p class="meta" style="margin:2px 0 0;">{{ item.series_title }}{% if item.index_raw %} · №{{ item.index_raw }}{% endif %}</p>
+      {% endif %}
+    </div>
+    <form method="post" action="/library/works/{{ item.work_id }}/status" style="display:flex; gap:8px; flex-wrap:wrap;">
+      <input type="hidden" name="back" value="/library/queue">
+      <button type="submit" name="status" value="reading" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Начать</button>
+      <button type="submit" name="status" value="read" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Прочитано</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card">
+  <p class="meta">Очередь пуста. Всё прочитано или книг нет.</p>
+</div>
+{% endif %}
+<p style="margin-top:24px;"><a href="/library/" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Библиотека</a></p>
+{% endblock %}

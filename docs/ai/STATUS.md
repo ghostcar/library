@@ -13,7 +13,7 @@
 | Phase 2. Catalog and import | `PARTIAL` | upload + локальные каталоги (dry-run/apply), дубликаты-кандидаты, каталог UI; watched inbox и review-UI — позже |
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `PARTIAL` | digest/schema/adapter/policy/cache/corrections готовы; live-вызовы заблокированы невалидным ключом (OPEN_QUESTIONS #3); TOC-proposal — Phase 8 |
-| Phase 5. Series and reading state | `PLANNED_ONLY` | Доменные основы (ReadingState, SeriesMembership) есть |
+| Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; has_new_release — Phase 6 |
 | Phase 6. Source monitoring | `PLANNED_ONLY` | — |
 | Phase 7. Delivery (OPDS) | `PLANNED_ONLY` | Device-токены уже реализованы в core.auth |
 | Phase 8. Design convergence | `PLANNED_ONLY` | Минимальный SSR на inline-токенах Ghostcar |
@@ -50,6 +50,9 @@
 | Review UI (unmatched, duplicates) | `IMPLEMENTED` | assign/resolve на /library/import |
 | AI matching (digest→proposal→apply) | `IMPLEMENTED` | ai/, ADR-0009; fake-server тесты; live — нужен валидный ключ |
 | Кэш proposals + corrections dataset | `IMPLEMENTED` | ai_proposals, ai_corrections |
+| Series state (last/next/missing/status) | `IMPLEMENTED` | SeriesStateService (ADR-0010) |
+| Чтение: действия + история + очередь | `IMPLEMENTED` | ReadingStateService, /library/queue, /library/series |
+| Dashboard | `IMPLEMENTED` | /library/ (продолжить/далее/недавние) |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты

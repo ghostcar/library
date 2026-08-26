@@ -108,7 +108,7 @@ class TestReadingState:
     def test_illegal_transition_rejected(self, owner_id) -> None:
         state = de.ReadingState(owner_id=owner_id, work_id=uuid4())
         with pytest.raises(ValueError, match="illegal"):
-            state.transition(ReadingStatus.READ)
+            state.transition(ReadingStatus.PAUSED)  # unread -> paused is illegal
 
     def test_return_to_queue_from_abandoned(self, owner_id) -> None:
         state = de.ReadingState(owner_id=owner_id, work_id=uuid4())
@@ -123,7 +123,8 @@ class TestReadingState:
 
     def test_can_transition_static(self) -> None:
         assert de.ReadingState.can_transition(ReadingStatus.UNREAD, ReadingStatus.READING)
-        assert not de.ReadingState.can_transition(ReadingStatus.UNREAD, ReadingStatus.READ)
+        assert de.ReadingState.can_transition(ReadingStatus.UNREAD, ReadingStatus.READ)
+        assert not de.ReadingState.can_transition(ReadingStatus.UNREAD, ReadingStatus.PAUSED)
 
 
 class TestSeriesMembership:
