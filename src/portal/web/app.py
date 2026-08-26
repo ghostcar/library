@@ -9,7 +9,7 @@ from pathlib import Path as _Path
 from typing import Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from portal.core.audit.service import AuditService
@@ -146,6 +146,11 @@ def create_app(
     app.include_router(proposal_routes.router, prefix="/library")
     for router in registry.routers():
         app.include_router(router, prefix="/library")
+
+    @app.get("/", include_in_schema=False)
+    async def root_redirect() -> RedirectResponse:
+        """Site root: the library module is the default macroportal section."""
+        return RedirectResponse("/library/", status_code=307)
 
     @app.get("/healthz", tags=["core"])
     async def healthz() -> JSONResponse:
