@@ -21,13 +21,27 @@
 - DNS: отсутствует. Добавляет пользователь (Cloudflare, proxy on).
 - Nginx-конфиг: подготовлен в `deploy/nginx/library.conf`, применяется пользователем (`sudo`), проксирует на 127.0.0.1:8001.
 
-## Процедура деплоя тестового контура
+## Деплой-артефакты (готовы, Phase 9)
 
-Пока ручная (Phase 9 автоматизирует):
+- Dockerfile (multi-stage, non-root, healthcheck) — сборка проверена локально.
+- compose.prod.yaml (web+worker+postgres, pg без портов, LIBRARY_PG_PASSWORD из .env).
+- deploy/nginx/library.conf — применяет владелец после DNS.
+- scripts/backup.sh / restore.sh — round-trip проверен (29 таблиц).
+- docs/operations/runbook.md — деплой/rollback/backup.
+
+## Чек-лист живого деплоя (когда DNS появится)
+
+1. Владелец: DNS-запись library.gorbunovr.ru (Cloudflare, proxy on).
+2. Владелец: применить nginx-конфиг (sudo), nginx -t, reload.
+3. Владелец: разрешить push образа в GHCR.
+4. Агент: docker build + push ghcr.io/ghostcar/library:<sha>.
+5. На VPS: backup → compose.prod up (тег <sha>) → alembic upgrade → smoke.
+6. Записать версию в DEPLOYMENT_STATE.
+
+## Процедура dev-контура
 
 ```bash
-docker compose -f compose.yaml -f compose.dev.yaml up -d   # db + web + worker
+docker compose -f compose.yaml -f compose.dev.yaml up -d   # postgres
 .venv/bin/alembic upgrade head
+scripts/dev.sh
 ```
-
-Backup/restore runbooks: PLANNED (Phase 9).

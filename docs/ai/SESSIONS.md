@@ -93,3 +93,12 @@
 - Найдено/исправлено: lxml nsmap требует None для default ns (пробел в стабах); двойной xmlns в OpenSearch; httpx-Response в fake-роутах.
 - Smoke: root→series→acquisition→download с Content-Disposition, search по автору/названию, no-auth 401. FBReader — ручная проверка пользователя.
 - Проверено: lint/mypy clean, 225 tests.
+
+## Сессия 10 — 2026-08-26 — Phase 8 (design/hardening) + Phase 9 prep
+
+- tokens.css (Astral+Solar из ghostcar токенов) + components.css; base.html без inline-стилей; StaticFiles; UI kit dev-only.
+- SecurityHeadersMiddleware (CSP с inline-styles переходно), skip-link, focus-visible, color-scheme.
+- Dockerfile multi-stage non-root healthcheck; compose.prod.yaml; nginx conf; backup/restore с round-trip (29 таблиц); runbook.
+- Найдено/исправлено: httpx в dev-зависимостях при использовании в prod-коде (образ не собирался); ui-kit искал base.html в одной папке; backup-контейнер параметризован (LIBRARY_PG_CONTAINER).
+- GHCR push не выполнялся (требуется явная команда владельца, §15.4).
+- Проверено: lint/mypy clean, 225 tests, docker build OK, image imports OK, headers/static/ui-kit smoke OK.

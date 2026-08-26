@@ -1,0 +1,78 @@
+/* Ghostcar Design Tokens (ADR-0004, docs/design/DESIGN_SOURCE_OF_TRUTH.md)
+   Source: design/ghostcar-design/system/tokens.md (v1.0, outside VCS).
+   Dark theme: Astral Gatekeeper. Light theme: Solar Mode.
+   Change tokens ONLY together with the source of truth doc. */
+
+:root,
+[data-theme="astral"] {
+  --bg: #070B12;
+  --surface: #08151e;
+  --surface-container-lowest: #040f18;
+  --surface-container-low: #101d27;
+  --surface-container: #14212b;
+  --surface-container-high: #1f2b35;
+  --surface-container-highest: #2a3641;
+  --on-surface: #d7e4f2;
+  --on-surface-variant: #bfc8cf;
+  --outline: #899299;
+  --outline-variant: #3f484e;
+  --primary: #c6e8ff;
+  --on-primary: #00344a;
+  --primary-container: #7fd1ff;
+  --secondary: #ebbf88;
+  --on-secondary: #452b02;
+  --tertiary: #ffe097;
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --success: #27ff97;
+  --warning: #ffc594;
+  --radius: 0.25rem;
+  --elevation-1: 0 0 0 1px rgba(126, 208, 254, 0.15);
+  --elevation-2: 0 0 12px rgba(126, 208, 254, 0.2), 0 0 0 1px rgba(126, 208, 254, 0.2);
+}
+
+[data-theme="solar"] {
+  --bg: #FCF9F2;
+  --surface: #fff9eb;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #faf3e3;
+  --surface-container: #f4eddd;
+  --surface-container-high: #eee8d8;
+  --surface-container-highest: #e8e2d2;
+  --on-surface: #1e1c12;
+  --on-surface-variant: #41484c;
+  --outline: #72787d;
+  --outline-variant: #c1c7cd;
+  --primary: #001e2c;
+  --on-primary: #ffffff;
+  --primary-container: #00344a;
+  --secondary: #775a19;
+  --on-secondary: #ffffff;
+  --tertiary: #1b1b17;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --success: #2e7d32;
+  --warning: #f57c00;
+  --radius: 0; /* Solar: sharp corners */
+  --elevation-1: 0 0 0 1px #00344A;
+  --elevation-2: 0 4px 0 0 #E8E2D2, 0 0 0 1px #00344A;
+}
+
+:root {
+  /* typography */
+  --font-display: 'Libre Caslon Text', Georgia, serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* spacing (8px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --sidebar-width: 280px;
+  --topbar-height: 64px;
+  --touch-target: 44px;
+  --container-max: 1440px;
+}

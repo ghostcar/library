@@ -1,0 +1,69 @@
+# Production-shaped stack for the test VPS (master prompt 14.1).
+# Secrets come from .env only. Postgres is NOT published to the host.
+# Image tags: pin by git SHA, never :latest (§14.1).
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: library-postgres-prod
+    environment:
+      POSTGRES_USER: library
+      POSTGRES_PASSWORD: ${LIBRARY_PG_PASSWORD:?set LIBRARY_PG_PASSWORD in .env}
+      POSTGRES_DB: library
+    volumes:
+      - library_pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U library -d library"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    # resource limits (§14.1)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  web:
+    build:
+      context: .
+      # docker build -t ghcr.io/ghostcar/library:<git-sha> .
+    image: ghcr.io/ghostcar/library:latest # overridden at deploy
+    container_name: library-web
+    env_file: .env
+    environment:
+      LIBRARY_DATABASE_URL: postgresql+asyncpg://library:${LIBRARY_PG_PASSWORD}@postgres:5432/library
+      LIBRARY_HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:8001:8001"
+    volumes:
+      - library_storage:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  worker:
+    image: ghcr.io/ghostcar/library:latest # overridden at deploy
+    container_name: library-worker
+    command: ["python", "-m", "portal.core.jobs.worker"]
+    env_file: .env
+    environment:
+      LIBRARY_DATABASE_URL: postgresql+asyncpg://library:${LIBRARY_PG_PASSWORD}@postgres:5432/library
+    volumes:
+      - library_storage:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  library_pgdata_prod:
+  library_storage:

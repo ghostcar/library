@@ -3,78 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
   <title>{{ title }}</title>
-  <style>
-    :root {
-      --bg: #070B12;
-      --surface: #08151e;
-      --surface-container: #14212b;
-      --surface-container-high: #1f2b35;
-      --on-surface: #d7e4f2;
-      --on-surface-variant: #bfc8cf;
-      --outline-variant: #3f484e;
-      --primary: #c6e8ff;
-      --on-primary: #00344a;
-      --primary-container: #7fd1ff;
-      --secondary: #ebbf88;
-      --error: #ffb4ab;
-      --font-display: 'Libre Caslon Text', Georgia, serif;
-      --font-body: 'Hanken Grotesk', system-ui, sans-serif;
-      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; background: var(--bg); color: var(--on-surface);
-      font-family: var(--font-body); font-size: 16px; line-height: 1.6;
-      min-height: 100vh;
-    }
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      height: 64px; padding: 0 24px; border-bottom: 1px solid var(--outline-variant);
-      background: var(--surface);
-    }
-    .brand { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.05em; }
-    .brand small { font-family: var(--font-mono); font-size: 11px; color: var(--on-surface-variant); display: block; letter-spacing: 0.1em; }
-    .container { max-width: 1440px; margin: 0 auto; padding: 40px 24px; }
-    .panel {
-      background: var(--surface-container); border: 1px solid var(--outline-variant);
-      padding: 24px; max-width: 420px; margin: 48px auto;
-    }
-    .panel h1 { font-family: var(--font-display); font-weight: 400; font-size: 24px; margin: 0 0 16px; }
-    label { display: block; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--on-surface-variant); margin: 16px 0 4px; }
-    input {
-      width: 100%; padding: 10px 12px; background: var(--surface);
-      border: none; border-bottom: 1px solid var(--outline-variant);
-      color: var(--on-surface); font-family: var(--font-mono); font-size: 14px;
-    }
-    input:focus { outline: none; border-bottom-color: var(--primary-container); }
-    button {
-      margin-top: 24px; width: 100%; padding: 12px; cursor: pointer;
-      background: transparent; border: 1px solid var(--primary-container);
-      color: var(--primary); font-family: var(--font-mono); font-size: 13px;
-      letter-spacing: 0.1em; text-transform: uppercase;
-    }
-    button:hover { box-shadow: 0 0 12px rgba(126, 208, 254, 0.4); }
-    .error { color: var(--error); font-size: 14px; margin-top: 12px; }
-    .meta { font-family: var(--font-mono); font-size: 12px; color: var(--on-surface-variant); }
-    .card {
-      background: var(--surface-container); border: 1px solid var(--outline-variant);
-      border-top: 1px solid var(--secondary); padding: 24px; margin-top: 24px;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/components.css">
   {% block head %}{% endblock %}
 </head>
 <body>
+  <a class="skip-link" href="#main-content">К содержанию</a>
   <header class="topbar">
     <div class="brand">Ghostcar<small>PERSONAL MACROPORTAL</small></div>
     <div style="display:flex; gap:16px; align-items:center;">
       <a href="/library/notifications" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
-        Уведомления{% if unread_notifications %} <span style="color:var(--secondary);">[{{ unread_notifications }}]</span>{% endif %}
+        Уведомления{% if unread_notifications %} <span class="chip chip--warn">[{{ unread_notifications }}]</span>{% endif %}
       </a>
       {% block topbar_right %}{% endblock %}
     </div>
   </header>
-  <main class="container">
+  <main id="main-content" class="container">
     {% block content %}{% endblock %}
   </main>
 </body>

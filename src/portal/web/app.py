@@ -5,10 +5,12 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from pathlib import Path as _Path
 from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from portal.core.audit.service import AuditService
 from portal.core.auth.jwt_service import TokenService
@@ -37,9 +39,11 @@ from portal.modules.library.presentation import (
     reading_routes,
     review_routes,
     sources_routes,
+    ui_kit_routes,
 )
 from portal.modules.library.presentation.opds import routes as opds_routes
 from portal.modules.library.presentation.routes import router as library_router
+from portal.web.middleware import SecurityHeadersMiddleware
 from portal.web.routes.auth_pages import router as auth_pages_router
 
 
@@ -118,6 +122,10 @@ def create_app(
     app.state.settings = settings
     app.state.registry = registry
 
+    static_dir = _Path(__file__).resolve().parents[1] / "web" / "static"
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    app.add_middleware(SecurityHeadersMiddleware)
+
     registry.register(
         "library",
         router=library_router,
@@ -131,6 +139,7 @@ def create_app(
     app.include_router(sources_routes.router, prefix="/library")
     app.include_router(opds_routes.router)  # top-level /opds for FBReader
     app.include_router(opds_settings_routes.router, prefix="/library")
+    app.include_router(ui_kit_routes.router, prefix="/library")  # dev-only guard inside
     app.include_router(catalog_routes.router, prefix="/library")
     app.include_router(normalization_routes.router, prefix="/library")
     app.include_router(review_routes.router, prefix="/library")

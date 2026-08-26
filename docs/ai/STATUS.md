@@ -16,8 +16,8 @@
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; has_new_release — Phase 6 |
 | Phase 6. Source monitoring | `PARTIAL` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled до исследования (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
-| Phase 8. Design convergence | `PLANNED_ONLY` | Минимальный SSR на inline-токенах Ghostcar |
-| Phase 9. Test VPS | `PLANNED_ONLY` | VPS уже целевой; DNS library.gorbunovr.ru отсутствует |
+| Phase 8. Design convergence | `PARTIAL` | tokens.css/components.css, UI kit dev-only, security headers, a11y-база; Tailwind-сборка и visual regression — TECH_DEBT |
+| Phase 9. Test VPS | `PARTIAL` | Dockerfile+compose.prod+nginx+backup/restore готовы и проверены локально; GHCR push и живой деплой — после DNS и команды владельца |
 
 ## Компоненты
 
@@ -60,6 +60,12 @@
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
 | OPDS download | `IMPLEMENTED` | /opds/download/{id}, Content-Disposition, preferred→normalized→original |
 | OPDS UI (токены) | `IMPLEMENTED` | /library/opds-settings |
+| Design tokens в CSS | `IMPLEMENTED` | static/css/tokens.css + components.css (обе темы) |
+| UI kit page | `IMPLEMENTED` | /library/ui-kit (dev-only) |
+| Security headers + CSP | `IMPLEMENTED` | SecurityHeadersMiddleware |
+| Dockerfile + compose.prod | `IMPLEMENTED` | сборка проверена локально; GHCR — по команде |
+| Backup/restore | `IMPLEMENTED` | scripts/backup.sh, restore.sh; round-trip пройден |
+| Nginx конфиг | `IMPLEMENTED` | deploy/nginx/library.conf (применяет владелец) |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты
