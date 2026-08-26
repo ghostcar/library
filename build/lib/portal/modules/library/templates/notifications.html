@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+  <h1 style="font-family: var(--font-display); font-weight: 400; margin:0;">Уведомления</h1>
+  <form method="post" action="/library/notifications/read-all">
+    <button type="submit" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Прочитать все</button>
+  </form>
+</div>
+
+{% for n in notifications %}
+<div class="card" style="margin-top:12px; {% if not n.read %}border-top-color: var(--secondary);{% endif %}">
+  <p class="meta">{{ n.kind }} · {{ n.created_at.strftime("%Y-%m-%d %H:%M") if n.created_at }}{% if n.read %} · прочитано{% else %} · НОВОЕ{% endif %}</p>
+  <p style="margin:4px 0; font-size:15px;">{{ n.title }}</p>
+  <p class="meta" style="margin:4px 0 0;">{{ n.body }}</p>
+</div>
+{% else %}
+<div class="card"><p class="meta">Уведомлений нет.</p></div>
+{% endif %}
+
+<p style="margin-top:24px;"><a href="/library/" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Библиотека</a></p>
+{% endblock %}

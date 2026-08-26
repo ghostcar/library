@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 style="font-family: var(--font-display); font-weight: 400;">OPDS-доступ для читалки</h1>
+
+<div class="card">
+  <p class="meta">КАК ПОДКЛЮЧИТЬ FBREADER</p>
+  <p class="meta" style="margin:4px 0 0;">
+    1. Создайте токен ниже (показывается один раз).<br>
+    2. В FBReader: каталоги → добавить по URL <span style="color:var(--primary);">{{ base_url or "http://127.0.0.1:8001" }}/opds</span><br>
+    3. Логин — любой (например, email), пароль — токен.
+  </p>
+</div>
+
+{% if created_token %}
+<div class="card" style="border-top-color: var(--secondary);">
+  <p class="meta">ТОКЕН СОЗДАН — ПОКАЗАН ЕДИНСТВЕННЫЙ РАЗ</p>
+  <p style="font-family:var(--font-mono); font-size:14px; word-break:break-all; color:var(--primary);">{{ created_token }}</p>
+  <p class="meta">Скопируйте его сейчас. Восстановить будет нельзя — только создать новый.</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <p class="meta">СОЗДАТЬ ТОКЕН УСТРОЙСТВА</p>
+  <form method="post" action="/library/opds-settings/tokens" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end;">
+    <div style="flex:1; min-width:200px;">
+      <label for="name">Название устройства</label>
+      <input id="name" name="name" required placeholder="Телефон FBReader">
+    </div>
+    <button type="submit" style="margin:0; width:auto;">Создать</button>
+  </form>
+</div>
+
+<div class="card">
+  <p class="meta">ТОКЕНЫ ({{ tokens | length }})</p>
+  {% for t in tokens %}
+  <div style="display:flex; gap:10px; align-items:center; margin:8px 0; flex-wrap:wrap;">
+    <span style="flex:1; min-width:180px; font-family:var(--font-mono); font-size:13px;">
+      {{ t.name }}
+      <span class="meta">· создан {{ t.created_at.strftime("%Y-%m-%d") if t.created_at }}
+      {% if t.expires_at %} · до {{ t.expires_at.strftime("%Y-%m-%d") }}{% endif %}
+      {% if t.revoked %}<span style="color:var(--error);"> · отозван</span>{% endif %}</span>
+    </span>
+    {% if not t.revoked %}
+    <form method="post" action="/library/opds-settings/tokens/{{ t.id }}/revoke">
+      <button type="submit" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Отозвать</button>
+    </form>
+    {% endif %}
+  </div>
+  {% else %}
+  <p class="meta">Токенов нет.</p>
+  {% endfor %}
+</div>
+
+<p style="margin-top:24px;"><a href="/library/" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Библиотека</a></p>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel">
+  <h1>Вход</h1>
+  <form method="post" action="/login">
+    <label for="username">Email</label>
+    <input id="username" name="username" type="email" autocomplete="username" required autofocus>
+    <label for="password">Пароль</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <button type="submit">Войти</button>
+  </form>
+</div>
+{% endblock %}

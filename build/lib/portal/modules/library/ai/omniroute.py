@@ -63,24 +63,9 @@ class OmniRouteAdapter:
         return bool(self._api_key)
 
     async def complete(self, user_prompt: str) -> AIResponse:
-        """Chat completion with one retry (free models have cold starts)."""
+        """One chat completion, no tools, no retries beyond transport-level."""
         if not self.is_configured():
             raise AIUnavailableError("LIBRARY_AI_API_KEY is not configured")
-
-        last_error: AIUnavailableError | None = None
-        for attempt in range(2):
-            try:
-                return await self._complete_once(user_prompt)
-            except AIUnavailableError as exc:
-                last_error = exc
-                if attempt == 0 and "429" not in str(exc) and "key" not in str(exc).lower():
-                    import asyncio
-
-                    await asyncio.sleep(3)  # cold start / transient busy
-        assert last_error is not None
-        raise last_error
-
-    async def _complete_once(self, user_prompt: str) -> AIResponse:
 
         payload = {
             "model": self._model,

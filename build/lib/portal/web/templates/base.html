@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <script src="/static/js/theme.js" defer></script>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#main-content">К содержанию</a>
+  <header class="topbar">
+    <div class="brand">Ghostcar<small>PERSONAL MACROPORTAL</small></div>
+    <div style="display:flex; gap:16px; align-items:center;">
+      <button id="theme-toggle" type="button" title="Переключить тему"
+              style="margin:0; width:auto; min-height:0; padding:4px 10px; font-size:10px;">Тема</button>
+      <a href="/library/notifications" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
+        Уведомления{% if unread_notifications %} <span class="chip chip--warn">[{{ unread_notifications }}]</span>{% endif %}
+      </a>
+      {% block topbar_right %}{% endblock %}
+    </div>
+  </header>
+  <main id="main-content" class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

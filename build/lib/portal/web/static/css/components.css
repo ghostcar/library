@@ -1,0 +1,172 @@
+/* Shared components built on Ghostcar tokens (Phase 8 design convergence).
+   Every screen uses these classes; page-specific inline styles are
+   allowed only for layout, not for colors/typography. */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--primary); }
+
+/* skip link (a11y) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--surface-container-high);
+  color: var(--primary);
+  padding: var(--space-2) var(--space-3);
+  z-index: 100;
+}
+.skip-link:focus { left: var(--space-2); top: var(--space-2); }
+
+/* visible focus for keyboard navigation */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--primary-container);
+  outline-offset: 2px;
+}
+
+/* topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--topbar-height);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--outline-variant);
+  background: var(--surface);
+  flex-wrap: wrap;
+}
+.brand {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.05em;
+}
+.brand small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--on-surface-variant);
+}
+
+/* layout */
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+}
+
+/* cards */
+.card {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-top: 1px solid var(--secondary);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  margin-top: var(--space-4);
+}
+.card--alert { border-top-color: var(--error); }
+
+/* headings */
+.h-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  margin: 0;
+}
+
+/* mono meta text */
+.meta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+/* forms */
+label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  margin: var(--space-3) 0 var(--space-1);
+}
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: none;
+  border-bottom: 1px solid var(--outline-variant);
+  border-radius: var(--radius) var(--radius) 0 0;
+  color: var(--on-surface);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+input:focus, select:focus {
+  outline: none;
+  border-bottom-color: var(--primary-container);
+}
+
+/* buttons: sharp, mono caps, frost glow on hover */
+button, .btn {
+  margin-top: var(--space-3);
+  padding: 12px var(--space-4);
+  min-height: var(--touch-target);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid var(--primary-container);
+  border-radius: var(--radius);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+button:hover, .btn:hover { box-shadow: var(--elevation-2); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* status chips: micro-borders, no fill (master prompt design) */
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--on-surface-variant);
+}
+.chip--ok { color: var(--success); border-color: var(--success); }
+.chip--warn { color: var(--warning); border-color: var(--warning); }
+.chip--error { color: var(--error); border-color: var(--error); }
+
+/* tables */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+}
+.table td { padding: var(--space-2) var(--space-1); border-top: 1px solid var(--outline-variant); }
+
+/* mobile-first: single column, larger touch targets */
+@media (max-width: 768px) {
+  .container { padding: var(--space-3) var(--space-3); }
+  button, .btn { width: 100%; }
+  form button { width: auto; }
+}
