@@ -32,11 +32,13 @@ from portal.modules.library.presentation import (
     catalog_routes,
     import_routes,
     normalization_routes,
+    opds_settings_routes,
     proposal_routes,
     reading_routes,
     review_routes,
     sources_routes,
 )
+from portal.modules.library.presentation.opds import routes as opds_routes
 from portal.modules.library.presentation.routes import router as library_router
 from portal.web.routes.auth_pages import router as auth_pages_router
 
@@ -127,6 +129,8 @@ def create_app(
     app.include_router(import_routes.router, prefix="/library")
     app.include_router(reading_routes.router, prefix="/library")
     app.include_router(sources_routes.router, prefix="/library")
+    app.include_router(opds_routes.router)  # top-level /opds for FBReader
+    app.include_router(opds_settings_routes.router, prefix="/library")
     app.include_router(catalog_routes.router, prefix="/library")
     app.include_router(normalization_routes.router, prefix="/library")
     app.include_router(review_routes.router, prefix="/library")

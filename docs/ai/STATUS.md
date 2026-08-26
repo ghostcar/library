@@ -15,7 +15,7 @@
 | Phase 4. LLM-assisted normalization | `PARTIAL` | digest/schema/adapter/policy/cache/corrections готовы; live-вызовы заблокированы невалидным ключом (OPEN_QUESTIONS #3); TOC-proposal — Phase 8 |
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; has_new_release — Phase 6 |
 | Phase 6. Source monitoring | `PARTIAL` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled до исследования (ADR-0011) |
-| Phase 7. Delivery (OPDS) | `PLANNED_ONLY` | Device-токены уже реализованы в core.auth |
+| Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `PLANNED_ONLY` | Минимальный SSR на inline-токенах Ghostcar |
 | Phase 9. Test VPS | `PLANNED_ONLY` | VPS уже целевой; DNS library.gorbunovr.ru отсутствует |
 
@@ -57,6 +57,9 @@
 | Watch rules + scheduler | `IMPLEMENTED` | watch_rules, worker tick 30s, backoff+jitter, degraded |
 | In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
 | Author.Today/Litnet/Flibusta | `ABSENT` | отключены в реестре с причинами (ADR-0011, OPEN_QUESTIONS #9/#10) |
+| OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
+| OPDS download | `IMPLEMENTED` | /opds/download/{id}, Content-Disposition, preferred→normalized→original |
+| OPDS UI (токены) | `IMPLEMENTED` | /library/opds-settings |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты

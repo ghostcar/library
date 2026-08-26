@@ -84,3 +84,12 @@
 - Smoke через реального воркера: rule → schedule_due → poll ok → «Новая публикация».
 - Найдено: персистентный shell держал LIBRARY_TEST_DATABASE_URL — smoke шёл в тестовую БД (лечится env -u).
 - Проверено: lint/mypy clean, 214 tests.
+
+## Сессия 9 — 2026-08-26 — Phase 7: OPDS delivery
+
+- ADR-0012: сериализатор OPDS 1.2 отдельным модулем (dict→XML), Basic auth с device token в пароле (JWT не принимается), OpdsCatalogService (recent/unread/series/authors/search/observations), download с preferred-приоритетом, OpenSearch.
+- UI: /library/opds-settings (токен показывается один раз, отзыв).
+- Тесты: 4 unit сериализатора + 7 integration (Basic/Bearer, отзыв→401, JWT-не-токен, фиды, download+Content-Disposition, search, owner isolation).
+- Найдено/исправлено: lxml nsmap требует None для default ns (пробел в стабах); двойной xmlns в OpenSearch; httpx-Response в fake-роутах.
+- Smoke: root→series→acquisition→download с Content-Disposition, search по автору/названию, no-auth 401. FBReader — ручная проверка пользователя.
+- Проверено: lint/mypy clean, 225 tests.

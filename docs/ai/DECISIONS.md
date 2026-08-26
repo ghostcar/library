@@ -15,3 +15,4 @@
 | 0009 | accepted | LLM-assisted matching через OmniRoute: digest без текста книги, строгая schema, policy engine, кэш, graceful fallback |
 | 0010 | accepted | Производное состояние циклов: caught_up ≠ completed, user override главнее, unread→read разрешён напрямую |
 | 0011 | accepted | Source monitoring: OPDS-адаптер реализован, AT/Litnet/Flibusta отключены до исследования; scheduler+backoff+degraded; уведомления только на переходы |
+| 0012 | accepted | OPDS 1.2 delivery: Basic auth с device token (пароль), сериализатор отдельным модулем, preferred assets в acquisition |
