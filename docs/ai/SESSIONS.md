@@ -65,3 +65,12 @@
 - Домен изменён: unread→read разрешён (главная мобильная кнопка §10.2) — обновлены тесты домена.
 - Найдено/исправлено: ReadingStateModel не импортирован в reading_queue; planned-циклы не попадали в очередь; серия тестов чинила мутации тест-кода (work_ids/series_id путаница).
 - Проверено: lint/mypy clean, 199 tests, smoke: 3 тома → mark read → dashboard «далее том 02».
+
+## Сессия 7 — 2026-08-26 — починка CI
+
+- CI падала с первого push. Три причины, устранены:
+  1) .gitignore `storage/` матчил src/portal/core/storage/ — пакет адаптера хранилища вообще не был закоммичен (ModuleNotFoundError в CI); паттерны заанкорены: /storage/, /data/.
+  2) lxml-stubs ставился руками на VPS, но отсутствовал в dev-зависимостях — mypy в CI падал на normalizer.
+  3) CI postgres стартует пустым — миграции не применялись перед integration; добавлен шаг `alembic upgrade head` + усилен migration check до downgrade base → upgrade head round-trip.
+- Тест jwt_secret сделан env-proof (CI экспортирует LIBRARY_JWT_SECRET глобально).
+- Проверено: CI run 32924042932 — quality: success, tests: success.
