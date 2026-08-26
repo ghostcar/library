@@ -29,13 +29,14 @@ design/
 index/
 
 # Books and user data must never be committed
+# (anchored to repo root — must not ignore source dirs like src/portal/core/storage/)
 *.fb2
 *.fb2.zip
 *.epub
 *.mobi
 *.azw3
-storage/
-data/
+/storage/
+/data/
 
 # OS / editor
 .DS_Store
