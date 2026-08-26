@@ -40,7 +40,13 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-portal = ["py.typed"]
+portal = [
+    "py.typed",
+    "web/templates/*.html",
+    "web/static/css/*.css",
+    "web/static/js/*.js",
+    "modules/library/templates/*.html",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
