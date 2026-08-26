@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:a19d030 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-26** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:6c040c6 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-26** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -34,7 +34,7 @@
 1. DNS library.gorbunovr.ru — сделано владельцем (Cloudflare).
 2. nginx library.conf — применено владельцем.
 3. GHCR push — разрешено; токен gh + write:packages (docker login ghcr.io).
-4. Образы: ghcr.io/ghostcar/library:a19d030 (= latest), digest 614f3cc6.
+4. Образы: ghcr.io/ghostcar/library:6c040c6 (= latest).
 5. Деплой: backup pre-deploy → compose.prod up → restore dev-данных (29 таблиц, alembic 0007) → smoke.
 6. Внешний smoke: https://library.gorbunovr.ru healthz/login/static/CSP — ОК (локальный резолвер кэшировал negative DNS — проверялось через --resolve).
 7. LLM live: auto/best-free, propose на реальном файле — proposal в форму (Громыко/Ведьма-хозяйка), decision=review.
