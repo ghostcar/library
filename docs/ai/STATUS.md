@@ -2,22 +2,22 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-25 (Phase 1 auth, сессия 2)
+Последняя проверка: 2026-08-26 (сессия 13: settings + ZIP import)
 
 ## Фазы мастер-промпта (§20)
 
 | Фаза | Статус | Примечание |
 |------|--------|------------|
 | Phase 0. Аудит и фиксация источников истины | `IMPLEMENTED` | Аудит, память, дизайн-матрица, ADR-0001..0004 |
-| Phase 1. Foundation | `PARTIAL` | config/db/registry/health/auth/audit/outbox/jobs/storage — готово; UI shell (Tailwind), CI — skeleton; worker-обработчики доменных задач — нет |
-| Phase 2. Catalog and import | `PARTIAL` | upload + локальные каталоги (dry-run/apply), дубликаты-кандидаты, каталог UI; watched inbox и review-UI — позже |
+| Phase 1. Foundation | `IMPLEMENTED` | config/db/registry/health/auth/audit/outbox/jobs/storage/CI — готово; UI shell — Tailwind отложен (TECH_DEBT#4) |
+| Phase 2. Catalog and import | `IMPLEMENTED` | upload (FB2/EPUB/ZIP-архивы), локальные каталоги, дубликаты-кандидаты, каталог UI, review UI; watched inbox — Phase 6 |
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
-| Phase 4. LLM-assisted normalization | `PARTIAL` | digest/schema/adapter/policy/cache/corrections готовы; live-вызовы заблокированы невалидным ключом (OPEN_QUESTIONS #3); TOC-proposal — Phase 8 |
+| Phase 4. LLM-assisted normalization | `IMPLEMENTED` | auto/best-free, ретрай на cold-start, live propose в проде, кэш, corrections, UI propose/apply |
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; has_new_release — Phase 6 |
-| Phase 6. Source monitoring | `PARTIAL` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled до исследования (ADR-0011) |
+| Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
-| Phase 8. Design convergence | `PARTIAL` | tokens.css/components.css, UI kit dev-only, security headers, a11y-база; Tailwind-сборка и visual regression — TECH_DEBT |
-| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:a19d030, https://library.gorbunovr.ru, данные перенесены, smoke пройден |
+| Phase 8. Design convergence | `IMPLEMENTED` | tokens.css/components.css (Astral+Solar), UI kit dev-only, security headers, a11y; Tailwind-сборка — TECH_DEBT#4 |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:053c145, https://library.gorbunovr.ru, данные перенесены, LLM live, settings+ZIP |
 
 ## Компоненты
 
@@ -27,7 +27,7 @@
 | Core: config (typed, jwt_secret required) | `IMPLEMENTED` | src/portal/core/config |
 | Core: database (async engine, session) | `IMPLEMENTED` | src/portal/core/database |
 | Core: module registry | `IMPLEMENTED` | src/portal/core/module_registry |
-| Core: auth (users, JWT, refresh/device, CSRF, rate limit) | `IMPLEMENTED` | src/portal/core/auth (ADR-0006) |
+| Core: auth (users, JWT, refresh/device, CSRF+forms, rate limit) | `IMPLEMENTED` | src/portal/core/auth (ADR-0006, CSRF accepts form field) |
 | Core: audit log | `IMPLEMENTED` | src/portal/core/audit |
 | Core: outbox (transactional) | `IMPLEMENTED` | src/portal/core/events |
 | Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | src/portal/core/jobs |
@@ -35,11 +35,11 @@
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
 | Alembic 0001+0002 | `IMPLEMENTED` | migrations/versions/ |
-| Auth SSR (login, защищённая /library, logout) | `IMPLEMENTED` | src/portal/web (inline-токены Ghostcar) |
+| Auth SSR (login, защищённая /library, logout, settings) | `IMPLEMENTED` | src/portal/web (password change, CSRF-защищённый logout) |
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
-| CI (GitHub Actions) | `PARTIAL` | lint+mypy+tests; контейнеры — Phase 9 |
+| CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |
 | Tailwind/UI shell | `ABSENT` | Phase 2+ (сейчас inline CSS) |
-| Импорт: upload + local dirs | `IMPLEMENTED` | ImportService, ADR-0007 |
+| Импорт: upload (FB2/EPUB/ZIP) + local dirs | `IMPLEMENTED` | ImportService + expand_book_archive, ADR-0007 |
 | Каталог UI (список, карточка) | `IMPLEMENTED` | /library/catalog, /library/works/{id} |
 | Import inbox UI | `IMPLEMENTED` | /library/import (upload, scan, unmatched, duplicates) |
 | Duplicate candidates | `IMPLEMENTED` | exact_content + same_work_format; review — Phase 3 |
@@ -60,10 +60,13 @@
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
 | OPDS download | `IMPLEMENTED` | /opds/download/{id}, Content-Disposition, preferred→normalized→original |
 | OPDS UI (токены) | `IMPLEMENTED` | /library/opds-settings |
+| Settings page (password change) | `IMPLEMENTED` | /library/settings, CSRF-защищённый form POST |
+| ZIP archive import | `IMPLEMENTED` | expand_book_archive: ZIP → FB2/EPUB, zip-bomb guards |
+| Root redirect (/ → /library/) | `IMPLEMENTED` | src/portal/web/app.py (307 redirect) |
 | Design tokens в CSS | `IMPLEMENTED` | static/css/tokens.css + components.css (обе темы) |
 | UI kit page | `IMPLEMENTED` | /library/ui-kit (dev-only) |
 | Security headers + CSP | `IMPLEMENTED` | SecurityHeadersMiddleware |
-| Dockerfile + compose.prod | `IMPLEMENTED` | сборка проверена локально; GHCR — по команде |
+| Dockerfile + compose.prod | `IMPLEMENTED` | multi-stage non-root, EPUBCheck jar, package-data; образ в GHCR |
 | Backup/restore | `IMPLEMENTED` | scripts/backup.sh, restore.sh; round-trip пройден |
 | Nginx конфиг | `IMPLEMENTED` | deploy/nginx/library.conf (применён владельцем) |
 | LLM live (auto/best-free) | `IMPLEMENTED` | propose работает в проде; ретрай на cold-start |
@@ -74,6 +77,6 @@
 - VPS: разработка идёт на целевой тестовой машине.
 - Занятые порты соседей: 8000 (tracker), 5432 (tracker-db), 55433 (pl-multisession-pg), 20128 (OmniRoute), 80/443 (host nginx).
 - Наш dev web: 127.0.0.1:8001. Наш PostgreSQL: dev 55440, test 55441 (только localhost).
-- DNS `library.gorbunovr.ru`: работает (Cloudflare; локальный резолвер VPS мог кэшировать negative — проверять через 1.1.1.1).
+- DNS `library.gorbunovr.ru`: работает (Cloudflare proxy, Cloudflare DNS). Локальный резолвер VPS может кэшировать negative → проверять через 1.1.1.1 или --resolve.
 - Sudo без пароля: нет → изменения /etc/nginx выполняет пользователь.
 - `.env`: prod-конфиг (JWT secret, LIBRARY_PG_PASSWORD, AI ключ валиден, модель auto/best-free). В Git не попадает.

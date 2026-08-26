@@ -25,7 +25,7 @@
 
 4. **Регистрация**: bootstrap — первый пользователь становится owner/superuser; далее регистрация закрыта (создание аккаунтов только superuser'ом). Логин: email+password (argon2id).
 
-5. **Web-сессии**: access+refresh в HttpOnly SameSite=Lax cookies (Secure в prod); CSRF double-submit (`library_csrf` cookie + `x-csrf-token` header) для cookie-аутентифицированных unsafe-запросов; Bearer-запросы CSRF не требуют.
+5. **Web-сессии**: access+refresh в HttpOnly SameSite=Lax cookies (Secure в prod); CSRF double-submit (`library_csrf` cookie + `x-csrf-token` header **или** `csrf_token` form field для SSR форм) для cookie-аутентифицированных unsafe-запросов; Bearer-запросы CSRF не требуют. Logout также защищён CSRF (session 13).
 
 6. **Аудит**: register/login/login_failed/refresh/logout/device_token_* пишутся в `audit_log`; failure-события — отдельной транзакцией (не откатываются вместе с основной операцией).
 

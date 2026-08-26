@@ -120,3 +120,13 @@
 - Деплой: backup pre-deploy → compose.prod up → restore (29 таблиц, 0007) → smoke. Инциденты: StaticFiles без package-data; SIGPIPE на restore; локальный DNS negative cache (--resolve обход).
 - Внешний smoke: https://library.gorbunovr.ru — healthz/login/static/CSP ОК. LLM live: propose → proposal (Громыко/Ведьма-хозяйка) → review.
 - OQ#2/#3 закрыты. DEPLOYMENT_STATE обновлён.
+
+## Сессия 13 — 2026-08-26 — settings + ZIP import + security fixes
+
+- Страница настроек: /library/settings, смена пароля (POST /library/settings/password), CSRF double-submit через form-field + cookie (обход ограничения header-only для SSR форм).
+- Logout CSRF: добавлена проверка CSRF-токена в logout_submit (раньше дыра — любой сайт мог вылогинить). CSRF-токен в hidden field формы.
+- Settings + logout ссылки в topbar на всех страницах (base.html).
+- Root redirect: / → 307 → /library/ (до этого FastAPI отдавал 404 JSON).
+- ZIP-импорт: expand_book_archive() распаковывает ZIP (не EPUB) в отдельные FB2/EPUB файлы. Защита от zip-bombs: ≤100 entries, ≤200 MiB/entry, ≤500 MiB total. Сканирование локальных каталогов подхватывает .zip.
+- Тесты: 23 новых (7 settings + 12 expand_archive + 4 zip_import), итого 252.
+- Деплой: образ 053c145, git main @ c363ef7.
