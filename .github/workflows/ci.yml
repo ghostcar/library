@@ -64,11 +64,16 @@ jobs:
       - name: Unit tests
         run: pytest -m "not integration"
 
+      - name: Apply migrations (schema for integration tests)
+        run: alembic -x database_url="$LIBRARY_TEST_DATABASE_URL" upgrade head
+
       - name: Integration tests
         run: pytest -m "integration"
 
-      - name: Migration check (fresh database)
-        run: alembic -x database_url="$LIBRARY_TEST_DATABASE_URL" upgrade head
+      - name: Migration check (fresh downgrade/upgrade round-trip)
+        run: |
+          alembic -x database_url="$LIBRARY_TEST_DATABASE_URL" downgrade base
+          alembic -x database_url="$LIBRARY_TEST_DATABASE_URL" upgrade head
 
   # Container build and GHCR push are added in Phase 9 (deploy),
   # after the Dockerfile exists; never automatic on this stage.
