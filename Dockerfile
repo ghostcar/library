@@ -11,8 +11,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 COPY requirements.lock ./
 RUN pip install --no-cache-dir -r requirements.lock
 
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md alembic.ini ./
 COPY src ./src
+COPY migrations ./migrations
 RUN pip install --no-cache-dir --no-deps .
 
 FROM python:3.13-slim AS runtime

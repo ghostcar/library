@@ -75,6 +75,7 @@ class OmniRouteAdapter:
             ],
             "temperature": 0.1,
             "max_tokens": 600,
+            "stream": False,  # some gateway models stream by default
         }
         try:
             response = await self._client.post(
