@@ -63,6 +63,13 @@ class UserRepository:
         row = await self._session.get(UserModel, user_id)
         return self._to_domain(row) if row else None
 
+    async def update_password(self, user_id: UUID, password_hash: str) -> None:
+        await self._session.execute(
+            update(UserModel)
+            .where(UserModel.id == user_id)
+            .values(password_hash=password_hash, updated_at=utcnow()),
+        )
+
     async def get_by_email(self, email: str) -> User | None:
         stmt = select(UserModel).where(UserModel.email == email.strip().lower())
         row = (await self._session.execute(stmt)).scalar_one_or_none()

@@ -38,6 +38,7 @@ from portal.modules.library.presentation import (
     proposal_routes,
     reading_routes,
     review_routes,
+    settings_routes,
     sources_routes,
     ui_kit_routes,
 )
@@ -144,6 +145,7 @@ def create_app(
     app.include_router(normalization_routes.router, prefix="/library")
     app.include_router(review_routes.router, prefix="/library")
     app.include_router(proposal_routes.router, prefix="/library")
+    app.include_router(settings_routes.router, prefix="/library")
     for router in registry.routers():
         app.include_router(router, prefix="/library")
 

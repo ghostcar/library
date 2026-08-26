@@ -239,6 +239,38 @@ class AuthService:
                 refresh_expires_at=expires_at,
             )
 
+    # --- password change -------------------------------------------------
+
+    async def change_password(
+        self,
+        user: User,
+        old_password: str,
+        new_password: str,
+        *,
+        actor_ip: str | None = None,
+    ) -> None:
+        """Verify old password, set the new one, revoke refresh tokens.
+
+        Device tokens (FBReader) stay valid — they are separate credentials.
+        """
+        async with self._transaction() as (users, tokens, audit):
+            fresh = await users.get(user.id)
+            if (
+                fresh is None
+                or not fresh.is_active
+                or not verify_password(fresh.password_hash, old_password)
+            ):
+                await audit.log("password_change_failed", user_id=user.id, actor_ip=actor_ip)
+                raise InvalidCredentialsError
+
+            if len(new_password) < 12:
+                msg = "password must be at least 12 characters"
+                raise InvalidCredentialsError(msg)
+
+            await users.update_password(user.id, hash_password(new_password))
+            await tokens.revoke_all_for_user(user.id, AuthTokenType.REFRESH)
+            await audit.log("password_changed", user_id=user.id, actor_ip=actor_ip)
+
     # --- refresh rotation ---------------------------------------------
 
     async def refresh(self, raw_refresh_token: str, *, actor_ip: str | None = None) -> LoginResult:

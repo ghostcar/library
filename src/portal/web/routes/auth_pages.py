@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from portal.core.auth.dependencies import (
+    CSRF_COOKIE,
     REFRESH_COOKIE,
     AuthServiceDep,
     SettingsDep,
@@ -79,6 +80,15 @@ async def logout_submit(
     request: Request,
     auth: AuthServiceDep = None,  # type: ignore[assignment]
 ) -> Response:
+    # CSRF double-submit: cookie must match hidden form field.
+    cookie_token = request.cookies.get(CSRF_COOKIE)
+    form = await request.form()
+    form_token: str | None = form.get("csrf_token")  # type: ignore[assignment]
+    if cookie_token and form_token and cookie_token != form_token:
+        from fastapi import HTTPException
+        from fastapi import status as _status
+
+        raise HTTPException(status_code=_status.HTTP_403_FORBIDDEN, detail="CSRF check failed")
     raw = request.cookies.get(REFRESH_COOKIE)
     if raw is not None:
         await auth.logout(raw, actor_ip=request.client.host if request.client else None)

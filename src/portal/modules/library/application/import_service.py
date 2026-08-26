@@ -3,11 +3,14 @@
 Pipeline per file: quarantine → format detection (content) → sha256 →
 duplicate check → original asset → deterministic match → events.
 Duplicates are recorded as candidates, never silently dropped or merged.
+ZIP archives containing FB2/EPUB books are expanded before processing.
 """
 
 from __future__ import annotations
 
+import io
 import logging
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -42,6 +45,73 @@ from portal.modules.library.infrastructure.repositories import (
 logger = logging.getLogger("library.import")
 
 _MAX_QUARANTINE_NAME = 128
+_MAX_ARCHIVE_ENTRIES = 100
+_MAX_ARCHIVE_ENTRY_BYTES = 200 * 1024 * 1024  # 200 MiB per entry
+_MAX_ARCHIVE_TOTAL_BYTES = 500 * 1024 * 1024  # 500 MiB total uncompressed
+_BOOK_EXTENSIONS = frozenset({".fb2", ".epub"})
+
+
+def expand_book_archive(
+    filename: str,
+    content: bytes,
+    *,
+    max_entries: int = _MAX_ARCHIVE_ENTRIES,
+    max_entry_bytes: int = _MAX_ARCHIVE_ENTRY_BYTES,
+    max_total_bytes: int = _MAX_ARCHIVE_TOTAL_BYTES,
+) -> list[tuple[str, bytes]] | None:
+    """Expand a ZIP archive into individual book files.
+
+    Returns ``None`` if *content* is not a ZIP archive or is an EPUB
+    (which is a book itself, not an archive of books).  Returns a list of
+    ``(filename, bytes)`` tuples for each FB2/EPUB found inside the ZIP.
+
+    Raises ``ValueError`` if the archive is valid but contains no book files
+    (caller should create a rejected import item).
+
+    Zip-bomb guards: entry count ≤ *max_entries*, each entry ≤
+    *max_entry_bytes*, total uncompressed ≤ *max_total_bytes*.
+    """
+    if not zipfile.is_zipfile(io.BytesIO(content)):
+        return None
+
+    # EPUB is a book itself — don't expand it.  An EPUB ZIP always contains
+    # a "mimetype" entry whose content is "application/epub+zip".
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            if "mimetype" in zf.namelist():
+                mt = zf.read("mimetype").decode("ascii", errors="ignore").strip()
+                if mt == "application/epub+zip":
+                    return None
+    except (zipfile.BadZipFile, OSError):
+        return None
+
+    entries: list[tuple[str, bytes]] = []
+    total_bytes = 0
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            for info in zf.infolist():
+                if info.is_dir():
+                    continue
+                basename = Path(info.filename).name
+                if basename.startswith(".") or basename.startswith("__MACOSX"):
+                    continue
+                if Path(basename).suffix.lower() not in _BOOK_EXTENSIONS:
+                    continue
+                if len(entries) >= max_entries:
+                    raise ValueError(f"archive contains more than {max_entries} book files")
+                if info.file_size > max_entry_bytes:
+                    msg = f"entry {basename} is {info.file_size} bytes (limit {max_entry_bytes})"
+                    raise ValueError(msg)
+                total_bytes += info.file_size
+                if total_bytes > max_total_bytes:
+                    raise ValueError(f"total uncompressed size exceeds {max_total_bytes} bytes")
+                entries.append((basename, zf.read(info.filename)))
+    except (zipfile.BadZipFile, OSError) as exc:
+        raise ValueError(f"corrupt archive: {exc}") from exc
+
+    if not entries:
+        raise ValueError("archive contains no FB2/EPUB book files")
+    return entries
 
 
 @dataclass(slots=True)
@@ -73,11 +143,33 @@ class ImportService:
         owner_id: UUID,
         uploads: list[tuple[str, bytes]],
     ) -> ie.ImportBatch:
-        """Process manually uploaded files (master prompt 6.1.1)."""
-        if len(uploads) > self._max_files:
+        """Process manually uploaded files (master prompt 6.1.1).
+
+        ZIP archives (non-EPUB) are expanded first: each FB2/EPUB inside
+        becomes a separate import item.  Archives with no books are rejected.
+        """
+        # --- phase 1: expand ZIP archives ---------------------------------
+        expanded: list[tuple[str, bytes]] = []
+        pre_rejected: list[tuple[str, str]] = []
+
+        for filename, content in uploads:
+            try:
+                entries = expand_book_archive(filename, content)
+            except ValueError as exc:
+                pre_rejected.append((_safe_name(filename), str(exc)))
+                continue
+
+            if entries is None:
+                # Not a ZIP or is EPUB → pass through as-is.
+                expanded.append((filename, content))
+            else:
+                expanded.extend(entries)
+
+        if len(expanded) + len(pre_rejected) > self._max_files:
             msg = f"too many files in one batch (max {self._max_files})"
             raise ValueError(msg)
 
+        # --- phase 2: create batch and process ----------------------------
         async with self._session_factory() as session, session.begin():
             batch_repo = ImportBatchRepository(session)
             batch = await batch_repo.add(
@@ -86,12 +178,29 @@ class ImportService:
         batch.mark_running()
 
         failed = 0
-        for filename, content in uploads:
+
+        # Reject archives that contained no book files.
+        for safe_name, reason in pre_rejected:
+            async with self._session_factory() as session, session.begin():
+                items = ImportItemRepository(session)
+                item = await items.add(
+                    ie.ImportItem(
+                        batch_id=batch.id,
+                        owner_id=owner_id,
+                        filename=safe_name,
+                    ),
+                )
+                item.reject(reason)
+                await items.update(item)
+            failed += 1
+
+        for filename, content in expanded:
             try:
                 await self._process_one(owner_id, batch.id, filename, content)
             except Exception:
                 logger.exception("import of %s failed", filename)
                 failed += 1
+
         batch.finish(failed_items=failed)
 
         async with self._session_factory() as session, session.begin():
@@ -245,7 +354,7 @@ class ImportService:
             if not root.is_dir():
                 continue
             for path in sorted(root.rglob("*")):
-                if not path.is_file() or path.suffix.lower() not in {".fb2", ".epub"}:
+                if not path.is_file() or path.suffix.lower() not in {".fb2", ".epub", ".zip"}:
                     continue
                 digest = _sha256_hex(path.read_bytes())
                 size = path.stat().st_size

@@ -129,12 +129,21 @@ OptionalUser = Annotated[AuthContext | None, Depends(get_optional_user)]
 
 
 async def require_csrf(request: Request, current: CurrentUser) -> AuthContext:
-    """CSRF double-submit check for cookie-authenticated unsafe requests."""
+    """CSRF double-submit check for cookie-authenticated unsafe requests.
+
+    Accepts the token from either the ``X-CSRF-Token`` header (API/JS) or a
+    ``csrf_token`` hidden form field (SSR HTML forms).
+    """
     if current.via == "bearer" or request.method not in _UNSAFE_METHODS:
         return current
     cookie_token = request.cookies.get(CSRF_COOKIE)
     header_token = request.headers.get(CSRF_HEADER)
-    if cookie_token is None or header_token is None or cookie_token != header_token:
+    form_token: str | None = None
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        form = await request.form()
+        form_token = form.get("csrf_token")  # type: ignore[assignment]
+    token = header_token or form_token
+    if cookie_token is None or token is None or cookie_token != token:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="CSRF check failed")
     return current
 

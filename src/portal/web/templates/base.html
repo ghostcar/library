@@ -17,6 +17,17 @@
     <div style="display:flex; gap:16px; align-items:center;">
       <button id="theme-toggle" type="button" title="Переключить тему"
               style="margin:0; width:auto; min-height:0; padding:4px 10px; font-size:10px;">Тема</button>
+      {% if user %}
+      <a href="/library/settings" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
+        Настройки
+      </a>
+      <form method="post" action="/logout" style="margin:0; display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ request.cookies.get('library_csrf', '') }}">
+        <button type="submit" style="margin:0; background:none; border:none; color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; padding:0; cursor:pointer;">
+          Выйти
+        </button>
+      </form>
+      {% endif %}
       <a href="/library/notifications" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
         Уведомления{% if unread_notifications %} <span class="chip chip--warn">[{{ unread_notifications }}]</span>{% endif %}
       </a>
