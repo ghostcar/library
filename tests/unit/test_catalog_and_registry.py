@@ -22,10 +22,11 @@ class TestSettings:
         assert settings.is_dev
 
     def test_missing_jwt_secret_rejected(self) -> None:
+        """Explicit jwt_secret=None must fail even when the env provides one (CI)."""
         from pydantic import ValidationError
 
         with pytest.raises(ValidationError, match="LIBRARY_JWT_SECRET"):
-            Settings(_env_file=None)  # type: ignore[call-arg]
+            Settings(_env_file=None, jwt_secret=None)  # type: ignore[call-arg]
 
     def test_database_url_env_prefix(self) -> None:
         settings = Settings(
