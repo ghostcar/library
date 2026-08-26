@@ -14,7 +14,7 @@
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `PARTIAL` | digest/schema/adapter/policy/cache/corrections готовы; live-вызовы заблокированы невалидным ключом (OPEN_QUESTIONS #3); TOC-proposal — Phase 8 |
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; has_new_release — Phase 6 |
-| Phase 6. Source monitoring | `PLANNED_ONLY` | — |
+| Phase 6. Source monitoring | `PARTIAL` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled до исследования (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `PLANNED_ONLY` | Device-токены уже реализованы в core.auth |
 | Phase 8. Design convergence | `PLANNED_ONLY` | Минимальный SSR на inline-токенах Ghostcar |
 | Phase 9. Test VPS | `PLANNED_ONLY` | VPS уже целевой; DNS library.gorbunovr.ru отсутствует |
@@ -53,6 +53,10 @@
 | Series state (last/next/missing/status) | `IMPLEMENTED` | SeriesStateService (ADR-0010) |
 | Чтение: действия + история + очередь | `IMPLEMENTED` | ReadingStateService, /library/queue, /library/series |
 | Dashboard | `IMPLEMENTED` | /library/ (продолжить/далее/недавние) |
+| OPDS source adapter | `IMPLEMENTED` | adapters/opds_adapter.py, conditional GET, XXE-тест |
+| Watch rules + scheduler | `IMPLEMENTED` | watch_rules, worker tick 30s, backoff+jitter, degraded |
+| In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
+| Author.Today/Litnet/Flibusta | `ABSENT` | отключены в реестре с причинами (ADR-0011, OPEN_QUESTIONS #9/#10) |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты

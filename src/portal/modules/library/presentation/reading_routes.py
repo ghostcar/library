@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from portal.core.auth.dependencies import CurrentUser, OptionalUser
+from portal.modules.library.adapters.watch_service import WatchService
 from portal.modules.library.application.reading_service import ReadingStateService
 from portal.modules.library.application.series_state_service import SeriesStateService
 from portal.modules.library.domain.enums import ReadingChangeSource, ReadingStatus
@@ -39,6 +40,8 @@ async def dashboard(request: Request, current: OptionalUser) -> Response:
     continue_reading = await service.continue_reading(current.user.id)
     recently_added = await service.recently_added(current.user.id)
     queue = await service.reading_queue(current.user.id, limit=5)
+    watch: WatchService = request.app.state.container["watch_service"]
+    unread = await watch.unread_count(current.user.id)
     return _templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -48,6 +51,7 @@ async def dashboard(request: Request, current: OptionalUser) -> Response:
             "continue_reading": continue_reading,
             "recently_added": recently_added,
             "queue": queue,
+            "unread_notifications": unread,
         },
     )
 

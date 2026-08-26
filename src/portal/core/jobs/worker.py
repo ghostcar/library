@@ -62,8 +62,41 @@ async def _normalize_handler(payload: dict[str, Any]) -> None:
         raise RuntimeError(msg)
 
 
+async def _poll_watch_handler(payload: dict[str, Any]) -> None:
+    from portal.modules.library.adapters.opds_adapter import OPDSAdapter
+    from portal.modules.library.adapters.watch_service import WatchService
+
+    settings = get_settings()
+    service = WatchService(
+        session_factory=build_container(settings)["session_factory"],
+        opds=OPDSAdapter(),
+    )
+    owner_id = UUID(payload["owner_id"])
+    rule_id = UUID(payload["watch_rule_id"])
+    outcome = await service.poll_rule(owner_id, rule_id)
+    logger.info("poll %s -> %s", rule_id, outcome)
+
+
 register_handler("noop", _noop_handler)
 register_handler("normalize", _normalize_handler)
+register_handler("poll_watch", _poll_watch_handler)
+
+
+async def schedule_due_watches(session_factory: async_sessionmaker[AsyncSession]) -> None:
+    """Enqueue poll jobs for due watch rules (throttled, non-fatal)."""
+    try:
+        from portal.modules.library.adapters.opds_adapter import OPDSAdapter
+        from portal.modules.library.adapters.watch_service import WatchService
+
+        service = WatchService(
+            session_factory=session_factory,
+            opds=OPDSAdapter(),
+        )
+        enqueued = await service.schedule_due()
+        if enqueued:
+            logger.info("scheduler enqueued %s watch polls", enqueued)
+    except Exception:
+        logger.exception("watch scheduler tick failed")
 
 
 async def process_batch(
@@ -101,9 +134,14 @@ async def run_forever(poll_interval_seconds: float = 2.0) -> None:
         loop.add_signal_handler(sig, stop.set)
 
     logger.info("worker started (db=%s)", settings.database_url.split("@")[-1])
+    last_schedule_check = 0.0
     while not stop.is_set():
         try:
             count = await process_batch(session_factory)
+            now = asyncio.get_running_loop().time()
+            if now - last_schedule_check >= 30.0:
+                last_schedule_check = now
+                await schedule_due_watches(session_factory)
             if count == 0:
                 try:
                     stopped: bool = await asyncio.wait_for(

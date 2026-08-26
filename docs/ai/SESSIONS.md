@@ -74,3 +74,13 @@
   3) CI postgres стартует пустым — миграции не применялись перед integration; добавлен шаг `alembic upgrade head` + усилен migration check до downgrade base → upgrade head round-trip.
 - Тест jwt_secret сделан env-proof (CI экспортирует LIBRARY_JWT_SECRET глобально).
 - Проверено: CI run 32924042932 — quality: success, tests: success.
+
+## Сессия 8 — 2026-08-26 — Phase 6: source monitoring
+
+- ADR-0011: OPDS adapter (Atom, safe-parser, conditional GET, size guard), реестр адаптеров с capabilities (OPDS вкл; AT/Litnet/Flibusta disabled с причинами), watch_rules+состояние опроса, scheduler tick в worker (30s), backoff 5м×2^n+jitter cap 6ч, degraded после 2 неудач, observations с unique-дедупом, уведомления на переходах.
+- Миграция 0007: watch_rules, source_observations, notifications.
+- UI: /library/sources (адаптеры+правила), /library/notifications, счётчик в topbar.
+- Тесты: 10 unit (парсинг/XXE/backoff/реестр) + 5 integration на fake OPDS (poll→dedup→notify, 304, degraded-once, HTTP-управление, изоляция).
+- Smoke через реального воркера: rule → schedule_due → poll ok → «Новая публикация».
+- Найдено: персистентный shell держал LIBRARY_TEST_DATABASE_URL — smoke шёл в тестовую БД (лечится env -u).
+- Проверено: lint/mypy clean, 214 tests.

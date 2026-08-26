@@ -67,7 +67,12 @@
 <body>
   <header class="topbar">
     <div class="brand">Ghostcar<small>PERSONAL MACROPORTAL</small></div>
-    {% block topbar_right %}{% endblock %}
+    <div style="display:flex; gap:16px; align-items:center;">
+      <a href="/library/notifications" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
+        Уведомления{% if unread_notifications %} <span style="color:var(--secondary);">[{{ unread_notifications }}]</span>{% endif %}
+      </a>
+      {% block topbar_right %}{% endblock %}
+    </div>
   </header>
   <main class="container">
     {% block content %}{% endblock %}

@@ -20,6 +20,8 @@ from portal.core.config.config import Settings, get_settings
 from portal.core.database.engine import build_container as build_db_container
 from portal.core.module_registry.registry import ModuleRegistry
 from portal.core.storage.local import LocalStorageAdapter
+from portal.modules.library.adapters.opds_adapter import OPDSAdapter
+from portal.modules.library.adapters.watch_service import WatchService
 from portal.modules.library.ai.digest import DigestBuilder
 from portal.modules.library.ai.omniroute import OmniRouteAdapter
 from portal.modules.library.ai.proposal_service import ProposalService
@@ -33,6 +35,7 @@ from portal.modules.library.presentation import (
     proposal_routes,
     reading_routes,
     review_routes,
+    sources_routes,
 )
 from portal.modules.library.presentation.routes import router as library_router
 from portal.web.routes.auth_pages import router as auth_pages_router
@@ -82,6 +85,10 @@ def build_container(settings: Settings) -> dict[str, Any]:
                 digest_builder=DigestBuilder(),
             ),
             "reading_service": ReadingStateService(session_factory),
+            "watch_service": WatchService(
+                session_factory=session_factory,
+                opds=OPDSAdapter(),
+            ),
             "rate_limiters": {
                 "login": RateLimiter(settings.login_rate_limit, settings.rate_limit_window_seconds),
                 "register": RateLimiter(
@@ -119,6 +126,7 @@ def create_app(
     app.include_router(auth_pages_router)
     app.include_router(import_routes.router, prefix="/library")
     app.include_router(reading_routes.router, prefix="/library")
+    app.include_router(sources_routes.router, prefix="/library")
     app.include_router(catalog_routes.router, prefix="/library")
     app.include_router(normalization_routes.router, prefix="/library")
     app.include_router(review_routes.router, prefix="/library")

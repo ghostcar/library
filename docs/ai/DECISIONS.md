@@ -14,3 +14,4 @@
 | 0008 | accepted | Детерминированный нормализатор: prose_compact, fingerprints-инвариант текста, manifest, идемпотентность |
 | 0009 | accepted | LLM-assisted matching через OmniRoute: digest без текста книги, строгая schema, policy engine, кэш, graceful fallback |
 | 0010 | accepted | Производное состояние циклов: caught_up ≠ completed, user override главнее, unread→read разрешён напрямую |
+| 0011 | accepted | Source monitoring: OPDS-адаптер реализован, AT/Litnet/Flibusta отключены до исследования; scheduler+backoff+degraded; уведомления только на переходы |

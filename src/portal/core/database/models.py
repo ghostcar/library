@@ -11,6 +11,7 @@ from portal.core.auth import orm as _auth_orm  # noqa: F401
 from portal.core.database.engine import Base
 from portal.core.events import orm as _events_orm  # noqa: F401
 from portal.core.jobs import orm as _jobs_orm  # noqa: F401
+from portal.modules.library.adapters import source_orm as _source_orm  # noqa: F401
 from portal.modules.library.ai import orm as _ai_orm  # noqa: F401
 from portal.modules.library.infrastructure import import_orm as _import_orm  # noqa: F401
 from portal.modules.library.infrastructure import normalization_orm as _norm_orm  # noqa: F401
