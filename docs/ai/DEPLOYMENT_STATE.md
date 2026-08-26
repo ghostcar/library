@@ -4,9 +4,9 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| Dev (локальный процесс/venv) | сессия 1, Phase 0/1 | этот VPS, 127.0.0.1:8001 | не запущен постоянно |
-| Dev DB | postgres:15-alpine (docker) | этот VPS, без публикации порта | поднимается compose.dev.yaml |
-| Test VPS | — | — | не развернуто |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:a19d030 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-26** |
+| Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
+| Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
 
 ## Окружение VPS (факты 2026-08-25)
@@ -29,14 +29,20 @@
 - scripts/backup.sh / restore.sh — round-trip проверен (29 таблиц).
 - docs/operations/runbook.md — деплой/rollback/backup.
 
-## Чек-лист живого деплоя (когда DNS появится)
+## Чек-лист живого деплоя — ВЫПОЛНЕН 2026-08-26
 
-1. Владелец: DNS-запись library.gorbunovr.ru (Cloudflare, proxy on).
-2. Владелец: применить nginx-конфиг (sudo), nginx -t, reload.
-3. Владелец: разрешить push образа в GHCR.
-4. Агент: docker build + push ghcr.io/ghostcar/library:<sha>.
-5. На VPS: backup → compose.prod up (тег <sha>) → alembic upgrade → smoke.
-6. Записать версию в DEPLOYMENT_STATE.
+1. DNS library.gorbunovr.ru — сделано владельцем (Cloudflare).
+2. nginx library.conf — применено владельцем.
+3. GHCR push — разрешено; токен gh + write:packages (docker login ghcr.io).
+4. Образы: ghcr.io/ghostcar/library:a19d030 (= latest), digest 614f3cc6.
+5. Деплой: backup pre-deploy → compose.prod up → restore dev-данных (29 таблиц, alembic 0007) → smoke.
+6. Внешний smoke: https://library.gorbunovr.ru healthz/login/static/CSP — ОК (локальный резолвер кэшировал negative DNS — проверялось через --resolve).
+7. LLM live: auto/best-free, propose на реальном файле — proposal в форму (Громыко/Ведьма-хозяйка), decision=review.
+
+## Примечания
+- .env теперь prod-конфиг: APP_ENV=test-vps, COOKIE_SECURE=true, LIBRARY_PG_PASSWORD (сгенерирован), AI ключ валиден, LIBRARY_AI_MODEL=auto/best-free.
+- Dev-запуски (scripts/dev.sh) требуют явных override поверх .env.
+- ui-kit (/library/ui-kit) скрыт (APP_ENV != development).
 
 ## Процедура dev-контура
 

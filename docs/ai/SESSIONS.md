@@ -112,3 +112,11 @@
 - Тема: переключатель Astral/Solar (theme.js, CSP-safe), default Astral. OQ#6 закрыт. OQ#5 закрыт (main-only).
 - Rate limiter: принято как есть (деплой = 1 процесс). TECH_DEBT#5 закрыт с триггером на будущее.
 - Проверено: lint/mypy clean, 229 passed, 0 warnings.
+
+## Сессия 12 — 2026-08-26 — модель + DEPLOY
+
+- Модель: auto/best-free (протестированы glm-5.2:free 429, qwen3-next 503, gemma SSE; auto-free стабилен). Адаптер: stream:false + 1 ретрай. ADR-0014.
+- GHCR: gh auth refresh write:packages → docker login → push a560f76 → fe30eb4 (migrations в образ) → f6b5f0e (package-data: templates/static) → a19d030 (ретрай).
+- Деплой: backup pre-deploy → compose.prod up → restore (29 таблиц, 0007) → smoke. Инциденты: StaticFiles без package-data; SIGPIPE на restore; локальный DNS negative cache (--resolve обход).
+- Внешний smoke: https://library.gorbunovr.ru — healthz/login/static/CSP ОК. LLM live: propose → proposal (Громыко/Ведьма-хозяйка) → review.
+- OQ#2/#3 закрыты. DEPLOYMENT_STATE обновлён.

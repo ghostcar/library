@@ -17,7 +17,7 @@
 | Phase 6. Source monitoring | `PARTIAL` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled до исследования (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `PARTIAL` | tokens.css/components.css, UI kit dev-only, security headers, a11y-база; Tailwind-сборка и visual regression — TECH_DEBT |
-| Phase 9. Test VPS | `PARTIAL` | Dockerfile+compose.prod+nginx+backup/restore готовы и проверены локально; GHCR push и живой деплой — после DNS и команды владельца |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:a19d030, https://library.gorbunovr.ru, данные перенесены, smoke пройден |
 
 ## Компоненты
 
@@ -65,7 +65,8 @@
 | Security headers + CSP | `IMPLEMENTED` | SecurityHeadersMiddleware |
 | Dockerfile + compose.prod | `IMPLEMENTED` | сборка проверена локально; GHCR — по команде |
 | Backup/restore | `IMPLEMENTED` | scripts/backup.sh, restore.sh; round-trip пройден |
-| Nginx конфиг | `IMPLEMENTED` | deploy/nginx/library.conf (применяет владелец) |
+| Nginx конфиг | `IMPLEMENTED` | deploy/nginx/library.conf (применён владельцем) |
+| LLM live (auto/best-free) | `IMPLEMENTED` | propose работает в проде; ретрай на cold-start |
 | Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
 
 ## Инфраструктурные факты
@@ -73,6 +74,6 @@
 - VPS: разработка идёт на целевой тестовой машине.
 - Занятые порты соседей: 8000 (tracker), 5432 (tracker-db), 55433 (pl-multisession-pg), 20128 (OmniRoute), 80/443 (host nginx).
 - Наш dev web: 127.0.0.1:8001. Наш PostgreSQL: dev 55440, test 55441 (только localhost).
-- DNS `library.gorbunovr.ru`: отсутствует (проверено 2026-08-25).
+- DNS `library.gorbunovr.ru`: работает (Cloudflare; локальный резолвер VPS мог кэшировать negative — проверять через 1.1.1.1).
 - Sudo без пароля: нет → изменения /etc/nginx выполняет пользователь.
-- `.env` создан scripts/dev.sh с сгенерированным JWT_SECRET (в Git не попадает).
+- `.env`: prod-конфиг (JWT secret, LIBRARY_PG_PASSWORD, AI ключ валиден, модель auto/best-free). В Git не попадает.
