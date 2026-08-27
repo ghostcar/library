@@ -13,7 +13,7 @@ docker logs library-web --tail 100
 docker logs library-worker --tail 100 -f
 
 # миграции (внутри web-контейнера)
-docker compose -f compose.prod.yaml exec web alembic -x database_url="$LIBRARY_DATABASE_URL" upgrade head
+docker compose -f compose.prod.yaml exec web alembic upgrade head
 ```
 
 ## Backup / Restore (§14.3)
@@ -38,9 +38,9 @@ docker push ghcr.io/ghostcar/library:<git-sha>
 scripts/backup.sh backups/
 
 # 3. обновить тег в compose.prod.yaml и применить
-docker compose -f compose.prod.yaml pull
-docker compose -f compose.prod.yaml up -d
-docker compose -f compose.prod.yaml exec web alembic -x database_url="$LIBRARY_DATABASE_URL" upgrade head
+LIBRARY_IMAGE=ghcr.io/ghostcar/library:<git-sha> docker compose -f compose.prod.yaml pull
+LIBRARY_IMAGE=ghcr.io/ghostcar/library:<git-sha> docker compose -f compose.prod.yaml up -d
+docker compose -f compose.prod.yaml exec web alembic upgrade head
 
 # 4. smoke
 curl -s http://127.0.0.1:8001/healthz && curl -s http://127.0.0.1:8001/readyz
@@ -68,6 +68,6 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## Известные ограничения
 
-- EPUBCheck не входит в образ (нет Java) — структурная валидация EPUB
-  помечается skipped в manifest.
-- Образы в GHCR ещё не публиковались (первый push — по команде владельца).
+- EPUBCheck 5.2.1 и Java входят в prod-образ.
+- Prod-образ публикуется в GHCR с immutable git-SHA tag; `latest` не используется
+  как источник версии при деплое.

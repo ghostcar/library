@@ -26,7 +26,8 @@ docker exec "$PG_CONTAINER" psql -U library -d library \
 
 if [[ -n "$STORAGE_TAR" ]]; then
     echo "==> Restore storage"
-    tar -xzf "$STORAGE_TAR"
+    STORAGE_CONTAINER="${LIBRARY_STORAGE_CONTAINER:-library-web}"
+    docker exec -i "$STORAGE_CONTAINER" tar -xzf - -C /data < "$STORAGE_TAR"
 fi
 
 echo "==> Done. Restart web+worker: docker compose -f compose.prod.yaml up -d --force-recreate web worker"

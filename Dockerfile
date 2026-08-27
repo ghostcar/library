@@ -32,6 +32,8 @@ ENV LIBRARY_EPUBCHECK_JAR=/opt/epubcheck/epubcheck.jar
 RUN groupadd -r app && useradd -r -g app -d /app -s /usr/sbin/nologin app
 
 COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder --chown=app:app /app/alembic.ini /app/alembic.ini
+COPY --from=builder --chown=app:app /app/migrations /app/migrations
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     LIBRARY_STORAGE_ROOT=/data/storage

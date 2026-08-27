@@ -16,14 +16,18 @@ docker exec "$PG_CONTAINER" pg_dump -U library -d library \
     | gzip > "$OUT/db-$STAMP.sql.gz"
 
 echo "==> Storage archive"
-tar -czf "$OUT/storage-$STAMP.tar.gz" storage/ 2>/dev/null \
-    || echo "   (no storage dir yet, skipped)"
+STORAGE_CONTAINER="${LIBRARY_STORAGE_CONTAINER:-library-web}"
+docker exec "$STORAGE_CONTAINER" tar -czf - -C /data storage \
+    > "$OUT/storage-$STAMP.tar.gz"
+
+ALEMBIC_HEAD="$(docker exec "$PG_CONTAINER" psql -U library -d library -Atc \
+    'select version_num from alembic_version;' 2>/dev/null || echo unknown)"
 
 cat > "$OUT/MANIFEST-$STAMP.txt" <<EOF
 created: $(date -Iseconds)
 db: db-$STAMP.sql.gz
 storage: storage-$STAMP.tar.gz
-alembic_head: $(.venv/bin/alembic -x database_url="${LIBRARY_DATABASE_URL:-postgresql+asyncpg://library:library@127.0.0.1:55440/library}" current 2>/dev/null | grep -oE '[0-9]{4}' | tail -1 || echo unknown)
+alembic_head: $ALEMBIC_HEAD
 EOF
 
 echo "==> Done: $OUT/*-$STAMP.*"
