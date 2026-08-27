@@ -44,6 +44,7 @@ portal = [
     "py.typed",
     "web/templates/*.html",
     "web/static/css/*.css",
+    "web/static/icons/*.svg",
     "web/static/js/*.js",
     "modules/library/templates/*.html",
 ]

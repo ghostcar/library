@@ -16,3 +16,8 @@ def test_csp_forbids_inline_scripts_and_styles() -> None:
     assert "unsafe-inline" not in csp
     assert "style-src 'self'" in csp
     assert "script-src 'self'" in csp
+
+
+def test_icon_sprite_is_declared_as_package_data() -> None:
+    pyproject = (ROOT / "pyproject.toml").read_text()
+    assert '"web/static/icons/*.svg"' in pyproject
