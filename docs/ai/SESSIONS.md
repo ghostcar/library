@@ -149,3 +149,11 @@
   bounded batch, idempotency по content hash, source provenance `inbox`.
 - Исходные файлы watched inbox остаются на месте.
 - Проверено: lint/mypy, diff check, 262 tests.
+
+## Сессия 16 — 2026-08-27 — audit remediation deploy
+
+- Коммиты `bd016d3`, `87c3459`, `b7351b2`; опубликован immutable GHCR tag `b7351b2`.
+- До переключения создан и проверен backup `20260827-023750`; применена миграция 0008.
+- Исправлены deploy blockers: Alembic files в runtime image, worker healthcheck,
+  prod-volume backup/restore, SHA-tag injection, packaged SVG sprite.
+- Smoke: local/external health, ready, HTML auth redirect, CSP, icons, worker, EPUBCheck — OK.

@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:053c145 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-26** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:b7351b2 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-27** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -44,6 +44,17 @@
 - .env теперь prod-конфиг: APP_ENV=test-vps, COOKIE_SECURE=true, LIBRARY_PG_PASSWORD (сгенерирован), AI ключ валиден, LIBRARY_AI_MODEL=auto/best-free.
 - Dev-запуски (scripts/dev.sh) требуют явных override поверх .env.
 - ui-kit (/library/ui-kit) скрыт (APP_ENV != development).
+
+## Деплой 2026-08-27 — audit remediation
+
+- Git: `b7351b2`; GHCR digest:
+  `sha256:20f1802da01770ad3e0f7011e8c38636bbca1240a4f58fd4259e68e1644a7635`.
+- Pre-deploy backup: `20260827-023750`, исходная схема `0007`; gzip/tar проверены.
+- Миграция `0007 → 0008` применена до переключения web/worker.
+- Post-deploy: web healthy, worker running, schema `0008`, health/ready, auth redirect,
+  CSP, packaged SVG sprite и внешний HTTPS smoke — OK.
+- EPUBCheck v5.2.1 подтверждён внутри worker image.
+- Rollback image: `ghcr.io/ghostcar/library:053c145`; откат БД только через backup.
 
 ## Процедура dev-контура
 
