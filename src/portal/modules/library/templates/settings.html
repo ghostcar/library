@@ -15,11 +15,11 @@
     <input id="old_password" name="old_password" type="password" autocomplete="current-password" required>
     <label for="new_password">Новый пароль (минимум 12 символов)</label>
     <input id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="12" required>
-    {% if error %}<p class="meta" style="color:var(--error); margin-top:8px;">{{ error }}</p>{% endif %}
+    {% if error %}<p class="meta u-error u-mt-8">{{ error }}</p>{% endif %}
     <button type="submit">Сменить пароль</button>
   </form>
-  <p class="meta" style="margin-top:8px;">После смены все сессии потребуют повторного входа. Токены читалок (FBReader) остаются активными.</p>
+  <p class="meta u-mt-8">После смены все сессии потребуют повторного входа. Токены читалок (FBReader) остаются активными.</p>
 </div>
 
-<p style="margin-top:24px;"><a href="/library/" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Библиотека</a></p>
+<p class="u-mt-24"><a href="/library/" class="u-primary u-mono u-text-13">← Библиотека</a></p>
 {% endblock %}

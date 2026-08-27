@@ -39,6 +39,33 @@ class TestSettings:
         )
         assert "localhost:1" in settings.database_url
 
+    def test_watched_inbox_requires_explicit_roots_and_owner(self) -> None:
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError, match="LIBRARY_IMPORT_ROOTS"):
+            Settings(
+                _env_file=None,  # type: ignore[call-arg]
+                jwt_secret="test-secret-0123456789abcdef0123456789abcdef",  # noqa: S106
+                watched_inbox_enabled=True,
+            )
+        with pytest.raises(ValidationError, match="WATCHED_INBOX_OWNER_EMAIL"):
+            Settings(
+                _env_file=None,  # type: ignore[call-arg]
+                jwt_secret="test-secret-0123456789abcdef0123456789abcdef",  # noqa: S106
+                watched_inbox_enabled=True,
+                import_roots=["/explicit/inbox"],
+            )
+
+    def test_watched_inbox_accepts_explicit_owner_and_roots(self) -> None:
+        settings = Settings(
+            _env_file=None,  # type: ignore[call-arg]
+            jwt_secret="test-secret-0123456789abcdef0123456789abcdef",  # noqa: S106
+            watched_inbox_enabled=True,
+            watched_inbox_owner_email="owner@example.com",
+            import_roots=["/explicit/inbox"],
+        )
+        assert settings.watched_inbox_enabled
+
 
 class TestModuleRegistry:
     def test_register_and_list(self) -> None:

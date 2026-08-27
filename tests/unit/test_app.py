@@ -35,6 +35,26 @@ async def test_unauthenticated_library_redirects_to_login(app) -> None:
     assert response.headers["location"] == "/login"
 
 
+async def test_unauthenticated_nested_page_redirects_instead_of_json(app) -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/library/catalog",
+            headers={"accept": "text/html"},
+            follow_redirects=False,
+        )
+    assert response.status_code == 303
+    assert response.headers["location"] == "/login?next=/library/catalog"
+
+
+async def test_local_icon_sprite_is_served(app) -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/static/icons/sprite.svg")
+    assert response.status_code == 200
+    assert 'symbol id="library"' in response.text
+
+
 async def test_login_page_renders_and_sets_csrf(app) -> None:
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:

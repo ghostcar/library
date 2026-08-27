@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="state-page" aria-labelledby="error-title">
+  <span class="state-page__icon" aria-hidden="true"><svg class="icon"><use href="/static/icons/sprite.svg#warning"></use></svg></span>
+  <p class="eyebrow">SYSTEM / ERROR {{ status_code }}</p>
+  <h1 id="error-title" class="h-display">Что-то пошло не так</h1>
+  <p>{{ message }}</p>
+  {% if detail %}<pre class="error-detail">{{ detail }}</pre>{% endif %}
+  <div class="actions">
+    <a class="btn" href="/library/">Вернуться в библиотеку</a>
+  </div>
+</section>
+{% endblock %}

@@ -44,22 +44,26 @@ async def _normalize_handler(payload: dict[str, Any]) -> None:
     from portal.modules.library.domain import normalization as nz
 
     settings = get_settings()
+    container = build_container(settings)
     service = NormalizationService(
-        session_factory=build_container(settings)["session_factory"],
+        session_factory=container["session_factory"],
         storage=LocalStorageAdapter(Path(settings.storage_root)),
     )
-    owner_id = UUID(payload["owner_id"])
-    run_id = UUID(payload["run_id"])
-    result = await service.execute_run(owner_id, run_id)
-    logger.info(
-        "normalization run %s -> state=%s derivative=%s",
-        run_id,
-        result.state.value,
-        result.derivative_asset_id,
-    )
-    if result.state is nz.RunState.FAILED:
-        msg = "normalization run failed"
-        raise RuntimeError(msg)
+    try:
+        owner_id = UUID(payload["owner_id"])
+        run_id = UUID(payload["run_id"])
+        result = await service.execute_run(owner_id, run_id)
+        logger.info(
+            "normalization run %s -> state=%s derivative=%s",
+            run_id,
+            result.state.value,
+            result.derivative_asset_id,
+        )
+        if result.state is nz.RunState.FAILED:
+            msg = "normalization run failed"
+            raise RuntimeError(msg)
+    finally:
+        await container["engine"].dispose()
 
 
 async def _poll_watch_handler(payload: dict[str, Any]) -> None:
@@ -67,14 +71,18 @@ async def _poll_watch_handler(payload: dict[str, Any]) -> None:
     from portal.modules.library.adapters.watch_service import WatchService
 
     settings = get_settings()
+    container = build_container(settings)
     service = WatchService(
-        session_factory=build_container(settings)["session_factory"],
+        session_factory=container["session_factory"],
         opds=OPDSAdapter(),
     )
-    owner_id = UUID(payload["owner_id"])
-    rule_id = UUID(payload["watch_rule_id"])
-    outcome = await service.poll_rule(owner_id, rule_id)
-    logger.info("poll %s -> %s", rule_id, outcome)
+    try:
+        owner_id = UUID(payload["owner_id"])
+        rule_id = UUID(payload["watch_rule_id"])
+        outcome = await service.poll_rule(owner_id, rule_id)
+        logger.info("poll %s -> %s", rule_id, outcome)
+    finally:
+        await container["engine"].dispose()
 
 
 register_handler("noop", _noop_handler)
@@ -87,7 +95,7 @@ async def run_retention_safe(session_factory: async_sessionmaker[AsyncSession]) 
     try:
         from portal.core.retention import run_retention
 
-        run_retention(session_factory)
+        await run_retention(session_factory)
     except Exception:
         logger.exception("retention tick failed")
 
@@ -109,29 +117,83 @@ async def schedule_due_watches(session_factory: async_sessionmaker[AsyncSession]
         logger.exception("watch scheduler tick failed")
 
 
+async def run_watched_inbox_safe(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    """Poll configured local inbox roots; disabled by default and non-fatal."""
+    settings = get_settings()
+    if not settings.watched_inbox_enabled:
+        return
+    try:
+        from portal.core.storage.local import LocalStorageAdapter
+        from portal.modules.library.application.import_service import ImportService
+        from portal.modules.library.application.watched_inbox import WatchedInboxService
+
+        importer = ImportService(
+            session_factory=session_factory,
+            storage=LocalStorageAdapter(Path(settings.storage_root)),
+            max_file_bytes=settings.max_file_bytes,
+            max_files_per_batch=settings.max_files_per_batch,
+        )
+        result = await WatchedInboxService(session_factory, importer).run_once(
+            owner_email=settings.watched_inbox_owner_email or "",
+            roots=[Path(root) for root in settings.import_roots],
+            max_files=settings.max_files_per_batch,
+            min_age_seconds=settings.watched_inbox_min_age_seconds,
+        )
+        if result.imported:
+            logger.info(
+                "watched inbox discovered=%s imported=%s",
+                result.discovered,
+                result.imported,
+            )
+    except Exception:
+        logger.exception("watched inbox tick failed")
+
+
 async def process_batch(
     session_factory: async_sessionmaker[AsyncSession],
     batch_size: int = 10,
 ) -> int:
     """Claim and process one batch. Returns number of processed jobs."""
     processed = 0
-    async with session_factory() as session:
-        async with session.begin():
-            jobs_repo = JobRepository(session)
-            jobs = await jobs_repo.claim_batch("worker", limit=batch_size)
-            for job in jobs:
-                handler = _handlers.get(job.kind)
-                try:
-                    if handler is None:
-                        msg = f"no handler for job kind '{job.kind}'"
-                        raise LookupError(msg)
-                    await handler(dict(job.payload))
-                    await jobs_repo.mark_done(job.id)
-                except Exception as exc:
-                    logger.exception("job %s (%s) failed", job.id, job.kind)
-                    await jobs_repo.mark_failed(job.id, str(exc), retry=True)
-                processed += 1
+    async with session_factory() as session, session.begin():
+        jobs_repo = JobRepository(session)
+        await jobs_repo.requeue_stale()
+        jobs = list(await jobs_repo.claim_batch("worker", limit=batch_size))
+        claimed = [(job.id, job.kind, dict(job.payload)) for job in jobs]
+
+    for job_id, kind, payload in claimed:
+        handler = _handlers.get(kind)
+        try:
+            if handler is None:
+                msg = f"no handler for job kind '{kind}'"
+                raise LookupError(msg)
+            await handler(payload)
+            async with session_factory() as session, session.begin():
+                await JobRepository(session).mark_done(job_id)
+        except Exception as exc:
+            logger.exception("job %s (%s) failed", job_id, kind)
+            async with session_factory() as session, session.begin():
+                await JobRepository(session).mark_failed(job_id, str(exc), retry=True)
+        processed += 1
     return processed
+
+
+async def process_outbox(session_factory: async_sessionmaker[AsyncSession]) -> int:
+    """Dispatch durable domain events. Current handlers are idempotent observers."""
+    from portal.core.events.repository import OutboxRepository
+
+    async with session_factory() as session, session.begin():
+        repo = OutboxRepository(session)
+        events = await repo.fetch_pending(limit=100)
+        for event in events:
+            try:
+                logger.info("domain event %s payload=%s", event.event_type, event.payload)
+                await repo.mark_processed(event.id)
+            except Exception as exc:
+                await repo.mark_failed(event.id, str(exc))
+        return len(events)
 
 
 async def run_forever(poll_interval_seconds: float = 2.0) -> None:
@@ -146,13 +208,18 @@ async def run_forever(poll_interval_seconds: float = 2.0) -> None:
     logger.info("worker started (db=%s)", settings.database_url.split("@")[-1])
     last_schedule_check = 0.0
     last_retention_check = 0.0
+    last_inbox_check = 0.0
     while not stop.is_set():
         try:
             count = await process_batch(session_factory)
+            count += await process_outbox(session_factory)
             now = asyncio.get_running_loop().time()
             if now - last_schedule_check >= 30.0:
                 last_schedule_check = now
                 await schedule_due_watches(session_factory)
+            if now - last_inbox_check >= settings.watched_inbox_interval_seconds:
+                last_inbox_check = now
+                await run_watched_inbox_safe(session_factory)
             if now - last_retention_check >= 6 * 3600.0:
                 last_retention_check = now
                 await run_retention_safe(session_factory)

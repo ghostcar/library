@@ -10,7 +10,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from portal.core.auth.dependencies import CurrentUser
+from portal.core.auth.dependencies import CSRFProtected, CurrentUser
 from portal.modules.library.adapters.sources import list_adapters
 from portal.modules.library.adapters.watch_service import WatchService
 from portal.web.deps import SessionDep
@@ -54,7 +54,7 @@ async def sources_page(
 @router.post("/sources/rules")
 async def create_rule(
     request: Request,
-    current: CurrentUser,
+    current: CSRFProtected,
     adapter_id: Annotated[str, Form()],
     name: Annotated[str, Form()],
     url: Annotated[str, Form()],
@@ -77,7 +77,7 @@ async def create_rule(
 async def delete_rule(
     rule_id: UUID,
     request: Request,
-    current: CurrentUser,
+    current: CSRFProtected,
 ) -> RedirectResponse:
     service = _watch_service(request)
     await service.delete_rule(current.user.id, rule_id)
@@ -88,7 +88,7 @@ async def delete_rule(
 async def toggle_rule(
     rule_id: UUID,
     request: Request,
-    current: CurrentUser,
+    current: CSRFProtected,
     enabled: Annotated[bool, Form()],
 ) -> RedirectResponse:
     service = _watch_service(request)
@@ -117,7 +117,7 @@ async def notifications_page(
 @router.post("/notifications/read-all")
 async def read_all_notifications(
     request: Request,
-    current: CurrentUser,
+    current: CSRFProtected,
 ) -> RedirectResponse:
     service = _watch_service(request)
     await service.mark_all_read(current.user.id)

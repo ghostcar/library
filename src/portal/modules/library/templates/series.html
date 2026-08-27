@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 style="font-family: var(--font-display); font-weight: 400;">{{ state.title }}</h1>
+<h1 class="u-display u-weight-normal">{{ state.title }}</h1>
 <p class="meta">
   статус: {{ state.series_status }} · уверенность завершённости: {{ state.completion_confidence }}
   {% if state.missing_indices %} · пропущены: №{{ state.missing_indices | join(", №") }}{% endif %}
@@ -8,15 +8,16 @@
 
 {% set next_up = state.next_available_unread %}
 {% if next_up %}
-<div class="card" style="border-top-color: var(--secondary);">
+<div class="card u-border-secondary">
   <p class="meta">СЛЕДУЮЩАЯ КНИГА ЦИКЛА</p>
-  <p style="font-family:var(--font-display); font-size:18px; margin:4px 0;">
+  <p class="u-display u-text-18 u-my-4">
     {{ next_up.title }}{% if next_up.index_raw %} <span class="meta">· №{{ next_up.index_raw }}</span>{% endif %}
   </p>
   <form method="post" action="/library/works/{{ next_up.work_id }}/status">
+    {% include "_csrf.html" %}
     <input type="hidden" name="status" value="reading">
     <input type="hidden" name="back" value="/library/series/{{ state.series_id }}">
-    <button type="submit" style="margin:0; width:auto;">Начал читать</button>
+    <button type="submit" class="u-m-0 u-w-auto">Начал читать</button>
   </form>
 </div>
 {% endif %}
@@ -24,42 +25,43 @@
 <div class="card">
   <p class="meta">КНИГИ ЦИКЛА ({{ state.entries | length }})</p>
   <form method="post" action="/library/works/status/bulk">
+    {% include "_csrf.html" %}
     <input type="hidden" name="status" value="read">
     <input type="hidden" name="back" value="/library/series/{{ state.series_id }}">
     {% for e in state.entries %}
-    <div style="display:flex; gap:10px; align-items:center; margin:8px 0; flex-wrap:wrap;">
-      <input type="checkbox" name="work_ids" value="{{ e.work_id }}" style="width:auto;">
-      <span style="flex:1; min-width:160px;">
+    <div class="u-flex u-gap-10 u-items-center u-my-8 u-wrap">
+      <input type="checkbox" name="work_ids" value="{{ e.work_id }}" class="u-w-auto">
+      <span class="u-grow u-min-160">
         {% if e.index_raw %}<span class="meta">№{{ e.index_raw }}</span> {% endif %}
-        <a href="/library/works/{{ e.work_id }}" style="color:var(--on-surface); text-decoration:none;">{{ e.title }}</a>
+        <a href="/library/works/{{ e.work_id }}" class="u-on-surface u-no-decoration">{{ e.title }}</a>
         {% if e.membership_type.value not in ('main', 'unknown') %}<span class="meta">({{ e.membership_type.value }})</span>{% endif %}
       </span>
-      <span class="meta" style="color: {{ 'var(--primary)' if e.is_read else 'var(--on-surface-variant)' }};">
+      <span class="meta {{ 'u-primary' if e.is_read else 'u-muted' }}">
         {{ {'unread':'не прочитана','reading':'читается','read':'прочитана','paused':'пауза','abandoned':'брошена'}[e.reading_status.value] }}
       </span>
-      <form method="post" action="/library/works/{{ e.work_id }}/status" style="display:flex; gap:6px;">
-        <input type="hidden" name="back" value="/library/series/{{ state.series_id }}">
+      <span class="actions actions--compact">
         {% if not e.is_read %}
-        <button type="submit" name="status" value="read" style="margin:0; width:auto; padding:4px 10px; font-size:10px;">Прочитано</button>
+        <button type="submit" name="status" value="read" formaction="/library/works/{{ e.work_id }}/status">Прочитано</button>
         {% else %}
-        <button type="submit" name="status" value="unread" style="margin:0; width:auto; padding:4px 10px; font-size:10px;">Сбросить</button>
+        <button type="submit" name="status" value="unread" formaction="/library/works/{{ e.work_id }}/status">Сбросить</button>
         {% endif %}
-      </form>
+      </span>
     </div>
     {% endfor %}
-    <button type="submit" style="margin-top:12px; width:auto;">Отметить выбранные прочитанными</button>
+    <button type="submit" class="u-mt-12 u-w-auto">Отметить выбранные прочитанными</button>
   </form>
 </div>
 
 <div class="card">
   <p class="meta">СТАТУС ЦИКЛА (вручную)</p>
-  <form method="post" action="/library/series/{{ state.series_id }}/user-status" style="display:flex; gap:8px; flex-wrap:wrap;">
+  <form method="post" action="/library/series/{{ state.series_id }}/user-status" class="u-flex u-gap-8 u-wrap">
+    {% include "_csrf.html" %}
     {% for s in ['planned', 'paused', 'abandoned', 'completed'] %}
-    <button type="submit" name="status" value="{{ s }}" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">{{ s }}</button>
+    <button type="submit" name="status" value="{{ s }}" class="u-m-0 u-w-auto u-p-6-12 u-text-11">{{ s }}</button>
     {% endfor %}
   </form>
-  <p class="meta" style="margin-top:8px;">Override важнее автоматического статуса. «completed» — только ваше явное решение.</p>
+  <p class="meta u-mt-8">Override важнее автоматического статуса. «completed» — только ваше явное решение.</p>
 </div>
 
-<p style="margin-top:24px;"><a href="/library/series" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Все циклы</a></p>
+<p class="u-mt-24"><a href="/library/series" class="u-primary u-mono u-text-13">← Все циклы</a></p>
 {% endblock %}

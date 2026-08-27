@@ -239,7 +239,12 @@ class SourceRecordModel(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("adapter_id", "external_id", name="uq_source_records_adapter_external"),
+        UniqueConstraint(
+            "owner_id",
+            "adapter_id",
+            "external_id",
+            name="uq_source_records_owner_adapter_external",
+        ),
         Index("ix_source_records_work", "work_id"),
     )
 
@@ -270,7 +275,12 @@ class SourceAuthorRecordModel(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("adapter_id", "external_id", name="uq_source_author_records_uniq"),
+        UniqueConstraint(
+            "owner_id",
+            "adapter_id",
+            "external_id",
+            name="uq_source_author_records_owner_adapter_external",
+        ),
     )
 
 

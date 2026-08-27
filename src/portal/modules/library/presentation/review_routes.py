@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Form
 from fastapi.responses import RedirectResponse
 
-from portal.core.auth.dependencies import CurrentUser
+from portal.core.auth.dependencies import CSRFProtected
 from portal.web.deps import SessionDep
 
 router = APIRouter()
@@ -17,7 +17,7 @@ router = APIRouter()
 @router.post("/import/items/{item_id}/assign")
 async def assign_item(
     item_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     session: SessionDep,
     work_id: Annotated[str, Form()] = "",
 ) -> RedirectResponse:
@@ -54,7 +54,7 @@ async def assign_item(
 @router.post("/duplicates/{candidate_id}/resolve")
 async def resolve_duplicate(
     candidate_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     session: SessionDep,
     decision: Annotated[str, Form()],
 ) -> RedirectResponse:

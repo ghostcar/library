@@ -1,25 +1,25 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
-  <h1 style="font-family: var(--font-display); font-weight: 400; margin:0;">Нормализация</h1>
-  <nav style="display:flex; gap:12px;">
-    <a href="/library/catalog" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px;">Каталог</a>
-    <a href="/library/import" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px;">Импорт</a>
-    <a href="/library/normalization" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">Нормализация</a>
+<div class="u-flex u-gap-16 u-items-center u-between u-wrap">
+  <h1 class="u-display u-weight-normal u-m-0">Нормализация</h1>
+  <nav class="u-flex u-gap-12">
+    <a href="/library/catalog" class="u-muted u-mono u-text-13">Каталог</a>
+    <a href="/library/import" class="u-muted u-mono u-text-13">Импорт</a>
+    <a href="/library/normalization" class="u-primary u-mono u-text-13">Нормализация</a>
   </nav>
 </div>
 
 {% if runs %}
-<table style="width:100%; border-collapse:collapse; margin-top:24px; font-size:14px;">
-  <tr class="meta" style="text-align:left;">
-    <th style="padding:8px 4px;">ПРОГОН</th><th>ПРОФИЛЬ</th><th>СТАТУС</th><th>СОЗДАН</th>
+<table class="u-w-full u-collapse u-mt-24 u-text-14">
+  <tr class="meta u-text-left">
+    <th class="u-p-8-4">ПРОГОН</th><th>ПРОФИЛЬ</th><th>СТАТУС</th><th>СОЗДАН</th>
   </tr>
   {% for r in runs %}
-  <tr style="border-top:1px solid var(--outline-variant);">
-    <td style="padding:8px 4px;"><a href="/library/normalization/{{ r.id }}" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">{{ (r.id|string)[:8] }}</a></td>
+  <tr class="u-border-top">
+    <td class="u-p-8-4"><a href="/library/normalization/{{ r.id }}" class="u-primary u-mono u-text-13">{{ (r.id|string)[:8] }}</a></td>
     <td class="meta">{{ r.profile }}</td>
     <td>
-      <span class="meta" style="color: {{ 'var(--primary)' if r.state in ('derivative_ready','preferred') else ('var(--error)' if r.state == 'failed' else 'var(--secondary)') }};">
+      <span class="meta {{ 'u-primary' if r.state in ('derivative_ready','preferred') else ('u-error' if r.state == 'failed' else 'u-secondary') }}">
         {{ r.state }}{% if r.needs_review %} · review{% endif %}
       </span>
     </td>

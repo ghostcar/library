@@ -85,6 +85,7 @@ async def authed(client: httpx.AsyncClient) -> tuple[httpx.AsyncClient, UUID]:
         json={"email": EMAIL, "password": PASSWORD},
     )
     assert response.status_code == 201
+    client.headers["x-csrf-token"] = client.cookies["library_csrf"]
     owner = UUID((await client.get("/auth/me")).json()["id"])
     return client, owner
 

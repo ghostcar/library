@@ -7,7 +7,6 @@ from typing import Any
 import httpx
 import pytest
 
-
 FB2_BYTES = b"""\
 <?xml version="1.0" encoding="utf-8"?>
 <FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
@@ -22,14 +21,18 @@ async def authed(app: Any, client: httpx.AsyncClient) -> httpx.AsyncClient:
         json={"email": "zip-test@example.com", "password": "test-password-123"},
     )
     assert resp.status_code == 201
+    client.headers["x-csrf-token"] = client.cookies["library_csrf"]
     return client
 
 
 class TestZipUpload:
     async def test_zip_with_two_fb2_imports_both(
-        self, authed: httpx.AsyncClient, tmp_path: Any,
+        self,
+        authed: httpx.AsyncClient,
+        tmp_path: Any,
     ) -> None:
-        import io, zipfile
+        import io
+        import zipfile
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
@@ -50,9 +53,11 @@ class TestZipUpload:
         assert "archive.zip" not in page.text  # original archive not stored as item
 
     async def test_zip_with_no_books_rejected(
-        self, authed: httpx.AsyncClient,
+        self,
+        authed: httpx.AsyncClient,
     ) -> None:
-        import io, zipfile
+        import io
+        import zipfile
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
@@ -69,12 +74,18 @@ class TestZipUpload:
         page = await authed.get("/library/import")
         assert page.status_code == 200
         assert "no-books.zip" in page.text
-        assert "нет FB2/EPUB" in page.text or "no FB2/EPUB" in page.text or "архив" in page.text.lower()
+        assert (
+            "нет FB2/EPUB" in page.text
+            or "no FB2/EPUB" in page.text
+            or "архив" in page.text.lower()
+        )
 
     async def test_epub_not_expanded_as_archive(
-        self, authed: httpx.AsyncClient,
+        self,
+        authed: httpx.AsyncClient,
     ) -> None:
-        import io, zipfile
+        import io
+        import zipfile
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
@@ -90,9 +101,11 @@ class TestZipUpload:
         assert resp.status_code == 303
 
     async def test_mixed_files_and_zip(
-        self, authed: httpx.AsyncClient,
+        self,
+        authed: httpx.AsyncClient,
     ) -> None:
-        import io, zipfile
+        import io
+        import zipfile
 
         fb2 = b'<?xml version="1.0"?><FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0"><body><section><p>X</p></section></body></FictionBook>'
         buf = io.BytesIO()

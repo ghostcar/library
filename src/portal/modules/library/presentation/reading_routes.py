@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Form, Request, Response
+from fastapi import APIRouter, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from portal.core.auth.dependencies import CurrentUser, OptionalUser
+from portal.core.auth.dependencies import CSRFProtected, CurrentUser, OptionalUser
 from portal.modules.library.adapters.watch_service import WatchService
 from portal.modules.library.application.reading_service import ReadingStateService
 from portal.modules.library.application.series_state_service import SeriesStateService
@@ -30,6 +30,10 @@ _templates = Jinja2Templates(
 def _reading_service(request: Request) -> ReadingStateService:
     service: ReadingStateService = request.app.state.container["reading_service"]
     return service
+
+
+def _safe_back(back: str, fallback: str) -> str:
+    return back if back.startswith("/library/") and not back.startswith("//") else fallback
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -113,26 +117,28 @@ async def series_overview(
 async def set_reading_status(
     request: Request,
     work_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     status: Annotated[str, Form()],
     back: Annotated[str, Form()] = "/library/queue",
 ) -> RedirectResponse:
     service = _reading_service(request)
     try:
         new_status = ReadingStatus(status)
-    except ValueError:
-        return RedirectResponse(back, status_code=303)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="unknown reading status") from exc
     try:
         await service.set_status(current.user.id, work_id, new_status)
-    except (LookupError, ValueError):
-        return RedirectResponse(back, status_code=303)
-    return RedirectResponse(back, status_code=303)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail="work not found") from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="reading transition is not allowed") from exc
+    return RedirectResponse(_safe_back(back, "/library/queue"), status_code=303)
 
 
 @router.post("/works/status/bulk")
 async def bulk_status(
     request: Request,
-    current: CurrentUser,
+    current: CSRFProtected,
     work_ids: Annotated[list[str], Form()],
     status: Annotated[str, Form()],
     back: Annotated[str, Form()] = "/library/import",
@@ -145,20 +151,21 @@ async def bulk_status(
         except ValueError:
             continue
     if status not in {s.value for s in ReadingStatus}:
-        return RedirectResponse(back, status_code=303)
+        raise HTTPException(status_code=400, detail="unknown reading status")
     await service.mark_read_bulk(current.user.id, work_uuids, ReadingChangeSource.MANUAL)
-    return RedirectResponse(back, status_code=303)
+    return RedirectResponse(_safe_back(back, "/library/queue"), status_code=303)
 
 
 @router.post("/series/{series_id}/user-status")
 async def set_series_user_status(
     series_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     session: SessionDep,
     status: Annotated[str, Form()],
 ) -> RedirectResponse:
     series_service = SeriesStateService(session)
-    await series_service.set_user_status(current.user.id, series_id, status)
+    if not await series_service.set_user_status(current.user.id, series_id, status):
+        raise HTTPException(status_code=400, detail="unknown series or status")
     return RedirectResponse(f"/library/series/{series_id}", status_code=303)
 
 

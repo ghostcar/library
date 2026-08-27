@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     import_roots: Annotated[list[str], NoDecode] = Field(default_factory=list)
     max_file_mb: int = 50
     max_files_per_batch: int = 20
+    watched_inbox_enabled: bool = False
+    watched_inbox_owner_email: str | None = None
+    watched_inbox_interval_seconds: int = Field(default=60, ge=10)
+    watched_inbox_min_age_seconds: int = Field(default=30, ge=0)
 
     @field_validator("import_roots", mode="before")
     @classmethod
@@ -87,6 +91,15 @@ class Settings(BaseSettings):
                 'Generate one: python -c "import secrets; print(secrets.token_urlsafe(48))"'
             )
             raise ValueError(msg)
+        if self.watched_inbox_enabled:
+            if not self.import_roots:
+                raise ValueError(
+                    "LIBRARY_IMPORT_ROOTS is required when watched inbox is enabled",
+                )
+            if not self.watched_inbox_owner_email:
+                raise ValueError(
+                    "LIBRARY_WATCHED_INBOX_OWNER_EMAIL is required when watched inbox is enabled",
+                )
         return self
 
     @property

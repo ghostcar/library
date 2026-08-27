@@ -1,6 +1,5 @@
 /* Shared components built on Ghostcar tokens (Phase 8 design convergence).
-   Every screen uses these classes; page-specific inline styles are
-   allowed only for layout, not for colors/typography. */
+   Every screen uses these classes; CSP forbids inline styles. */
 
 * { box-sizing: border-box; }
 
@@ -12,6 +11,17 @@ body {
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
 }
 
 a { color: var(--primary); }
@@ -48,6 +58,36 @@ input:focus-visible {
   background: var(--surface);
   flex-wrap: wrap;
 }
+.topbar__actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; }
+.topbar__form { display: inline-flex; margin: 0; }
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  min-height: var(--touch-target);
+  margin: 0;
+  padding: 0;
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.icon-button:hover { color: var(--primary); border-color: var(--outline-variant); }
+.badge-anchor { position: relative; }
+.badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 17px;
+  padding: 0 4px;
+  background: var(--warning);
+  color: var(--on-secondary);
+  font: 10px/17px var(--font-mono);
+  text-align: center;
+  border-radius: 9px;
+}
 .brand {
   font-family: var(--font-display);
   font-size: 20px;
@@ -60,6 +100,39 @@ input:focus-visible {
   letter-spacing: 0.1em;
   color: var(--on-surface-variant);
 }
+.brand { color: var(--on-surface); text-decoration: none; }
+.brand--sidebar { padding: var(--space-4); border-bottom: 1px solid var(--outline-variant); }
+.brand--mobile { display: none; }
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  background: var(--surface-container-lowest);
+  border-right: 1px solid var(--outline-variant);
+}
+.side-nav { padding: var(--space-3) var(--space-2); }
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--touch-target);
+  padding: 0 12px;
+  color: var(--on-surface-variant);
+  font: 12px var(--font-mono);
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  border-left: 2px solid transparent;
+}
+.nav-link:hover, .nav-link.is-active { color: var(--primary); background: var(--surface-container-low); border-left-color: var(--secondary); }
+.bottom-nav { display: none; }
+
+body:has(.sidebar) .topbar,
+body:has(.sidebar) .container { margin-left: var(--sidebar-width); }
 
 /* layout */
 .container {
@@ -67,6 +140,18 @@ input:focus-visible {
   margin: 0 auto;
   padding: var(--space-5) var(--space-4);
 }
+
+.state-page { max-width: 640px; margin: 10vh auto; text-align: center; }
+.state-page__icon { display: inline-flex; color: var(--error); }
+.state-page__icon .icon { width: 56px; height: 56px; }
+.eyebrow { color: var(--secondary); font: 11px var(--font-mono); letter-spacing: .14em; }
+.error-detail { overflow: auto; padding: var(--space-3); text-align: left; color: var(--error); background: var(--surface-container-low); }
+.actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.actions--compact button { min-height: 36px; margin: 0; padding: 4px 10px; font-size: 10px; }
+.catalog-search { margin-top: var(--space-4); }
+.search-control { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: var(--space-2); }
+.search-control .icon { margin: 0 var(--space-1) 10px; color: var(--on-surface-variant); }
+.search-control button { margin: 0; }
 
 /* cards */
 .card {
@@ -166,7 +251,46 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* mobile-first: single column, larger touch targets */
 @media (max-width: 768px) {
+  body { padding-bottom: 72px; }
+  .sidebar { display: none; }
+  body:has(.sidebar) .topbar,
+  body:has(.sidebar) .container { margin-left: 0; }
+  .brand--mobile { display: block; }
+  .topbar { position: sticky; top: 0; z-index: 20; padding: 0 var(--space-3); flex-wrap: nowrap; }
   .container { padding: var(--space-3) var(--space-3); }
+  .bottom-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    min-height: 64px;
+    background: var(--surface-container-lowest);
+    border-top: 1px solid var(--outline-variant);
+  }
+  .bottom-nav__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    color: var(--on-surface-variant);
+    font: 9px var(--font-mono);
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+  .bottom-nav__link.is-active { color: var(--primary); background: var(--surface-container-low); }
   button, .btn { width: 100%; }
   form button { width: auto; }
 }
+
+/* Layout utilities for SSR templates. Kept local so CSP needs no inline styles. */
+.u-flex{display:flex}.u-grid{display:grid}.u-block{display:block}.u-wrap{flex-wrap:wrap}.u-grow{flex:1}.u-grow-2{flex:2}
+.u-items-center{align-items:center}.u-items-end{align-items:end}.u-items-baseline{align-items:baseline}.u-self-center{align-self:center}.u-between{justify-content:space-between}
+.u-gap-8{gap:8px}.u-gap-10{gap:10px}.u-gap-12{gap:12px}.u-gap-16{gap:16px}
+.u-m-0{margin:0}.u-my-2{margin:2px 0}.u-my-4{margin:4px 0}.u-my-6{margin:6px 0}.u-my-8{margin:8px 0}.u-mt-2{margin-top:2px}.u-mt-4{margin-top:4px}.u-mt-8{margin-top:8px}.u-mt-12{margin-top:12px}.u-mt-16{margin-top:16px}.u-mt-24{margin-top:24px}.u-mb-4{margin-bottom:4px}.u-mb-12{margin-bottom:12px}
+.u-p-4-8{padding:4px 8px}.u-p-4-10{padding:4px 10px}.u-p-6-4{padding:6px 4px}.u-p-6-12{padding:6px 12px}.u-p-8{padding:8px}.u-p-8-4{padding:8px 4px}
+.u-w-auto{width:auto}.u-w-full{width:100%}.u-w-220{width:220px}.u-w-90{width:90px}.u-min-140{min-width:140px}.u-min-160{min-width:160px}.u-min-180{min-width:180px}.u-min-200{min-width:200px}.u-min-220{min-width:220px}
+.u-mono{font-family:var(--font-mono)}.u-display{font-family:var(--font-display)}.u-weight-normal{font-weight:400}.u-text-11{font-size:11px}.u-text-12{font-size:12px}.u-text-13{font-size:13px}.u-text-14{font-size:14px}.u-text-15{font-size:15px}.u-text-17{font-size:17px}.u-text-18{font-size:18px}.u-text-24{font-size:24px}
+.u-primary{color:var(--primary)}.u-secondary{color:var(--secondary)}.u-error{color:var(--error)}.u-on-surface{color:var(--on-surface)}.u-muted{color:var(--on-surface-variant)}.u-color-inherit{color:inherit}
+.u-no-decoration{text-decoration:none}.u-text-left{text-align:left}.u-break-all{word-break:break-all}.u-border-error{border-top-color:var(--error)}.u-border-secondary{border-top-color:var(--secondary)}.u-border{border:1px solid var(--outline-variant)}.u-border-top{border-top:1px solid var(--outline-variant)}.u-border-bottom{border-bottom:1px solid var(--outline-variant)}.u-collapse{border-collapse:collapse}.u-card-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}

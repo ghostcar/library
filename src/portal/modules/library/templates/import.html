@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
-<div style="display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
-  <h1 style="font-family: var(--font-display); font-weight: 400; margin:0;">Импорт</h1>
-  <nav style="display:flex; gap:12px;">
-    <a href="/library/catalog" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px;">Каталог</a>
-    <a href="/library/import" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">Импорт</a>
+<div class="u-flex u-gap-16 u-items-center u-between u-wrap">
+  <h1 class="u-display u-weight-normal u-m-0">Импорт</h1>
+  <nav class="u-flex u-gap-12">
+    <a href="/library/catalog" class="u-muted u-mono u-text-13">Каталог</a>
+    <a href="/library/import" class="u-primary u-mono u-text-13">Импорт</a>
   </nav>
 </div>
 
 <div class="card">
   <p class="meta">ЗАГРУЗКА ФАЙЛОВ · до {{ max_files }} файлов, до {{ max_file_mb }} МБ каждый (FB2/EPUB)</p>
   <form method="post" action="/library/import/upload" enctype="multipart/form-data">
+    {% include "_csrf.html" %}
     <input type="file" name="files" multiple accept=".fb2,.epub" required
-           style="border:1px solid var(--outline-variant); padding:8px; width:100%; color:var(--on-surface);">
+           class="u-border u-p-8 u-w-full u-on-surface">
     <button type="submit">Импортировать</button>
   </form>
 </div>
@@ -20,23 +21,29 @@
 <div class="card">
   <p class="meta">ЛОКАЛЬНЫЕ КАТАЛОГИ</p>
   {% if scan_roots %}
-  <p class="meta" style="margin:4px 0 12px;">{{ scan_roots | join(" · ") }}</p>
-  <form method="post" action="/library/import/scan" style="display:flex; gap:12px; flex-wrap:wrap;">
-    <button type="submit" name="apply" value="false" style="width:auto; margin:0;">Dry-run скан</button>
-    <button type="submit" name="apply" value="true" style="width:auto; margin:0;">Импортировать новое</button>
+  <p class="meta u-mb-12">{{ scan_roots | join(" · ") }}</p>
+  {% if watched_inbox_enabled %}
+  <p class="chip chip--ok">Автоимпорт включён · каждые {{ watched_inbox_interval_seconds }} сек.</p>
+  {% else %}
+  <p class="chip">Автоимпорт выключен</p>
+  {% endif %}
+  <form method="post" action="/library/import/scan" class="u-flex u-gap-12 u-wrap">
+    {% include "_csrf.html" %}
+    <button type="submit" name="apply" value="false" class="u-w-auto u-m-0">Dry-run скан</button>
+    <button type="submit" name="apply" value="true" class="u-w-auto u-m-0">Импортировать новое</button>
   </form>
   {% else %}
-  <p class="meta" style="margin:4px 0 0;">Каталоги не настроены. Задайте LIBRARY_IMPORT_ROOTS в .env (через запятую).</p>
+  <p class="meta u-mt-4">Каталоги не настроены. Задайте LIBRARY_IMPORT_ROOTS в .env (через запятую).</p>
   {% endif %}
 
   {% if scan_result is not none %}
-  <p class="meta" style="margin-top:16px;">РЕЗУЛЬТАТ СКАНА ({{ scan_result | length }} файлов)</p>
-  <table style="width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:12px;">
+  <p class="meta u-mt-16">РЕЗУЛЬТАТ СКАНА ({{ scan_result | length }} файлов)</p>
+  <table class="u-w-full u-collapse u-mono u-text-12">
     {% for e in scan_result %}
-    <tr style="border-bottom:1px solid var(--outline-variant);">
-      <td style="padding:6px 4px;">{{ e.path.name }}</td>
-      <td style="padding:6px 4px;">{{ (e.size_bytes / 1048576) | round(2) }} MB</td>
-      <td style="padding:6px 4px; color: {{ 'var(--primary)' if e.verdict == 'new' else 'var(--secondary)' }};">{{ e.verdict }}</td>
+    <tr class="u-border-bottom">
+      <td class="u-p-6-4">{{ e.path.name }}</td>
+      <td class="u-p-6-4">{{ (e.size_bytes / 1048576) | round(2) }} MB</td>
+      <td class="u-p-6-4 {{ 'u-primary' if e.verdict == 'new' else 'u-secondary' }}">{{ e.verdict }}</td>
     </tr>
     {% endfor %}
   </table>
@@ -47,7 +54,7 @@
 <div class="card">
   <p class="meta">ДУБЛИКАТЫ И ОТКЛОНЁННЫЕ ({{ duplicates | length }})</p>
   {% for item in duplicates %}
-  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">
+  <p class="u-my-6 u-mono u-text-13">
     {{ item.filename }} <span class="meta">· {{ item.status }}{% if item.match_evidence.reason %} · {{ item.match_evidence.reason }}{% endif %}{% if item.error %} · {{ item.error }}{% endif %}</span>
   </p>
   {% endfor %}
@@ -59,15 +66,17 @@
 <div class="card">
   <p class="meta">ТРЕБУЮТ РАЗБОРА ({{ unmatched | length }})</p>
   {% for item in unmatched %}
-  <div style="display:flex; gap:12px; align-items:center; margin:6px 0; flex-wrap:wrap;">
-    <span style="font-family:var(--font-mono); font-size:13px; flex:1; min-width:180px;">{{ item.filename }}</span>
+  <div class="u-flex u-gap-12 u-items-center u-my-6 u-wrap">
+    <span class="u-mono u-text-13 u-grow u-min-180">{{ item.filename }}</span>
     <form method="post" action="/library/import/items/{{ item.id }}/propose">
-      <button type="submit" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Разобрать с LLM</button>
+      {% include "_csrf.html" %}
+      <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Разобрать с LLM</button>
     </form>
-    <form method="post" action="/library/import/items/{{ item.id }}/assign" style="display:flex; gap:8px; align-items:center;">
+    <form method="post" action="/library/import/items/{{ item.id }}/assign" class="u-flex u-gap-8 u-items-center">
+      {% include "_csrf.html" %}
       <input type="text" name="work_id" placeholder="UUID произведения"
-             style="width:220px; padding:4px 8px; font-family:var(--font-mono); font-size:11px;">
-      <button type="submit" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Привязать</button>
+             class="u-w-220 u-p-4-8 u-mono u-text-11">
+      <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Привязать</button>
     </form>
   </div>
   {% endfor %}
@@ -79,13 +88,14 @@
 <div class="card">
   <p class="meta">КАНДИДАТЫ В ДУБЛИКАТЫ ({{ candidates | length }})</p>
   {% for c in candidates %}
-  <div style="display:flex; gap:12px; align-items:center; margin:6px 0; flex-wrap:wrap;">
-    <span style="font-family:var(--font-mono); font-size:12px; flex:1; min-width:220px;">
+  <div class="u-flex u-gap-12 u-items-center u-my-6 u-wrap">
+    <span class="u-mono u-text-12 u-grow u-min-220">
       {{ c.reason }} · {{ (c.asset_id|string)[:8] }} ≈ {{ (c.suspected_of_asset_id|string)[:8] }}
     </span>
-    <form method="post" action="/library/duplicates/{{ c.id }}/resolve" style="display:flex; gap:8px;">
-      <button type="submit" name="decision" value="confirm" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Дубликат</button>
-      <button type="submit" name="decision" value="dismiss" style="margin:0; width:auto; padding:4px 10px; font-size:11px;">Разные</button>
+    <form method="post" action="/library/duplicates/{{ c.id }}/resolve" class="u-flex u-gap-8">
+      {% include "_csrf.html" %}
+      <button type="submit" name="decision" value="confirm" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Дубликат</button>
+      <button type="submit" name="decision" value="dismiss" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Разные</button>
     </form>
   </div>
   {% endfor %}
@@ -96,7 +106,7 @@
 <div class="card">
   <p class="meta">ПОСЛЕДНИЕ ПАРТИИ ИМПОРТА</p>
   {% for b in batches %}
-  <p style="margin:6px 0; font-family:var(--font-mono); font-size:13px;">
+  <p class="u-my-6 u-mono u-text-13">
     {{ b.created_at.strftime("%Y-%m-%d %H:%M") }} · {{ b.source }} · {{ b.status }}
   </p>
   {% else %}

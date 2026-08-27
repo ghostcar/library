@@ -8,6 +8,10 @@ from pathlib import Path
 
 import httpx
 import pytest
+from sqlalchemy import select
+
+from portal.modules.library.application.watched_inbox import WatchedInboxService
+from portal.modules.library.infrastructure.import_orm import ImportBatchModel
 
 pytestmark = pytest.mark.integration
 
@@ -39,6 +43,7 @@ async def authed_client(client: httpx.AsyncClient) -> httpx.AsyncClient:
         json={"email": EMAIL, "password": PASSWORD},
     )
     assert response.status_code == 201
+    client.headers["x-csrf-token"] = client.cookies["library_csrf"]
     return client
 
 
@@ -220,3 +225,39 @@ class TestLocalDirScan:
         dry = await authed_client.post("/library/import/scan", data={"apply": "false"})
         assert dry.status_code == 200
         assert "note.txt" not in dry.text
+
+    async def test_watched_inbox_is_bounded_idempotent_and_tracks_source(
+        self,
+        authed_client: httpx.AsyncClient,
+        tmp_path: Path,
+    ) -> None:
+        inbox = tmp_path / "watched"
+        inbox.mkdir()
+        original = inbox / "Лем — Солярис.fb2"
+        original.write_bytes(_fb2("Солярис", "watched"))
+
+        app = authed_client._transport.app
+        container = app.state.container
+        service = WatchedInboxService(
+            container["session_factory"],
+            container["import_service"],
+        )
+        first = await service.run_once(
+            owner_email=EMAIL,
+            roots=[inbox],
+            max_files=1,
+            min_age_seconds=0,
+        )
+        second = await service.run_once(
+            owner_email=EMAIL,
+            roots=[inbox],
+            max_files=1,
+            min_age_seconds=0,
+        )
+
+        assert first.imported == 1
+        assert second.imported == 0
+        assert original.is_file()  # source files are never moved or deleted
+        async with container["session_factory"]() as session:
+            sources = (await session.execute(select(ImportBatchModel.source))).scalars().all()
+        assert "inbox" in sources

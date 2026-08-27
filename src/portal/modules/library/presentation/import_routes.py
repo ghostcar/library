@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, Request, Response, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from portal.core.auth.dependencies import CurrentUser
+from portal.core.auth.dependencies import CSRFProtected, CurrentUser
 from portal.core.config.config import Settings
 from portal.web.deps import SessionDep
 
@@ -63,6 +63,8 @@ async def _inbox_context(
         "max_file_mb": settings.max_file_mb,
         "max_files": settings.max_files_per_batch,
         "scan_roots": settings.import_roots,
+        "watched_inbox_enabled": settings.watched_inbox_enabled,
+        "watched_inbox_interval_seconds": settings.watched_inbox_interval_seconds,
         "scan_result": scan_result,
     }
 
@@ -84,22 +86,35 @@ async def import_page(
 @router.post("/import/upload")
 async def upload_files(
     request: Request,
-    current: CurrentUser,
+    current: CSRFProtected,
     files: Annotated[list[UploadFile], File()],
 ) -> RedirectResponse:
     service = _import_service(request)
+    settings: Settings = request.app.state.settings
+    if len(files) > settings.max_files_per_batch:
+        raise HTTPException(status_code=413, detail="too many files")
     uploads: list[tuple[str, bytes]] = []
     for upload in files:
-        content = await upload.read()
+        chunks: list[bytes] = []
+        total = 0
+        while chunk := await upload.read(1024 * 1024):
+            total += len(chunk)
+            if total > settings.max_file_bytes:
+                raise HTTPException(status_code=413, detail=f"file too large: {upload.filename}")
+            chunks.append(chunk)
+        content = b"".join(chunks)
         uploads.append((upload.filename or "unnamed", content))
-    await service.import_uploads(current.user.id, uploads)
+    try:
+        await service.import_uploads(current.user.id, uploads)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return RedirectResponse("/library/import", status_code=303)
 
 
 @router.post("/import/scan", response_class=HTMLResponse)
 async def scan_directories(
     request: Request,
-    current: CurrentUser,
+    current: CSRFProtected,
     session: SessionDep,
     apply: Annotated[bool, Form()] = False,
 ) -> Response:

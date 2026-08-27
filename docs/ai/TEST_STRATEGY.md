@@ -6,9 +6,9 @@
 
 - **Unit**: domain-сущности library (инварианты Work/Asset/SourceRecord, series ordering — sort key), config.
 - **Integration**: репозитории на PostgreSQL (docker compose, тестовая БД), миграции с чистой схемы.
-- **Contract**: PLANNED (с появлением адаптеров, Phase 6).
-- **E2E**: PLANNED (Playwright, Phase 8).
-- **Security**: PLANNED (Phase 2+: upload/XXE/ZIP bomb; Phase 7: OPDS tokens).
+- **Contract**: source adapter/OPDS serializer и capability registry покрыты unit-тестами.
+- **E2E**: HTTP end-to-end через ASGITransport; Chromium browser smoke для desktop/mobile shell.
+- **Security**: upload/XXE/ZIP bomb, owner isolation, OPDS token scope, auth CSRF и library-form CSRF реализованы.
 - **Property-based**: PLANNED (Hypothesis: filenames, unicode, series indices — Phase 2/3).
 
 ## Правила
@@ -22,4 +22,5 @@
 ```bash
 scripts/test.sh          # unit + integration
 scripts/lint.sh          # ruff + mypy
+scripts/test-browser.sh  # responsive shell в локальном Chromium/Playwright
 ```

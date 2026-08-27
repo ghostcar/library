@@ -130,3 +130,22 @@
 - ZIP-импорт: expand_book_archive() распаковывает ZIP (не EPUB) в отдельные FB2/EPUB файлы. Защита от zip-bombs: ≤100 entries, ≤200 MiB/entry, ≤500 MiB total. Сканирование локальных каталогов подхватывает .zip.
 - Тесты: 23 новых (7 settings + 12 expand_archive + 4 zip_import), итого 252.
 - Деплой: образ 053c145, git main @ c363ef7.
+
+## Сессия 14 — 2026-08-27 — remediation полного аудита
+
+- Browser UX: вложенные `/library/*` без сессии перенаправляются на login; portal 4xx/5xx получают тематическую HTML-страницу, API сохраняет JSON.
+- CSRF распространён на все unsafe library routes и SSR-формы; `back` redirect ограничен локальным `/library/`.
+- Outbox переведён на транзакцию use case и обработку worker; jobs выполняются после commit claim и восстанавливаются из stale running; retention исправлен на async.
+- Upload читается чанками с ранним лимитом; локальный scan хеширует потоково. Source uniqueness стала owner-scoped (Alembic 0008).
+- Frontend shell: desktop sidebar, mobile bottom navigation, локальный SVG icon sprite по Material vocabulary дизайн-шаблонов, поиск каталога.
+- Пустые backups и stale build/lib убраны из Git index и добавлены в `.gitignore`; история не переписывалась.
+- Проверено: Ruff format/check, mypy и git diff --check clean; 257 tests passed.
+
+## Сессия 15 — 2026-08-27 — frontend hardening + watched inbox
+
+- Inline styles удалены из SSR; CSP усилена до local-only scripts/styles.
+- Chromium smoke проверяет desktop/mobile navigation, icons и overflow.
+- Watched inbox: opt-in config, explicit owner email и roots, stability window,
+  bounded batch, idempotency по content hash, source provenance `inbox`.
+- Исходные файлы watched inbox остаются на месте.
+- Проверено: lint/mypy, diff check, 262 tests.

@@ -25,6 +25,7 @@ async def authed(client: httpx.AsyncClient) -> tuple[httpx.AsyncClient, str]:
         json={"email": EMAIL, "password": PASSWORD},
     )
     assert response.status_code == 201
+    client.headers["x-csrf-token"] = client.cookies["library_csrf"]
     return client, EMAIL
 
 

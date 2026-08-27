@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 style="font-family: var(--font-display); font-weight: 400;">Разбор файла</h1>
+<h1 class="u-display u-weight-normal">Разбор файла</h1>
 
 <div class="card">
   <p class="meta">РЕШЕНИЕ: {{ decision }}{% if outcome.cached %} · из кэша{% endif %}</p>
-  <p class="meta" style="margin:4px 0 0;">{{ outcome.note }}</p>
+  <p class="meta u-mt-4">{{ outcome.note }}</p>
 </div>
 
 {% if proposal %}
 <div class="card">
   <p class="meta">ПРЕДЛОЖЕНИЕ (confidence {{ "%.2f" | format(proposal.confidence) }})</p>
   <form method="post" action="/library/import/items/{{ item_id }}/apply">
+    {% include "_csrf.html" %}
     <label for="author">Автор</label>
     <input id="author" name="author" value="{{ proposal.author or '' }}">
     <label for="title">Название</label>
@@ -22,18 +23,19 @@
     <label for="match_existing_work_id">Или привязать к существующему (UUID)</label>
     <input id="match_existing_work_id" name="match_existing_work_id" value="{{ proposal.match_existing_work_id or '' }}">
     {% if proposal.ambiguities %}
-    <p class="meta" style="margin-top:12px;">НЕОДНОЗНАЧНОСТИ:</p>
-    {% for a in proposal.ambiguities %}<p class="meta" style="margin:2px 0;">· {{ a }}</p>{% endfor %}
+    <p class="meta u-mt-12">НЕОДНОЗНАЧНОСТИ:</p>
+    {% for a in proposal.ambiguities %}<p class="meta u-my-2">· {{ a }}</p>{% endfor %}
     {% endif %}
     <button type="submit">Применить</button>
   </form>
-  <p class="meta" style="margin-top:8px;">Поправьте поля при необходимости — ваша правка сохраняется как пример для оценки качества (evaluation dataset).</p>
+  <p class="meta u-mt-8">Поправьте поля при необходимости — ваша правка сохраняется как пример для оценки качества (evaluation dataset).</p>
 </div>
 {% else %}
 <div class="card">
   <p class="meta">ПРЕДЛОЖЕНИЯ НЕТ</p>
   <p>LLM недоступен или вернул невалидный ответ. Заполните поля вручную:</p>
   <form method="post" action="/library/import/items/{{ item_id }}/apply">
+    {% include "_csrf.html" %}
     <label for="author">Автор</label>
     <input id="author" name="author" value="">
     <label for="title">Название</label>
@@ -49,5 +51,5 @@
 </div>
 {% endif %}
 
-<p style="margin-top:24px;"><a href="/library/import" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Импорт</a></p>
+<p class="u-mt-24"><a href="/library/import" class="u-primary u-mono u-text-13">← Импорт</a></p>
 {% endblock %}

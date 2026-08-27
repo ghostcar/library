@@ -12,30 +12,49 @@
 </head>
 <body>
   <a class="skip-link" href="#main-content">К содержанию</a>
-  <header class="topbar">
-    <div class="brand">Ghostcar<small>PERSONAL MACROPORTAL</small></div>
-    <div style="display:flex; gap:16px; align-items:center;">
-      <button id="theme-toggle" type="button" title="Переключить тему"
-              style="margin:0; width:auto; min-height:0; padding:4px 10px; font-size:10px;">Тема</button>
-      {% if user %}
-      <a href="/library/settings" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
-        Настройки
+  {% set path = request.url.path %}
+  {% if user %}
+  <aside class="sidebar" aria-label="Основная навигация">
+    <a class="brand brand--sidebar" href="/library/">Ghostcar<small>LIBRARY ARCHIVE</small></a>
+    <nav class="side-nav">
+      {% for href, icon, label in [('/library/', 'dashboard', 'Обзор'), ('/library/catalog', 'library', 'Каталог'), ('/library/series', 'series', 'Циклы'), ('/library/queue', 'queue', 'Очередь'), ('/library/import', 'upload', 'Импорт'), ('/library/sources', 'radar', 'Источники'), ('/library/opds-settings', 'opds', 'OPDS')] %}
+      <a href="{{ href }}" class="nav-link{% if path == href or (href != '/library/' and path.startswith(href)) %} is-active{% endif %}">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons/sprite.svg#{{ icon }}"></use></svg><span>{{ label }}</span>
       </a>
-      <form method="post" action="/logout" style="margin:0; display:inline;">
+      {% endfor %}
+    </nav>
+  </aside>
+  {% endif %}
+  <header class="topbar">
+    <a class="brand brand--mobile" href="/library/">Ghostcar<small>LIBRARY ARCHIVE</small></a>
+    <div class="topbar__actions">
+      <button id="theme-toggle" class="icon-button" type="button" title="Переключить тему" aria-label="Переключить тему"><svg class="icon"><use href="/static/icons/sprite.svg#theme"></use></svg></button>
+      {% if user %}
+      <a href="/library/settings" class="icon-button" aria-label="Настройки" title="Настройки">
+        <svg class="icon"><use href="/static/icons/sprite.svg#settings"></use></svg>
+      </a>
+      <a href="/library/notifications" class="icon-button badge-anchor" aria-label="Уведомления" title="Уведомления">
+        <svg class="icon"><use href="/static/icons/sprite.svg#notifications"></use></svg>{% if unread_notifications %}<span class="badge">{{ unread_notifications }}</span>{% endif %}
+      </a>
+      <form method="post" action="/logout" class="topbar__form">
         <input type="hidden" name="csrf_token" value="{{ request.cookies.get('library_csrf', '') }}">
-        <button type="submit" style="margin:0; background:none; border:none; color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; padding:0; cursor:pointer;">
-          Выйти
+        <button type="submit" class="icon-button" aria-label="Выйти" title="Выйти">
+          <svg class="icon"><use href="/static/icons/sprite.svg#logout"></use></svg>
         </button>
       </form>
       {% endif %}
-      <a href="/library/notifications" style="color:var(--on-surface-variant); font-family:var(--font-mono); font-size:13px; text-decoration:none;">
-        Уведомления{% if unread_notifications %} <span class="chip chip--warn">[{{ unread_notifications }}]</span>{% endif %}
-      </a>
       {% block topbar_right %}{% endblock %}
     </div>
   </header>
   <main id="main-content" class="container">
     {% block content %}{% endblock %}
   </main>
+  {% if user %}
+  <nav class="bottom-nav" aria-label="Мобильная навигация">
+    {% for href, icon, label in [('/library/', 'dashboard', 'Обзор'), ('/library/catalog', 'library', 'Каталог'), ('/library/series', 'series', 'Циклы'), ('/library/queue', 'queue', 'Очередь'), ('/library/import', 'upload', 'Импорт')] %}
+    <a href="{{ href }}" class="bottom-nav__link{% if path == href or (href != '/library/' and path.startswith(href)) %} is-active{% endif %}"><svg class="icon"><use href="/static/icons/sprite.svg#{{ icon }}"></use></svg><span>{{ label }}</span></a>
+    {% endfor %}
+  </nav>
+  {% endif %}
 </body>
 </html>

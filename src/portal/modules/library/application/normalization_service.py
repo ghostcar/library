@@ -203,6 +203,7 @@ class NormalizationService:
                     needs_review=run_row.needs_review,
                 )
                 await self._emit(
+                    session,
                     owner_id,
                     "NormalizationCompleted",
                     {
@@ -234,6 +235,7 @@ class NormalizationService:
             if run_row.state == nz.RunState.DERIVATIVE_READY.value:
                 run_row.state = nz.RunState.PREFERRED.value
             await self._emit(
+                session,
                 owner_id,
                 "NormalizationCompleted",
                 {
@@ -507,10 +509,15 @@ class NormalizationService:
             }
             await OutboxRepository(session).enqueue("NormalizationFailed", envelope)
 
-    async def _emit(self, owner_id: UUID, event_type: str, payload: dict[str, Any]) -> None:
-        async with self._session_factory() as session, session.begin():
-            envelope = {"owner_id": str(owner_id), **payload}
-            await OutboxRepository(session).enqueue(event_type, envelope)
+    async def _emit(
+        self,
+        session: AsyncSession,
+        owner_id: UUID,
+        event_type: str,
+        payload: dict[str, Any],
+    ) -> None:
+        envelope = {"owner_id": str(owner_id), **payload}
+        await OutboxRepository(session).enqueue(event_type, envelope)
 
 
 @dataclass(slots=True)

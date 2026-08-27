@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import logging
+import time
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -142,6 +143,8 @@ class ImportService:
         self,
         owner_id: UUID,
         uploads: list[tuple[str, bytes]],
+        *,
+        source: ie.ImportSource = ie.ImportSource.UPLOAD,
     ) -> ie.ImportBatch:
         """Process manually uploaded files (master prompt 6.1.1).
 
@@ -173,7 +176,7 @@ class ImportService:
         async with self._session_factory() as session, session.begin():
             batch_repo = ImportBatchRepository(session)
             batch = await batch_repo.add(
-                ie.ImportBatch(owner_id=owner_id, source=ie.ImportSource.UPLOAD),
+                ie.ImportBatch(owner_id=owner_id, source=source),
             )
         batch.mark_running()
 
@@ -255,6 +258,7 @@ class ImportService:
                 await items.update(item)
                 await self._discard_quarantine(quarantine_path)
                 await self._emit(
+                    session,
                     owner_id,
                     "DuplicateSuspected",
                     {
@@ -318,6 +322,7 @@ class ImportService:
             await self._discard_quarantine(quarantine_path)
 
             await self._emit(
+                session,
                 owner_id,
                 "BookFileImported",
                 {
@@ -328,6 +333,7 @@ class ImportService:
             )
             if work_id is not None:
                 await self._emit(
+                    session,
                     owner_id,
                     "WorkMatched",
                     {
@@ -346,6 +352,7 @@ class ImportService:
         roots: list[Path],
         *,
         known_hashes: dict[str, UUID],
+        min_age_seconds: int = 0,
     ) -> list[ScanEntry]:
         """Dry-run: list files with verdicts; no writes."""
         entries: list[ScanEntry] = []
@@ -356,8 +363,13 @@ class ImportService:
             for path in sorted(root.rglob("*")):
                 if not path.is_file() or path.suffix.lower() not in {".fb2", ".epub", ".zip"}:
                     continue
-                digest = _sha256_hex(path.read_bytes())
-                size = path.stat().st_size
+                stat = path.stat()
+                if time.time() - stat.st_mtime < min_age_seconds:
+                    continue
+                size = stat.st_size
+                if size > self._max_file_bytes:
+                    continue
+                digest = _sha256_file(path)
                 if digest in known_hashes or digest in seen_hashes:
                     verdict = "duplicate"
                     existing = known_hashes.get(digest)
@@ -374,13 +386,15 @@ class ImportService:
         self,
         owner_id: UUID,
         entries: list[ScanEntry],
+        *,
+        source: ie.ImportSource = ie.ImportSource.LOCAL_DIR,
     ) -> ie.ImportBatch:
         """Apply a scan: only 'new' verdicts are imported."""
         fresh = [e for e in entries if e.verdict == "new"]
         uploads: list[tuple[str, bytes]] = [
             (entry.path.name, entry.path.read_bytes()) for entry in fresh
         ]
-        return await self.import_uploads(owner_id, uploads)
+        return await self.import_uploads(owner_id, uploads, source=source)
 
     # --- matching --------------------------------------------------------
 
@@ -438,16 +452,31 @@ class ImportService:
         except StorageError:
             logger.warning("could not remove quarantine object %s", relative)
 
-    async def _emit(self, owner_id: UUID, event_type: str, payload: dict[str, Any]) -> None:
-        async with self._session_factory() as session, session.begin():
-            envelope = {"owner_id": str(owner_id), **payload}
-            await OutboxRepository(session).enqueue(event_type, envelope)
+    async def _emit(
+        self,
+        session: AsyncSession,
+        owner_id: UUID,
+        event_type: str,
+        payload: dict[str, Any],
+    ) -> None:
+        envelope = {"owner_id": str(owner_id), **payload}
+        await OutboxRepository(session).enqueue(event_type, envelope)
 
 
 def _sha256_hex(content: bytes) -> str:
     import hashlib
 
     return hashlib.sha256(content).hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    import hashlib
+
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        while chunk := source.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _safe_name(filename: str) -> str:

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 style="font-family: var(--font-display); font-weight: 400;">{{ work.title }}</h1>
+<h1 class="u-display u-weight-normal">{{ work.title }}</h1>
 <p class="meta">{{ work.authors | map(attribute='name') | join(", ") if work.authors else "Автор не указан" }}</p>
 
 {% if work.series %}
 <div class="card">
   <p class="meta">ЦИКЛЫ</p>
   {% for membership, series in work.series %}
-  <p style="margin:4px 0;">{{ series.title }}
+  <p class="u-my-4">{{ series.title }}
     {% if membership.index_raw %}<span class="meta">· №{{ membership.index_raw }} ({{ membership.membership_type }})</span>{% endif %}
   </p>
   {% endfor %}
@@ -16,39 +16,41 @@
 
 <div class="card">
   <p class="meta">ЧТЕНИЕ</p>
-  <form method="post" action="/library/works/{{ work.id }}/status" style="display:flex; gap:8px; flex-wrap:wrap;">
+  <form method="post" action="/library/works/{{ work.id }}/status" class="u-flex u-gap-8 u-wrap">
+    {% include "_csrf.html" %}
     <input type="hidden" name="back" value="/library/works/{{ work.id }}">
-    <button type="submit" name="status" value="reading" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Начал читать</button>
-    <button type="submit" name="status" value="read" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Прочитана</button>
-    <button type="submit" name="status" value="paused" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Пауза</button>
-    <button type="submit" name="status" value="abandoned" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Бросил</button>
-    <button type="submit" name="status" value="unread" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">В очередь</button>
+    <button type="submit" name="status" value="reading" class="u-m-0 u-w-auto u-p-6-12 u-text-11">Начал читать</button>
+    <button type="submit" name="status" value="read" class="u-m-0 u-w-auto u-p-6-12 u-text-11">Прочитана</button>
+    <button type="submit" name="status" value="paused" class="u-m-0 u-w-auto u-p-6-12 u-text-11">Пауза</button>
+    <button type="submit" name="status" value="abandoned" class="u-m-0 u-w-auto u-p-6-12 u-text-11">Бросил</button>
+    <button type="submit" name="status" value="unread" class="u-m-0 u-w-auto u-p-6-12 u-text-11">В очередь</button>
   </form>
-  <p style="margin-top:8px;"><a href="/library/works/{{ work.id }}/history" style="color:var(--primary); font-family:var(--font-mono); font-size:12px;">История чтения</a></p>
+  <p class="u-mt-8"><a href="/library/works/{{ work.id }}/history" class="u-primary u-mono u-text-12">История чтения</a></p>
 </div>
 
 <div class="card">
   <p class="meta">ФАЙЛЫ ({{ work.assets | length }})</p>
   {% for asset in work.assets %}
-  <div style="display:flex; gap:12px; align-items:center; margin:8px 0; flex-wrap:wrap;">
-    <span style="font-family:var(--font-mono); font-size:13px; flex:1; min-width:200px;">
+  <div class="u-flex u-gap-12 u-items-center u-my-8 u-wrap">
+    <span class="u-mono u-text-13 u-grow u-min-200">
       {{ asset.original_filename or asset.storage_path }}
-      <span class="meta">· {{ asset.format }} · {{ asset.kind }}{% if asset.is_preferred %} · <span style="color:var(--secondary);">основной</span>{% endif %}</span>
+      <span class="meta">· {{ asset.format }} · {{ asset.kind }}{% if asset.is_preferred %} · <span class="u-secondary">основной</span>{% endif %}</span>
     </span>
     {% if asset.kind == 'original' %}
     <form method="post" action="/library/assets/{{ asset.id }}/normalize">
-      <button type="submit" style="margin:0; width:auto; padding:6px 12px; font-size:11px;">Нормализовать</button>
+      {% include "_csrf.html" %}
+      <button type="submit" class="u-m-0 u-w-auto u-p-6-12 u-text-11">Нормализовать</button>
     </form>
     {% endif %}
-    <a href="/library/assets/{{ asset.id }}/download" style="color:var(--primary); font-family:var(--font-mono); font-size:12px;">Скачать</a>
+    <a href="/library/assets/{{ asset.id }}/download" class="u-primary u-mono u-text-12">Скачать</a>
   </div>
   {% else %}
   <p class="meta">Файлы не привязаны.</p>
   {% endfor %}
 </div>
 
-<p style="margin-top:24px;">
-  <a href="/library/catalog" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← Каталог</a>
-  · <a href="/library/normalization" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">Нормализация</a>
+<p class="u-mt-24">
+  <a href="/library/catalog" class="u-primary u-mono u-text-13">← Каталог</a>
+  · <a href="/library/normalization" class="u-primary u-mono u-text-13">Нормализация</a>
 </p>
 {% endblock %}

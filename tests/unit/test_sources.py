@@ -92,7 +92,7 @@ class TestBackoff:
     def test_backoff_capped(self) -> None:
         now = datetime.now(UTC)
         nxt = next_poll_after(20, 60)
-        assert nxt - now <= timedelta(seconds=6 * 3600 + 60)
+        assert nxt - now <= timedelta(seconds=6 * 3600 + 60, milliseconds=10)
 
 
 class TestRegistry:

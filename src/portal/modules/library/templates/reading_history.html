@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 style="font-family: var(--font-display); font-weight: 400;">История чтения</h1>
+<h1 class="u-display u-weight-normal">История чтения</h1>
 {% if history %}
-<table style="width:100%; border-collapse:collapse; font-size:14px;">
-  <tr class="meta" style="text-align:left;"><th style="padding:8px 4px;">БЫЛО</th><th>СТАЛО</th><th>ИСТОЧНИК</th><th>КОГДА</th></tr>
+<table class="u-w-full u-collapse u-text-14">
+  <tr class="meta u-text-left"><th class="u-p-8-4">БЫЛО</th><th>СТАЛО</th><th>ИСТОЧНИК</th><th>КОГДА</th></tr>
   {% for h in history %}
-  <tr style="border-top:1px solid var(--outline-variant);">
-    <td style="padding:8px 4px;" class="meta">{{ h.from_status or "—" }}</td>
-    <td style="padding:8px 4px; color:var(--primary);">{{ h.to_status }}</td>
+  <tr class="u-border-top">
+    <td class="u-p-8-4" class="meta">{{ h.from_status or "—" }}</td>
+    <td class="u-p-8-4 u-primary">{{ h.to_status }}</td>
     <td class="meta">{{ h.source }}</td>
     <td class="meta">{{ h.changed_at.strftime("%Y-%m-%d %H:%M") if h.changed_at }}</td>
   </tr>
@@ -16,5 +16,5 @@
 {% else %}
 <div class="card"><p class="meta">История пуста.</p></div>
 {% endif %}
-<p style="margin-top:24px;"><a href="/library/works/{{ work_id }}" style="color:var(--primary); font-family:var(--font-mono); font-size:13px;">← К произведению</a></p>
+<p class="u-mt-24"><a href="/library/works/{{ work_id }}" class="u-primary u-mono u-text-13">← К произведению</a></p>
 {% endblock %}

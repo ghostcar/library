@@ -9,7 +9,6 @@ import pytest
 
 from portal.modules.library.application.import_service import expand_book_archive
 
-
 FB2_BYTES = b"""\
 <?xml version="1.0" encoding="utf-8"?>
 <FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">
@@ -47,10 +46,12 @@ class TestExpandBookArchive:
         assert expand_book_archive(name, content) is None
 
     def test_zip_with_fb2_files(self) -> None:
-        content = _make_zip({
-            "book1.fb2": FB2_BYTES,
-            "book2.fb2": FB2_BYTES.replace(b"Test book", b"Second book"),
-        })
+        content = _make_zip(
+            {
+                "book1.fb2": FB2_BYTES,
+                "book2.fb2": FB2_BYTES.replace(b"Test book", b"Second book"),
+            }
+        )
         result = expand_book_archive("archive.zip", content)
         assert result is not None
         assert len(result) == 2
@@ -59,10 +60,12 @@ class TestExpandBookArchive:
 
     def test_zip_with_mixed_fb2_epub(self) -> None:
         epub_name, epub_content = _make_epub("inside.epub")
-        content = _make_zip({
-            "novel.fb2": FB2_BYTES,
-            epub_name: epub_content,
-        })
+        content = _make_zip(
+            {
+                "novel.fb2": FB2_BYTES,
+                epub_name: epub_content,
+            }
+        )
         result = expand_book_archive("mixed.zip", content)
         assert result is not None
         assert len(result) == 2
@@ -76,11 +79,13 @@ class TestExpandBookArchive:
             expand_book_archive("no-books.zip", content)
 
     def test_skips_hidden_and_macosx(self) -> None:
-        content = _make_zip({
-            ".DS_Store": b"\x00",
-            "__MACOSX/._file": b"\x00",
-            "book.fb2": FB2_BYTES,
-        })
+        content = _make_zip(
+            {
+                ".DS_Store": b"\x00",
+                "__MACOSX/._file": b"\x00",
+                "book.fb2": FB2_BYTES,
+            }
+        )
         result = expand_book_archive("archive.zip", content)
         assert result is not None
         assert len(result) == 1

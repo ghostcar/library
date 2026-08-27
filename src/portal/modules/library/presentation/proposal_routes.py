@@ -10,7 +10,7 @@ from fastapi import APIRouter, Form, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from portal.core.auth.dependencies import CurrentUser
+from portal.core.auth.dependencies import CSRFProtected
 from portal.modules.library.ai.proposal import MatchProposal
 from portal.modules.library.ai.proposal_service import (
     PolicyDecision,
@@ -37,7 +37,7 @@ def _proposal_service(request: Request) -> ProposalService:
 async def propose_for_item(
     request: Request,
     item_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
 ) -> Response:
     service = _proposal_service(request)
     try:
@@ -65,7 +65,7 @@ async def propose_for_item(
 async def apply_proposal(
     request: Request,
     item_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     session: SessionDep,
     author: Annotated[str, Form()] = "",
     title: Annotated[str, Form()] = "",
@@ -101,7 +101,7 @@ async def apply_proposal(
 @router.post("/import/items/{item_id}/apply-auto")
 async def apply_auto(
     item_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     request: Request,
 ) -> RedirectResponse:
     """Apply the cached proposal as-is (auto-apply decision)."""

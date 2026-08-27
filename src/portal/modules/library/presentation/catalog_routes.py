@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Request
@@ -27,11 +28,26 @@ async def catalog_page(
     request: Request,
     current: CurrentUser,
     session: SessionDep,
+    q: str = "",
 ) -> HTMLResponse:
     from portal.modules.library.infrastructure.import_repositories import CatalogQueries
 
     queries = CatalogQueries(session)
     works = await queries.works_with_authors(current.user.id)
+    needle = q.strip().casefold()
+    if needle:
+        works = [
+            work
+            for work in works
+            if needle in str(work["title"]).casefold()
+            or any(
+                needle in str(author).casefold() for author in cast("list[str]", work["authors"])
+            )
+            or any(
+                needle in str(series["title"]).casefold()
+                for series in cast("list[dict[str, Any]]", work["series"])
+            )
+        ]
     counts = await queries.counts(current.user.id)
     return _templates.TemplateResponse(
         request,
@@ -41,6 +57,7 @@ async def catalog_page(
             "title": "Каталог — Библиотека",
             "works": works,
             "counts": counts,
+            "query": q,
         },
     )
 

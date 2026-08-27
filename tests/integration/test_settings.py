@@ -7,12 +7,11 @@ from typing import Any
 import httpx
 import pytest
 
-from portal.core.config.config import get_settings
 from portal.core.auth.dependencies import CSRF_COOKIE
 
 EMAIL = "settings-test@example.com"
-PASSWORD = "test-password-123"
-NEW_PASSWORD = "brand-new-password-12345"
+PASSWORD = "test-password-123"  # noqa: S105 - synthetic test credential
+NEW_PASSWORD = "brand-new-password-12345"  # noqa: S105 - synthetic test credential
 
 
 @pytest.fixture
@@ -20,6 +19,7 @@ async def authed(app: Any, client: httpx.AsyncClient) -> httpx.AsyncClient:
     resp = await client.post("/auth/register", json={"email": EMAIL, "password": PASSWORD})
     assert resp.status_code == 201
     assert "library_csrf" in client.cookies
+    client.headers["x-csrf-token"] = client.cookies["library_csrf"]
     return client
 
 
@@ -28,7 +28,8 @@ async def test_settings_page_requires_auth(app: Any) -> None:
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         resp = await c.get("/library/settings", follow_redirects=False)
-    assert resp.status_code in {307, 401}
+    assert resp.status_code == 303
+    assert resp.headers["location"].startswith("/login?next=")
 
 
 @pytest.mark.anyio
@@ -107,6 +108,7 @@ async def test_change_password_success(app: Any, authed: httpx.AsyncClient) -> N
 
 @pytest.mark.anyio
 async def test_change_password_no_csrf(app: Any, authed: httpx.AsyncClient) -> None:
+    del authed.headers["x-csrf-token"]
     resp = await authed.post(
         "/library/settings/password",
         data={

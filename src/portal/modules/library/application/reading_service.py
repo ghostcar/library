@@ -72,7 +72,7 @@ class ReadingStateService:
                     source=source.value,
                 ),
             )
-            await self._emit(owner_id, work_id, new_status)
+            await self._emit(session, owner_id, work_id, new_status)
             return StatusChange(work_id, from_status, new_status)
 
     async def mark_read_bulk(
@@ -219,10 +219,15 @@ class ReadingStateService:
                     )
             return queue[:limit]
 
-    async def _emit(self, owner_id: UUID, work_id: UUID, status: ReadingStatus) -> None:
-        async with self._session_factory() as session, session.begin():
-            outbox = OutboxRepository(session)
-            await outbox.enqueue(
-                "BookMarkedRead" if status is ReadingStatus.READ else "SeriesProgressChanged",
-                {"owner_id": str(owner_id), "work_id": str(work_id), "status": status.value},
-            )
+    async def _emit(
+        self,
+        session: AsyncSession,
+        owner_id: UUID,
+        work_id: UUID,
+        status: ReadingStatus,
+    ) -> None:
+        outbox = OutboxRepository(session)
+        await outbox.enqueue(
+            "BookMarkedRead" if status is ReadingStatus.READ else "SeriesProgressChanged",
+            {"owner_id": str(owner_id), "work_id": str(work_id), "status": status.value},
+        )

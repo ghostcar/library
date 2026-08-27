@@ -167,6 +167,22 @@ class TestLogout:
 
 
 class TestCSRF:
+    async def test_library_form_without_csrf_is_rejected(
+        self,
+        client: httpx.AsyncClient,
+    ) -> None:
+        await _register(client)
+        response = await client.post("/library/notifications/read-all")
+        assert response.status_code == 403
+
+        csrf = client.cookies["library_csrf"]
+        accepted = await client.post(
+            "/library/notifications/read-all",
+            data={"csrf_token": csrf},
+            follow_redirects=False,
+        )
+        assert accepted.status_code == 303
+
     async def test_cookie_auth_unsafe_request_without_header_rejected(
         self,
         client: httpx.AsyncClient,
@@ -311,6 +327,35 @@ class TestSSR:
 
 
 class TestJobsAndOutbox:
+    async def test_stale_running_job_is_requeued(self, client: httpx.AsyncClient) -> None:
+        from datetime import UTC, datetime, timedelta
+
+        from sqlalchemy import update
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from portal.core.jobs.orm import JobModel, JobStatus
+        from portal.core.jobs.repository import JobRepository
+
+        session_factory: async_sessionmaker = client._transport.app.state.container[
+            "session_factory"
+        ]
+        async with session_factory() as session, session.begin():
+            repo = JobRepository(session)
+            job_id = await repo.enqueue("noop", {})
+            await repo.claim_batch("dead-worker")
+            await session.execute(
+                update(JobModel)
+                .where(JobModel.id == job_id)
+                .values(locked_at=datetime.now(UTC) - timedelta(hours=1)),
+            )
+
+        async with session_factory() as session, session.begin():
+            assert await JobRepository(session).requeue_stale(timeout_seconds=900) == 1
+        async with session_factory() as session:
+            job = await JobRepository(session).get(job_id)
+            assert job is not None
+            assert job.status == JobStatus.QUEUED.value
+
     async def test_job_claim_and_complete(self, client: httpx.AsyncClient) -> None:
         from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -356,3 +401,23 @@ class TestJobsAndOutbox:
 
         async with session_factory() as session:
             assert await OutboxRepository(session).count_pending() == 0
+
+    async def test_worker_drains_outbox_and_retention_is_async(
+        self,
+        client: httpx.AsyncClient,
+    ) -> None:
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+
+        from portal.core.events.repository import OutboxRepository
+        from portal.core.jobs.worker import process_outbox
+        from portal.core.retention import run_retention
+
+        session_factory: async_sessionmaker = client._transport.app.state.container[
+            "session_factory"
+        ]
+        async with session_factory() as session, session.begin():
+            await OutboxRepository(session).enqueue("BookMarkedRead", {"work_id": "test"})
+        assert await process_outbox(session_factory) == 1
+        async with session_factory() as session:
+            assert await OutboxRepository(session).count_pending() == 0
+        assert await run_retention(session_factory) >= 0

@@ -37,6 +37,8 @@ index/
 *.azw3
 /storage/
 /data/
+/backups/
+/build/
 
 # OS / editor
 .DS_Store

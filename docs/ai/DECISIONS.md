@@ -17,3 +17,5 @@
 | 0011 | accepted | Source monitoring: OPDS-адаптер реализован, AT/Litnet/Flibusta отключены до исследования; scheduler+backoff+degraded; уведомления только на переходы |
 | 0012 | accepted | OPDS 1.2 delivery: Basic auth с device token (пароль), сериализатор отдельным модулем, preferred assets в acquisition |
 | 0013 | accepted | Токены в CSS (обе темы) + UI kit dev-only; security headers/CSP; Docker-образ multi-stage non-root; backup/restore round-trip |
+| 0014 | accepted | Модель auto/best-free и деплой в GHCR |
+| 0015 | accepted | Audit remediation: HTML errors, transactional outbox, recoverable jobs, local SVG icons |

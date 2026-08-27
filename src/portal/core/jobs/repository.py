@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -55,6 +55,25 @@ class JobRepository:
                 .values(status=JobStatus.RUNNING.value, locked_at=datetime.now(UTC)),
             )
         return jobs
+
+    async def requeue_stale(self, timeout_seconds: int = 900) -> int:
+        """Recover jobs left running after a worker crash."""
+        cutoff = datetime.now(UTC) - timedelta(seconds=timeout_seconds)
+        result = await self._session.execute(
+            update(JobModel)
+            .where(
+                JobModel.status == JobStatus.RUNNING.value,
+                JobModel.locked_at < cutoff,
+            )
+            .values(
+                status=JobStatus.QUEUED.value,
+                run_at=datetime.now(UTC),
+                locked_at=None,
+                last_error="requeued after stale worker lock",
+                updated_at=datetime.now(UTC),
+            ),
+        )
+        return int(getattr(result, "rowcount", 0))
 
     async def mark_done(self, job_id: UUID) -> None:
         await self._session.execute(

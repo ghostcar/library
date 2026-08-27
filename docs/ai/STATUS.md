@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-26 (сессия 13: settings + ZIP import)
+Последняя проверка: 2026-08-27 (audit remediation: security, reliability, frontend shell)
 
 ## Фазы мастер-промпта (§20)
 
@@ -16,7 +16,7 @@
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; has_new_release — Phase 6 |
 | Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
-| Phase 8. Design convergence | `IMPLEMENTED` | tokens.css/components.css (Astral+Solar), UI kit dev-only, security headers, a11y; Tailwind-сборка — TECH_DEBT#4 |
+| Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
 | Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:053c145, https://library.gorbunovr.ru, данные перенесены, LLM live, settings+ZIP |
 
 ## Компоненты
@@ -29,21 +29,22 @@
 | Core: module registry | `IMPLEMENTED` | src/portal/core/module_registry |
 | Core: auth (users, JWT, refresh/device, CSRF+forms, rate limit) | `IMPLEMENTED` | src/portal/core/auth (ADR-0006, CSRF accepts form field) |
 | Core: audit log | `IMPLEMENTED` | src/portal/core/audit |
-| Core: outbox (transactional) | `IMPLEMENTED` | src/portal/core/events |
-| Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | src/portal/core/jobs |
+| Core: outbox (transactional) | `IMPLEMENTED` | события пишутся в транзакции use case; worker обрабатывает pending events |
+| Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | claim до handler; stale running jobs requeue через 15 мин |
 | Core: storage port + local adapter | `IMPLEMENTED` | src/portal/core/storage |
+| Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
 | Alembic 0001+0002 | `IMPLEMENTED` | migrations/versions/ |
 | Auth SSR (login, защищённая /library, logout, settings) | `IMPLEMENTED` | src/portal/web (password change, CSRF-защищённый logout) |
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |
-| Tailwind/UI shell | `ABSENT` | Phase 2+ (сейчас inline CSS) |
+| UI shell | `IMPLEMENTED` | desktop sidebar + mobile bottom nav + local SVG sprite; локальные CSS components/utilities, без inline CSS |
 | Импорт: upload (FB2/EPUB/ZIP) + local dirs | `IMPLEMENTED` | ImportService + expand_book_archive, ADR-0007 |
 | Каталог UI (список, карточка) | `IMPLEMENTED` | /library/catalog, /library/works/{id} |
 | Import inbox UI | `IMPLEMENTED` | /library/import (upload, scan, unmatched, duplicates) |
 | Duplicate candidates | `IMPLEMENTED` | exact_content + same_work_format; review — Phase 3 |
-| Watched inbox directory | `ABSENT` | Phase 6 (нужен scheduler) |
+| Watched inbox directory | `IMPLEMENTED` | opt-in worker poll; explicit roots+owner; stability window; bounded/idempotent import |
 | Нормализатор FB2/EPUB | `IMPLEMENTED` | normalizer/, NormalizationService (ADR-0008) |
 | Очередь нормализации + отчёты | `IMPLEMENTED` | /library/normalization, /library/normalization/{id} |
 | Download с Content-Disposition | `IMPLEMENTED` | /library/assets/{id}/download |
@@ -70,7 +71,7 @@
 | Backup/restore | `IMPLEMENTED` | scripts/backup.sh, restore.sh; round-trip пройден |
 | Nginx конфиг | `IMPLEMENTED` | deploy/nginx/library.conf (применён владельцем) |
 | LLM live (auto/best-free) | `IMPLEMENTED` | propose работает в проде; ретрай на cold-start |
-| Нормализатор / AI / source adapters / OPDS | `ABSENT` | Phase 3–7 |
+| Browser error UX + CSRF forms | `IMPLEMENTED` | 401 → login; portal HTML errors; unsafe library forms CSRF-protected |
 
 ## Инфраструктурные факты
 

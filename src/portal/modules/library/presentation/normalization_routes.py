@@ -5,12 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from portal.core.auth.dependencies import CurrentUser
+from portal.core.auth.dependencies import CSRFProtected, CurrentUser
 from portal.modules.library.application.normalization_service import (
     AssetNotFoundError,
     NormalizationError,
@@ -87,7 +87,7 @@ async def run_report(
 async def request_normalization(
     request: Request,
     asset_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     session: SessionDep,
     profile: str = "prose_compact",
 ) -> RedirectResponse:
@@ -98,8 +98,10 @@ async def request_normalization(
             asset_id,
             nz.ProfileName(profile),
         )
-    except (AssetNotFoundError, NormalizationError, KeyError):
-        return RedirectResponse("/library/normalization", status_code=303)
+    except AssetNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="asset not found") from exc
+    except (NormalizationError, KeyError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="normalization request rejected") from exc
 
     if not result.idempotent:
         from portal.core.jobs.repository import JobRepository
@@ -115,12 +117,13 @@ async def request_normalization(
 @router.post("/normalization/{run_id}/prefer")
 async def prefer_derivative(
     run_id: UUID,
-    current: CurrentUser,
+    current: CSRFProtected,
     session: SessionDep,
     request: Request,
 ) -> RedirectResponse:
     service = _normalization_service(request)
-    await service.prefer_derivative(current.user.id, run_id)
+    if not await service.prefer_derivative(current.user.id, run_id):
+        raise HTTPException(status_code=404, detail="normalization run not found")
     return RedirectResponse(f"/library/normalization/{run_id}", status_code=303)
 
 
