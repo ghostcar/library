@@ -3,6 +3,28 @@
 <h1 class="u-display u-weight-normal">Источники</h1>
 
 <div class="card">
+  <p class="meta">НАСТРОЙКИ ИСТОЧНИКОВ</p>
+  <div class="u-grid u-card-grid u-gap-12">
+    <div><p class="u-m-0 u-display u-text-17">Наблюдаемые OPDS</p><p class="meta">Каталоги и feeds для metadata/acquisition.</p></div>
+    <div><p class="u-m-0 u-display u-text-17">Наблюдаемые сайты</p><p class="meta">HTML-страницы авторов, серий и книг.</p></div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="meta">ДОБАВИТЬ ENDPOINT</p>
+  <form method="post" action="/library/sources/endpoints" class="u-flex u-gap-8 u-wrap u-items-end">
+    {% include "_csrf.html" %}
+    <div><label for="endpoint-name">Название</label><input id="endpoint-name" name="name" required placeholder="Flibusta OPDS"></div>
+    <div><label for="source-type">Тип</label><select id="source-type" name="source_type"><option value="opds">OPDS</option><option value="html">Сайт</option></select></div>
+    <div><label for="role">Роль</label><select id="role" name="role"><option value="metadata">Metadata</option><option value="acquisition">Acquisition</option><option value="metadata+acquisition">Обе</option></select></div>
+    <input type="hidden" name="adapter_id" value="opds">
+    <div class="u-grow u-min-220"><label for="endpoint-url">URL</label><input id="endpoint-url" name="url" type="url" required></div>
+    <button type="submit" class="u-m-0 u-w-auto">Сохранить</button>
+  </form>
+</div>
+{% if endpoints %}<div class="card"><p class="meta">СОХРАНЁННЫЕ ENDPOINTS</p>{% for e in endpoints %}<div class="u-flex u-gap-10 u-wrap u-items-baseline u-my-6"><span class="u-mono u-text-13">{{ e.name }}</span><span class="chip">{{ e.source_type }}</span><span class="chip">{{ e.role }}</span><span class="meta">{{ e.url }}</span></div>{% endfor %}</div>{% endif %}
+
+<div class="card">
   <p class="meta">АДАПТЕРЫ</p>
   {% for a in adapters %}
   <div class="u-flex u-gap-10 u-items-baseline u-my-6 u-wrap">
@@ -28,6 +50,7 @@
   <form method="post" action="/library/sources/rules" class="u-flex u-gap-8 u-wrap u-items-end">
     {% include "_csrf.html" %}
     <div class="u-min-180">
+      {% if endpoints %}<label for="endpoint-id">Endpoint (необязательно)</label><select id="endpoint-id" name="endpoint_id"><option value="">Новый URL</option>{% for e in endpoints %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select>{% endif %}
       <label for="adapter_id">Профиль источника</label>
       <select id="adapter_id" name="adapter_id">
         <option value="opds">Общий OPDS</option>
