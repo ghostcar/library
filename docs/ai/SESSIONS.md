@@ -173,3 +173,12 @@
 - `scripts/test.sh` теперь применяет `alembic upgrade head` перед тестами.
 - Проверено: lint clean, targeted 30 passed, полный набор 263 passed.
 - Outbox-срез ещё не развёрнут; текущий Test VPS остаётся на `b7351b2`.
+
+## Сессия 19 — 2026-08-28 — source observation links + deploy
+
+- Наблюдения источников получают owner-scoped nullable links на Work/Series и match evidence;
+  неоднозначные совпадения не связываются.
+- SeriesStateService вычисляет `last_observed`, `has_new_release`, `waiting_release`.
+- Проверено: полный набор 263 теста, Ruff и diff-check clean.
+- Деплой `33633da`: backup `20260828-023347`, миграции `0008→0010`, web/worker healthy,
+  health/ready/auth redirect/icons smoke OK.

@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:b7351b2 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-27** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:33633da | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-28** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -63,3 +63,11 @@ docker compose -f compose.yaml -f compose.dev.yaml up -d   # postgres
 .venv/bin/alembic upgrade head
 scripts/dev.sh
 ```
+
+## Деплой 2026-08-28 — source observation links
+
+- Git/SHA: `33633da`; GHCR digest: `sha256:6d1392f55808ba9a160880e1abafe7f6941138fc7ad81c360eda286fbbe341d5`.
+- Backup: `backups/pre-deploy/*-20260828-023347.*`, gzip/tar и manifest проверены.
+- Миграции `0008 → 0009 → 0010` применены до переключения web/worker.
+- Post-deploy: web healthy, worker running, `/healthz`/`/readyz` 200, `/library/` 303,
+  `/static/icons/sprite.svg` 200.
