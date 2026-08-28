@@ -9,8 +9,10 @@ from uuid import UUID
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 
 from portal.core.auth.dependencies import CurrentUser
+from portal.modules.library.adapters.source_orm import SourceEndpointModel, SourceLinkModel
 from portal.web.deps import SessionDep
 
 router = APIRouter()
@@ -21,6 +23,17 @@ _templates = Jinja2Templates(
         str(Path(__file__).resolve().parents[3] / "web" / "templates"),
     ],
 )
+
+
+async def _sources(
+    session: Any, owner_id: UUID, kind: str, entity_id: UUID
+) -> list[dict[str, str]]:
+    rows = (await session.execute(select(SourceLinkModel, SourceEndpointModel).join(
+        SourceEndpointModel, SourceEndpointModel.id == SourceLinkModel.source_endpoint_id
+    ).where(SourceLinkModel.owner_id == owner_id, SourceLinkModel.entity_type == kind,
+            SourceLinkModel.entity_id == entity_id))).all()
+    return [{"name": endpoint.name, "role": link.role, "url": link.external_url or endpoint.url}
+            for link, endpoint in rows]
 
 
 @router.get("/catalog", response_class=HTMLResponse)
@@ -79,6 +92,7 @@ async def work_page(
             {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
             status_code=404,
         )
+    detail["sources"] = await _sources(session, current.user.id, "work", work_id)
     return _templates.TemplateResponse(
         request,
         "work_detail.html",
@@ -113,4 +127,5 @@ async def author_page(
         )
     return _templates.TemplateResponse(request, "author.html", {
         "user": current.user, "title": "Автор — Библиотека", "works": works, "author_id": author_id,
+        "sources": await _sources(session, current.user.id, "author", author_id),
     })
