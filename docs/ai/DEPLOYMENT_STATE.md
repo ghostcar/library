@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:33633da | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-28** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:a4859e7 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-28** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -71,3 +71,9 @@ scripts/dev.sh
 - Миграции `0008 → 0009 → 0010` применены до переключения web/worker.
 - Post-deploy: web healthy, worker running, `/healthz`/`/readyz` 200, `/library/` 303,
   `/static/icons/sprite.svg` 200.
+
+## Деплой 2026-08-28 — responsive navigation
+
+- Git/SHA: `a4859e7`; GHCR digest: `sha256:5debcb30c8f87f77b7d7669b75a17e8bf031941c178033077c9855994c7ff0d3`.
+- Backup: `backups/pre-deploy/*-20260828-024823.*`; миграций нет.
+- Web/worker переключены, health/ready 200, root redirect 303, SVG icon pack 200.

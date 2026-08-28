@@ -196,3 +196,4 @@
   в topbar для Источников/Уведомлений/OPDS/Настроек.
 - Добавлена иконка menu в локальный SVG sprite, fixture исправлен на существующие icon ids.
 - Chromium smoke: 1280×800 и 390×844 — OK.
+- Деплой `a4859e7`: backup `20260828-024823`, web/worker healthy, HTTP smoke OK.
