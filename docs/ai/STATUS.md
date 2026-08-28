@@ -14,7 +14,7 @@
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `IMPLEMENTED` | auto/best-free, ретрай на cold-start, live propose в проде, кэш, corrections, UI propose/apply |
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; derived source evidence включено |
-| Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled (ADR-0011) |
+| Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; formal adapter contracts; AT/Litnet/Flibusta — disabled (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
 | Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:b7351b2, schema 0008, https://library.gorbunovr.ru |
@@ -72,6 +72,7 @@
 | Nginx конфиг | `IMPLEMENTED` | deploy/nginx/library.conf (применён владельцем) |
 | LLM live (auto/best-free) | `IMPLEMENTED` | propose работает в проде; ретрай на cold-start |
 | Browser error UX + CSRF forms | `IMPLEMENTED` | 401 → login; portal HTML errors; unsafe library forms CSRF-protected |
+| Formal adapter contracts | `IMPLEMENTED` | `application/contracts.py`: capabilities, source/import/notification Protocols, registration validation |
 
 ## Инфраструктурные факты
 

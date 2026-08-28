@@ -182,3 +182,10 @@
 - Проверено: полный набор 263 теста, Ruff и diff-check clean.
 - Деплой `33633da`: backup `20260828-023347`, миграции `0008→0010`, web/worker healthy,
   health/ready/auth redirect/icons smoke OK.
+
+## Сессия 20 — 2026-08-28 — formal adapter contracts
+
+- Добавлен `application/contracts.py`: capabilities, Protocol-контракты source/import/notifications,
+  регистрационная валидация.
+- OPDS получил стабильный adapter id; неготовые интеграции не включались.
+- Ruff clean, 26 targeted tests passed.

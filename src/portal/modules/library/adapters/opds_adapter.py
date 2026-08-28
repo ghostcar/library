@@ -83,6 +83,7 @@ class OPDSAdapter:
     """SourceAdapter implementation for OPDS 1.2 feeds."""
 
     client: httpx.AsyncClient | None = None
+    id: str = "opds"
     capabilities: SourceCapabilities = field(
         default_factory=lambda: SourceCapabilities(
             author_updates=True,
