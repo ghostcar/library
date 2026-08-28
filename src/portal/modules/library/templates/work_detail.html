@@ -2,6 +2,7 @@
 {% block content %}
 <h1 class="u-display u-weight-normal">{{ work.title }}</h1>
 <p class="meta">{{ work.authors | map(attribute='name') | join(", ") if work.authors else "Автор не указан" }}</p>
+{% if work.sources %}<div class="card"><p class="meta">ИСТОЧНИКИ</p>{% for source in work.sources %}<p class="u-my-4"><span class="chip">{{ source.role }}</span> <a href="{{ source.url }}" rel="noreferrer noopener">{{ source.name }}</a></p>{% endfor %}</div>{% endif %}
 
 {% if work.series %}
 <div class="card">
