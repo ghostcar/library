@@ -14,7 +14,7 @@
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `IMPLEMENTED` | auto/best-free, ретрай на cold-start, live propose в проде, кэш, corrections, UI propose/apply |
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; derived source evidence включено |
-| Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; formal adapter contracts; AT/Litnet/Flibusta — disabled (ADR-0011) |
+| Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, включая Flibusta metadata-only профиль, scheduler/backoff/degraded, watch rules, уведомления; HTML-источники остаются disabled |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
 | Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:41a9068, schema 0010, https://library.gorbunovr.ru |
@@ -57,7 +57,8 @@
 | OPDS source adapter | `IMPLEMENTED` | adapters/opds_adapter.py, conditional GET, XXE-тест |
 | Watch rules + scheduler | `IMPLEMENTED` | watch_rules, worker tick 30s, backoff+jitter, degraded |
 | In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
-| Author.Today/Litnet/Flibusta | `ABSENT` | отключены в реестре с причинами (ADR-0011, OPEN_QUESTIONS #9/#10) |
+| Author.Today/Litnet | `ABSENT` | отключены в реестре до исследования API/HTML и правовых ограничений (ADR-0011) |
+| Flibusta OPDS metadata | `IMPLEMENTED` | отдельный профиль поверх OPDS; acquisition=false, фоновые скачивания отсутствуют |
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
 | OPDS download | `IMPLEMENTED` | /opds/download/{id}, Content-Disposition, preferred→normalized→original |
 | OPDS UI (токены) | `IMPLEMENTED` | /library/opds-settings |

@@ -203,3 +203,9 @@
 - В карточки циклов добавлены chips `новый релиз`, `ждём продолжение`, `последнее наблюдение`.
 - В деталях цикла добавлен доступный disclosure evidence наблюдений.
 - Деплой `41a9068`: backup `20260828-034009`, web/worker healthy, HTTP smoke OK.
+
+## Сессия 23 — 2026-08-28 — Flibusta OPDS metadata-only
+
+- Flibusta включена отдельным профилем generic OPDS с metadata/author/series
+  capabilities и `acquisition=false`.
+- В форме источников добавлен выбор `Flibusta (metadata-only)`; фоновых скачиваний нет.

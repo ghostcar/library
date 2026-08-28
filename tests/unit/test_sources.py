@@ -96,12 +96,14 @@ class TestBackoff:
 
 
 class TestRegistry:
-    def test_opds_enabled_others_disabled_with_reason(self) -> None:
+    def test_opds_profiles_and_html_adapters(self) -> None:
         adapters = {a.id: a for a in list_adapters()}
         assert adapters["opds"].enabled
         assert not adapters["author_today"].enabled
         assert adapters["author_today"].reason
-        assert not adapters["flibusta"].enabled
+        assert adapters["flibusta"].enabled
+        assert adapters["flibusta"].capabilities.metadata
+        assert not adapters["flibusta"].capabilities.acquisition
 
     def test_capabilities_distinct_from_acquisition(self) -> None:
         opds = get_adapter_descriptor("opds")

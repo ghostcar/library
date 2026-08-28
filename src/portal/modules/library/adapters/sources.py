@@ -124,8 +124,14 @@ register_adapter(
     AdapterDescriptor(
         id=SourceKind.FLIBUSTA.value,
         title="Flibusta",
-        enabled=False,
-        reason=("нет официального API; правовые ограничения — не реализуем без отдельного решения"),
-        capabilities=SourceCapabilities(),
+        enabled=True,
+        reason="",
+        capabilities=SourceCapabilities(
+            author_updates=True,
+            series_listing=True,
+            metadata=True,
+            acquisition=False,
+            authentication="none",
+        ),
     ),
 )

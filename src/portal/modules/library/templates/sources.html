@@ -27,7 +27,13 @@
   <p class="meta">ДОБАВИТЬ НАБЛЮДЕНИЕ (OPDS-лента)</p>
   <form method="post" action="/library/sources/rules" class="u-flex u-gap-8 u-wrap u-items-end">
     {% include "_csrf.html" %}
-    <input type="hidden" name="adapter_id" value="opds">
+    <div class="u-min-180">
+      <label for="adapter_id">Профиль источника</label>
+      <select id="adapter_id" name="adapter_id">
+        <option value="opds">Общий OPDS</option>
+        <option value="flibusta">Flibusta (metadata-only)</option>
+      </select>
+    </div>
     <div class="u-grow u-min-160">
       <label for="name">Название</label>
       <input id="name" name="name" required placeholder="Моя полка FB">

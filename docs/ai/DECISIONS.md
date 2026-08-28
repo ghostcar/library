@@ -21,3 +21,4 @@
 | 0015 | accepted | Audit remediation: HTML errors, transactional outbox, recoverable jobs, local SVG icons |
 | 0016 | accepted | Typed outbox registry, bounded exponential retry и migration 0009 |
 | 0017 | accepted | Formal adapter contracts и explicit capability registration |
+| 0018 | accepted | Flibusta подключается как OPDS metadata-only профиль без фонового acquisition |
