@@ -251,4 +251,5 @@
 - Добавлен fail-closed HTML parser v1, conditional GET, 5 MiB guard и URL allowlist.
 - Quiet baseline предотвращает flood старых книг; update time/status образуют revision event.
 - Проверено: live page parsed (30 works), targeted 23 unit + 7 integration, full 281 passed.
-- Production не менялся: image `a531fd1`, schema `0012`.
+- Деплой `8bc0f60`: backup `20260828-063254`, schema `0012`, web healthy/worker running.
+- Local/external и authenticated sources UI smoke — OK; rollback image `a531fd1`.

@@ -128,7 +128,7 @@
   https://library.gorbunovr.ru.
 - Развёрнуты endpoint CRUD, preferred/inherited sources и schema 0012.
 
-## 2026-08-28 (Author.Today adapter, not deployed)
+## 2026-08-28 (Author.Today adapter, deployed)
 
 - В настройках источников добавлен metadata-only профиль Author.Today для публичной
   страницы произведений автора.

@@ -1,6 +1,6 @@
 # TaskContext: Author.Today public metadata adapter
 
-- Status: completed (code/tests; deployment pending explicit command)
+- Status: completed_and_deployed
 - Goal: observe public Author.Today author work pages for new/updated works without authentication or content acquisition.
 - Safety boundary:
   - only public `/u/<slug>/works` pages allowed by current robots.txt;
@@ -21,4 +21,4 @@
   - quiet initial baseline plus revision notifications for later update/status changes;
   - WatchService dispatches by adapter and stores per-adapter parser version;
   - 23 targeted unit + 7 integration passed; full suite 281 passed;
-  - repository-only change; deployed image remains `a531fd1`.
+  - deployed image `8bc0f60`, schema `0012`; backup `20260828-063254` and smoke OK.

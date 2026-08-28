@@ -4,15 +4,15 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:a531fd1 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-28** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:8bc0f60 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-28** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
 
 ### Pending, не развёрнуто
 
-- Нет: source-management release `a531fd1` развёрнут, production schema `0012`.
-- HTML endpoints пока декларативны; actual HTML polling adapter — будущий code slice.
+- Нет: Author.Today metadata release `8bc0f60` развёрнут, production schema `0012`.
+- Generic HTML/Litnet polling остаются будущими срезами.
 
 ## Окружение VPS (факты 2026-08-25)
 
@@ -99,3 +99,14 @@ scripts/dev.sh
 - Web/worker переключены на `a531fd1`; web healthy, worker running, schema `0012`.
 - Smoke: local health/ready, no-auth redirect, SVG/security headers и внешний HTTPS health — OK.
 - Rollback image: `ghcr.io/ghostcar/library:41a9068`; DB rollback только restore backup.
+
+## Деплой 2026-08-28 — Author.Today metadata
+
+- Git/SHA: `8bc0f60`; GHCR digest:
+  `sha256:9ba4eae181b8402ab2e119feee7d9384f01455a4d827f07c150f8cde2f6735af`.
+- Backup: `backups/pre-deploy/*-20260828-063254.*`; DB/storage gzip, tar listing
+  и manifest проверены; schema осталась `0012` (миграций нет).
+- Web/worker переключены на `8bc0f60`; web healthy, worker running.
+- Smoke: health/ready, external HTTPS, auth redirect и authenticated sources UI — OK;
+  Author.Today profile/options присутствуют, ошибок в логах нет.
+- Rollback image: `ghcr.io/ghostcar/library:a531fd1`; схема совместима.
