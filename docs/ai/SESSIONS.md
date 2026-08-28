@@ -244,3 +244,11 @@
 - Проверенный backup `20260828-060545` создан на schema 0010.
 - Миграции 0011/0012 применены до переключения; web/worker работают на `a531fd1`.
 - Local/external health, ready, auth redirect, SVG/security headers и логи — OK.
+
+## Сессия 28 — 2026-08-28 — Author.Today public metadata adapter
+
+- Исследованы robots.txt, публичная works page и условия; граница зафиксирована ADR-0019.
+- Добавлен fail-closed HTML parser v1, conditional GET, 5 MiB guard и URL allowlist.
+- Quiet baseline предотвращает flood старых книг; update time/status образуют revision event.
+- Проверено: live page parsed (30 works), targeted 23 unit + 7 integration, full 281 passed.
+- Production не менялся: image `a531fd1`, schema `0012`.

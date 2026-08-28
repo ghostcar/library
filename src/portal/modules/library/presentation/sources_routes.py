@@ -42,6 +42,7 @@ async def sources_page(
 ) -> HTMLResponse:
     service = _watch_service(request)
     rules = await service.list_rules(current.user.id)
+    enabled_adapter_ids = {adapter.id for adapter in list_adapters() if adapter.enabled}
     endpoints = list(
         (
             await session.execute(
@@ -60,6 +61,11 @@ async def sources_page(
             "adapters": list_adapters(),
             "rules": rules,
             "endpoints": endpoints,
+            "watch_endpoints": [
+                endpoint
+                for endpoint in endpoints
+                if endpoint.enabled and endpoint.adapter_id in enabled_adapter_ids
+            ],
             "error": request.query_params.get("error"),
         },
     )
@@ -205,8 +211,10 @@ async def create_endpoint(
         or urlparse(clean_url).scheme not in {"http", "https"}
     ):
         return RedirectResponse("/library/sources?error=endpoint", status_code=303)
-    allowed_adapters = {"opds", "flibusta"} if source_type == "opds" else {"html"}
+    allowed_adapters = {"opds", "flibusta"} if source_type == "opds" else {"html", "author_today"}
     if adapter_id not in allowed_adapters:
+        return RedirectResponse("/library/sources?error=endpoint", status_code=303)
+    if adapter_id == "author_today" and role != "metadata":
         return RedirectResponse("/library/sources?error=endpoint", status_code=303)
     session.add(
         SourceEndpointModel(

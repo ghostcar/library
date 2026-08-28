@@ -99,8 +99,10 @@ class TestRegistry:
     def test_opds_profiles_and_html_adapters(self) -> None:
         adapters = {a.id: a for a in list_adapters()}
         assert adapters["opds"].enabled
-        assert not adapters["author_today"].enabled
-        assert adapters["author_today"].reason
+        assert adapters["author_today"].enabled
+        assert adapters["author_today"].capabilities.metadata
+        assert adapters["author_today"].capabilities.work_status
+        assert not adapters["author_today"].capabilities.acquisition
         assert adapters["flibusta"].enabled
         assert adapters["flibusta"].capabilities.metadata
         assert not adapters["flibusta"].capabilities.acquisition

@@ -9,7 +9,7 @@
 | 3 | ЗАКРЫТО 2026-08-26: владелец выдал валидный ключ — LLM live работает в проде. | — | — | 2026-08-26 |
 | 4 | ЗАКРЫТО 2026-08-26: DNS добавлен, https://library.gorbunovr.ru работает через Cloudflare. | — | — | 2026-08-26 |
 | 5 | ЗАКРЫТО 2026-08-26: один агент — атомарные коммиты в main (Conventional Commits), feature-ветки опционально для рискованных задач. | Git workflow | — | 2026-08-26 |
-| 9 | Author.Today: исследование официального API (авторизация, rate limits, допустимость наблюдения). Решить до включения адаптера. | ADR-0011 | low | 2026-08-26 |
+| 9 | ЗАКРЫТО 2026-08-28: выбран публичный HTML metadata-only adapter без auth/private API/content; минимум 30 минут, quiet baseline, ADR-0019. | ADR-0011/0019 | — | 2026-08-26 |
 | 10 | Litnet: правовая и техническая оценка HTML-наблюдения (selectors versioning, fixtures) или отказ. Flibusta решена как OPDS metadata-only (ADR-0018). | ADR-0011/0018 | low | 2026-08-26 |
 | 11 | ЗАКРЫТО 2026-08-28: preferred хранится на `SourceLink` отдельно для каждой роли; metadata/acquisition разрешаются независимо по цепочке `work > series > author > global`. | source_links, migration 0012 | — | 2026-08-28 |
 | 7 | SSO между поддоменами *.gorbunovr.ru и миграция tracker'а на общую auth: общий домен cookie или RS256/JWKS? Решить при появлении второго web-сервиса. | ADR-0006 | low | 2026-08-25 |

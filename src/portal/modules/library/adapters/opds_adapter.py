@@ -15,6 +15,7 @@ from lxml import etree
 
 from portal.modules.library.adapters.sources import (
     FetchResult,
+    SourceAdapterError,
     SourceCapabilities,
     SourceEntry,
 )
@@ -27,7 +28,7 @@ _OPDS_NS = "http://opds-spec.org/2010/catalog"
 _MAX_FEED_BYTES = 5 * 1024 * 1024  # guard against huge/malicious feeds
 
 
-class OPDSParseError(ValueError):
+class OPDSParseError(SourceAdapterError):
     pass
 
 
@@ -84,6 +85,7 @@ class OPDSAdapter:
 
     client: httpx.AsyncClient | None = None
     id: str = "opds"
+    parser_version: str = PARSER_VERSION
     capabilities: SourceCapabilities = field(
         default_factory=lambda: SourceCapabilities(
             author_updates=True,

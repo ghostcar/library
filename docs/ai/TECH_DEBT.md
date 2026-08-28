@@ -16,6 +16,6 @@
 | 10 | Browser smoke для responsive shell реализован (Chromium, 1280×800 и 390×844). Pixel-by-pixel сверка всех Stitch-экранов остаётся нецелесообразной до стабилизации контента страниц. | возможен локальный visual drift отдельных страниц | low | agent | существенный редизайн страницы |
 | 11 | Формальные контракты добавлены; конкретные import/metadata/notification adapters появятся по мере включения соответствующих интеграций | capability registry пока описывает границы, а не все реализации | low | agent | новый внешний адаптер |
 | 12 | Pixel-by-pixel сверка Stitch-экранов не выполнялась; shell/navigation теперь покрыты responsive smoke | возможен локальный visual drift отдельных страниц | low | agent | стабилизация контента и эталонных fixtures |
-| 13 | HTML endpoints корректно сохраняются как декларативные настройки/ссылки, но generic или site-specific HTML polling adapter ещё не реализован | сайты не опрашиваются автоматически | medium | agent | первый наблюдаемый HTML-сайт |
+| 13 | Author.Today HTML polling реализован; generic HTML и Litnet adapter отсутствуют | остальные сайты не опрашиваются автоматически | low | agent | решение OPEN_QUESTIONS#10 или второй HTML-сайт |
 | 14 | ~~SourceLink preferred/priority, CRUD, inheritance и series card отсутствуют~~ РЕШЕНО: migration 0012, owner-scoped service/UI, work→series→author→global | — | — | — | — |
 | 15 | ~~Fresh migration/full suite для source schema не подтверждены~~ РЕШЕНО: fresh migration 0012 и 269 tests passed | — | — | — | — |

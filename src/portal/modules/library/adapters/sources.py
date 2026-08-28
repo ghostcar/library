@@ -47,10 +47,15 @@ class FetchResult:
     last_modified: str | None = None
 
 
+class SourceAdapterError(ValueError):
+    """Expected remote-fetch or parser failure handled by watch backoff."""
+
+
 class SourceAdapter(Protocol):
     """Contract for source observation adapters."""
 
     id: str
+    parser_version: str
     capabilities: SourceCapabilities
 
     async def fetch(
@@ -106,9 +111,16 @@ register_adapter(
     AdapterDescriptor(
         id=SourceKind.AUTHOR_TODAY.value,
         title="Author.Today",
-        enabled=False,
-        reason="нужно исследовать официальный API и авторизацию (ADR-0011)",
-        capabilities=SourceCapabilities(authentication="required"),
+        enabled=True,
+        reason="",
+        capabilities=SourceCapabilities(
+            author_updates=True,
+            series_listing=True,
+            work_status=True,
+            metadata=True,
+            acquisition=False,
+            authentication="none",
+        ),
     ),
 )
 register_adapter(

@@ -8,9 +8,17 @@ from uuid import UUID, uuid4
 import httpx
 import pytest
 from fastapi import FastAPI, Request, Response
+from sqlalchemy import select
 
+from portal.modules.library.adapters.author_today_adapter import (
+    PARSER_VERSION as AUTHOR_TODAY_PARSER_VERSION,
+)
+from portal.modules.library.adapters.author_today_adapter import AuthorTodayAdapter
 from portal.modules.library.adapters.opds_adapter import OPDSAdapter
-from portal.modules.library.adapters.source_orm import SourceEndpointModel
+from portal.modules.library.adapters.source_orm import (
+    SourceEndpointModel,
+    SourceObservationModel,
+)
 from portal.modules.library.adapters.watch_service import WatchService
 
 pytestmark = pytest.mark.integration
@@ -92,6 +100,67 @@ async def authed(client: httpx.AsyncClient) -> tuple[httpx.AsyncClient, UUID]:
 
 
 class TestPollFlow:
+    async def test_author_today_public_metadata_poll(self, authed) -> None:
+        client, owner = authed
+        fake = FastAPI()
+        revision = {"value": "2026-08-28T01:00:00Z"}
+
+        @fake.get("/u/test/works")
+        async def works() -> Response:
+            return Response(
+                content=(
+                    '<html><head><meta charset="utf-8"></head><body>'
+                    '<script type="application/ld+json">'
+                    '{"@type":"Person","name":"Автор AT"}</script>'
+                    '<div class="book-row"><div class="book-title">'
+                    '<a href="/work/777">Новая книга AT</a></div>'
+                    '<span><i class="book-status-icon"></i> в процессе</span>'
+                    f'<span data-hint="Обновление " data-time="{revision["value"]}"></span>'
+                    "</div></body></html>"
+                ),
+                media_type="text/html",
+            )
+
+        container = client._transport.app.state.container
+        at_client = httpx.AsyncClient(transport=httpx.ASGITransport(app=fake))
+        service = WatchService(
+            session_factory=container["session_factory"],
+            adapters={"author_today": AuthorTodayAdapter(client=at_client)},
+        )
+        rule_id = await service.create_rule(
+            owner,
+            adapter_id="author_today",
+            name="Автор AT",
+            url="https://author.today/u/test",
+            interval_seconds=300,
+        )
+        assert rule_id is not None
+        assert (await service.list_rules(owner))[0]["interval_seconds"] == 1800
+        outcome = await service.poll_rule(owner, rule_id)
+        assert outcome == {"status": "ok", "not_modified": False, "new": 1}
+
+        async with container["session_factory"]() as session:
+            observation = (
+                await session.execute(
+                    select(SourceObservationModel).where(
+                        SourceObservationModel.watch_rule_id == rule_id
+                    )
+                )
+            ).scalar_one()
+        assert observation.adapter_id == "author_today"
+        assert observation.external_id == ("author-today:work:777:revision:2026-08-28T01:00:00Z")
+        assert observation.parser_version == AUTHOR_TODAY_PARSER_VERSION
+        assert observation.raw["status"] == "в процессе"
+        assert await service.notifications(owner) == []  # initial page is a quiet baseline
+
+        revision["value"] = "2026-08-28T02:00:00Z"
+        outcome = await service.poll_rule(owner, rule_id)
+        assert outcome["new"] == 1
+        notifications = await service.notifications(owner)
+        assert len(notifications) == 1
+        assert "Новая книга AT" in notifications[0]["title"]
+        await at_client.aclose()
+
     async def test_rule_keeps_selected_endpoint(self, authed) -> None:
         client, owner = authed
         container = client._transport.app.state.container

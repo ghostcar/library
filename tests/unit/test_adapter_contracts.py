@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from portal.modules.library.adapters.author_today_adapter import AuthorTodayAdapter
 from portal.modules.library.adapters.opds_adapter import OPDSAdapter
 from portal.modules.library.application.contracts import (
     AdapterRegistration,
@@ -15,6 +16,11 @@ from portal.modules.library.application.contracts import (
 def test_opds_implements_source_contract() -> None:
     assert isinstance(OPDSAdapter(), SourceAdapterContract)
     assert OPDSAdapter().id == "opds"
+
+
+def test_author_today_implements_source_contract() -> None:
+    assert isinstance(AuthorTodayAdapter(), SourceAdapterContract)
+    assert AuthorTodayAdapter().id == "author_today"
 
 
 def test_registration_rejects_enabled_reason() -> None:

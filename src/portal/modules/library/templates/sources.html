@@ -17,7 +17,7 @@
     <div><label for="endpoint-name">Название</label><input id="endpoint-name" name="name" required placeholder="Flibusta OPDS"></div>
     <div><label for="source-type">Тип</label><select id="source-type" name="source_type"><option value="opds">OPDS</option><option value="html">Сайт</option></select></div>
     <div><label for="role">Роль</label><select id="role" name="role"><option value="metadata">Metadata</option><option value="acquisition">Acquisition</option><option value="metadata+acquisition">Обе</option></select></div>
-    <div><label for="endpoint-adapter">Профиль</label><select id="endpoint-adapter" name="adapter_id"><option value="opds">Общий OPDS</option><option value="flibusta">Flibusta</option><option value="html">HTML (настройка)</option></select></div>
+    <div><label for="endpoint-adapter">Профиль</label><select id="endpoint-adapter" name="adapter_id"><option value="opds">Общий OPDS</option><option value="flibusta">Flibusta</option><option value="author_today">Author.Today (metadata)</option><option value="html">HTML (только ссылка)</option></select></div>
     <div class="u-grow u-min-220"><label for="endpoint-url">URL</label><input id="endpoint-url" name="url" type="url" required></div>
     <button type="submit" class="u-m-0 u-w-auto">Сохранить</button>
   </form>
@@ -50,11 +50,12 @@
   <form method="post" action="/library/sources/rules" class="u-flex u-gap-8 u-wrap u-items-end">
     {% include "_csrf.html" %}
     <div class="u-min-180">
-      {% if endpoints %}<label for="endpoint-id">Endpoint (необязательно)</label><select id="endpoint-id" name="endpoint_id"><option value="">Новый URL</option>{% for e in endpoints %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select>{% endif %}
+      {% if watch_endpoints %}<label for="endpoint-id">Endpoint (необязательно)</label><select id="endpoint-id" name="endpoint_id"><option value="">Новый URL</option>{% for e in watch_endpoints %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select>{% endif %}
       <label for="adapter_id">Профиль источника</label>
       <select id="adapter_id" name="adapter_id">
         <option value="opds">Общий OPDS</option>
         <option value="flibusta">Flibusta (metadata-only)</option>
+        <option value="author_today">Author.Today (публичная страница автора)</option>
       </select>
     </div>
     <div class="u-grow u-min-160">
@@ -63,11 +64,12 @@
     </div>
     <div class="u-grow-2 u-min-220">
       <label for="url">URL OPDS-ленты</label>
-      <input id="url" name="url" type="url" required placeholder="https://example.com/opds/feed">
+      <input id="url" name="url" type="url" placeholder="https://example.com/opds/feed">
     </div>
     <div>
       <label for="interval_minutes">Интервал, мин</label>
       <input id="interval_minutes" name="interval_minutes" type="number" min="5" max="1440" value="60" class="u-w-90">
+      <span class="meta">Author.Today: минимум 30 мин.</span>
     </div>
     <button type="submit" class="u-m-0 u-w-auto">Добавить</button>
   </form>

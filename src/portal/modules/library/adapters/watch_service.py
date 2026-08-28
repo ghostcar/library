@@ -16,16 +16,20 @@ from uuid import UUID
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from portal.modules.library.adapters.author_today_adapter import AuthorTodayAdapter
 from portal.modules.library.adapters.opds_adapter import (
     OPDSAdapter,
-    OPDSParseError,
 )
 from portal.modules.library.adapters.source_orm import (
     NotificationModel,
     SourceObservationModel,
     WatchRuleModel,
 )
-from portal.modules.library.adapters.sources import get_adapter_descriptor
+from portal.modules.library.adapters.sources import (
+    SourceAdapter,
+    SourceAdapterError,
+    get_adapter_descriptor,
+)
 from portal.modules.library.domain.entities import normalize_title
 from portal.modules.library.infrastructure.orm import (
     AuthorModel,
@@ -57,9 +61,17 @@ class WatchService:
         self,
         session_factory: async_sessionmaker[AsyncSession],
         opds: OPDSAdapter | None = None,
+        adapters: dict[str, SourceAdapter] | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._opds = opds or OPDSAdapter()
+        self._adapters: dict[str, SourceAdapter] = {
+            "opds": self._opds,
+            "flibusta": self._opds,
+            "author_today": AuthorTodayAdapter(),
+        }
+        if adapters:
+            self._adapters.update(adapters)
 
     # --- rule management --------------------------------------------------
 
@@ -79,13 +91,14 @@ class WatchService:
         if not url.startswith(("http://", "https://")):
             return None
         async with self._session_factory() as session, session.begin():
+            minimum_interval = 1800 if adapter_id == "author_today" else 300
             rule = WatchRuleModel(
                 owner_id=owner_id,
                 adapter_id=adapter_id,
                 source_endpoint_id=source_endpoint_id,
                 name=name.strip()[:200] or "Без названия",
                 url=url.strip(),
-                interval_seconds=max(300, min(interval_seconds, 86400)),
+                interval_seconds=max(minimum_interval, min(interval_seconds, 86400)),
                 next_poll_at=datetime.now(UTC),
             )
             session.add(rule)
@@ -185,13 +198,18 @@ class WatchService:
                 rule.next_poll_at = next_poll_after(1, rule.interval_seconds)
                 return {"status": "skipped", "reason": "adapter disabled"}
 
+        adapter = self._adapters.get(rule.adapter_id)
+        if adapter is None:
+            return await self._record_failure(
+                rule_id, rule.owner_id, rule.interval_seconds, "adapter implementation missing"
+            )
         try:
-            result = await self._opds.fetch(
+            result = await adapter.fetch(
                 rule.url,
                 etag=rule.etag,
                 last_modified=rule.last_modified,
             )
-        except OPDSParseError as exc:
+        except SourceAdapterError as exc:
             return await self._record_failure(
                 rule_id, rule.owner_id, rule.interval_seconds, str(exc)
             )
@@ -201,13 +219,19 @@ class WatchService:
             if rule is None:
                 return {"status": "error", "reason": "rule deleted"}
             new_count = 0
+            initial_author_today_baseline = (
+                rule.adapter_id == "author_today" and rule.last_polled_at is None
+            )
             if result.not_modified:
                 new_count = 0
             else:
                 for entry in result.entries:
-                    inserted = await self._insert_observation(session, rule, entry)
+                    inserted = await self._insert_observation(
+                        session, rule, entry, adapter.parser_version
+                    )
                     if inserted:
                         new_count += 1
+                    if inserted and not initial_author_today_baseline:
                         session.add(
                             NotificationModel(
                                 owner_id=owner_id,
@@ -240,6 +264,7 @@ class WatchService:
         session: AsyncSession,
         rule: WatchRuleModel,
         entry: Any,  # SourceEntry
+        parser_version: str,
     ) -> bool:
         """Insert observation; False when already seen (dedup)."""
         from portal.modules.library.adapters.sources import SourceEntry
@@ -265,7 +290,7 @@ class WatchService:
                 title=entry.title,
                 author_name=entry.author_name,
                 url=entry.url,
-                parser_version=PARSER_VERSION_LOCAL,
+                parser_version=parser_version,
                 raw=dict(entry.raw),
                 work_id=work_id,
                 series_id=series_id,
@@ -413,6 +438,3 @@ class WatchService:
                 .values(read_at=datetime.now(UTC)),
             )
             return int(result.rowcount)  # type: ignore[attr-defined]
-
-
-PARSER_VERSION_LOCAL = "opds-atom-v1"

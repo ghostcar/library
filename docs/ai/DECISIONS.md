@@ -22,3 +22,4 @@
 | 0016 | accepted | Typed outbox registry, bounded exponential retry и migration 0009 |
 | 0017 | accepted | Formal adapter contracts и explicit capability registration |
 | 0018 | accepted | Flibusta подключается как OPDS metadata-only профиль без фонового acquisition |
+| 0019 | accepted | Author.Today: публичный HTML metadata-only, quiet baseline, revision events, без auth/API/content |

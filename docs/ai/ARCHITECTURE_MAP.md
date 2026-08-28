@@ -32,7 +32,7 @@ src/portal/
       infrastructure/    — ORM, репозитории, мапперы
       presentation/      — защищённые HTML-страницы + /library/info
       templates/         — шаблоны модуля (extends base из web)
-      adapters/          — реализации внешних источников (позже)
+      adapters/          — OPDS + Author.Today public HTML, watch dispatch/backoff
   (normalizer: modules/library/infrastructure/normalizer/{fb2,epub,fingerprints,cover}.py)
   web/                   — app factory, composition root, SSR auth-страницы
     deps.py              — provide_session (transactional session per request)
@@ -62,7 +62,15 @@ scripts/                 — dev/test/lint
 |--------|--------|----------|
 | core.auth | IMPLEMENTED | /auth/register, /auth/login, /auth/refresh, /auth/logout, /auth/me, /auth/tokens, /login (SSR), /logout (SSR) |
 | core.health | IMPLEMENTED | GET /healthz, /readyz |
-| library | PARTIAL | /library/ (dashboard), /library/catalog, /library/works/{id}, /library/import (+upload/scan), /library/normalization (+{id}, prefer), /library/assets/{id}/normalize|download, review (assign/resolve), /library/info |
+| library | PARTIAL | dashboard/catalog/authors/series/import/normalization/sources/notifications/settings + OPDS delivery |
+
+## Source monitoring
+
+- `WatchService` выбирает реализацию по `watch_rules.adapter_id`, хранит parser version,
+  делает dedup/notifications и общий degraded/backoff.
+- `OPDSAdapter`: safe Atom/OPDS parser, conditional GET.
+- `AuthorTodayAdapter`: только публичные `/u/<slug>/works`, HTML parser v1,
+  quiet baseline и revision events; без auth/private API/content/acquisition (ADR-0019).
 
 ## База данных (18 таблиц)
 
