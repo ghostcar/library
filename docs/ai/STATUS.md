@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-28 (outbox retries, reproducible browser toolchain)
+Последняя проверка: 2026-08-28 (source observation links, outbox retries, reproducible browser toolchain)
 
 ## Фазы мастер-промпта (§20)
 
@@ -13,7 +13,7 @@
 | Phase 2. Catalog and import | `IMPLEMENTED` | upload (FB2/EPUB/ZIP-архивы), локальные каталоги, дубликаты-кандидаты, каталог UI, review UI; watched inbox — Phase 6 |
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `IMPLEMENTED` | auto/best-free, ретрай на cold-start, live propose в проде, кэш, corrections, UI propose/apply |
-| Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; has_new_release — Phase 6 |
+| Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; derived source evidence включено |
 | Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; AT/Litnet/Flibusta — disabled (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
@@ -35,7 +35,7 @@
 | Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
-| Alembic 0001+0009 | `IMPLEMENTED` | migrations/versions/ |
+| Alembic 0001+0010 | `IMPLEMENTED` | migrations/versions/ |
 | Auth SSR (login, защищённая /library, logout, settings) | `IMPLEMENTED` | src/portal/web (password change, CSRF-защищённый logout) |
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |
@@ -51,7 +51,7 @@
 | Review UI (unmatched, duplicates) | `IMPLEMENTED` | assign/resolve на /library/import |
 | AI matching (digest→proposal→apply) | `IMPLEMENTED` | ai/, ADR-0009; fake-server тесты; live — нужен валидный ключ |
 | Кэш proposals + corrections dataset | `IMPLEMENTED` | ai_proposals, ai_corrections |
-| Series state (last/next/missing/status) | `IMPLEMENTED` | SeriesStateService (ADR-0010) |
+| Series state (last/next/missing/status) | `IMPLEMENTED` | SeriesStateService: last_observed, has_new_release, waiting_release, evidence |
 | Чтение: действия + история + очередь | `IMPLEMENTED` | ReadingStateService, /library/queue, /library/series |
 | Dashboard | `IMPLEMENTED` | /library/ (продолжить/далее/недавние) |
 | OPDS source adapter | `IMPLEMENTED` | adapters/opds_adapter.py, conditional GET, XXE-тест |

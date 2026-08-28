@@ -26,6 +26,13 @@ from portal.modules.library.adapters.source_orm import (
     WatchRuleModel,
 )
 from portal.modules.library.adapters.sources import get_adapter_descriptor
+from portal.modules.library.domain.entities import normalize_title
+from portal.modules.library.infrastructure.orm import (
+    AuthorModel,
+    SeriesMembershipModel,
+    WorkAuthorModel,
+    WorkModel,
+)
 
 logger = logging.getLogger("library.sources")
 
@@ -245,6 +252,7 @@ class WatchService:
         ).scalar_one_or_none()
         if exists is not None:
             return False
+        work_id, series_id, evidence = await self._match_canonical(session, rule.owner_id, entry)
         session.add(
             SourceObservationModel(
                 owner_id=rule.owner_id,
@@ -256,10 +264,61 @@ class WatchService:
                 url=entry.url,
                 parser_version=PARSER_VERSION_LOCAL,
                 raw=dict(entry.raw),
+                work_id=work_id,
+                series_id=series_id,
+                match_evidence=evidence,
             ),
         )
         await session.flush()
         return True
+
+    async def _match_canonical(
+        self, session: AsyncSession, owner_id: UUID, entry: Any
+    ) -> tuple[UUID | None, UUID | None, dict[str, object]]:
+        """Link only deterministic, owner-scoped matches; leave ambiguity unresolved."""
+        title = normalize_title(entry.title)
+        stmt = select(WorkModel).where(
+            WorkModel.owner_id == owner_id,
+            WorkModel.title_normalized == title,
+        )
+        candidates = list((await session.execute(stmt)).scalars().all())
+        if entry.author_name:
+            author = normalize_title(entry.author_name)
+            author_stmt = (
+                select(WorkModel)
+                .join(WorkAuthorModel, WorkAuthorModel.work_id == WorkModel.id)
+                .join(AuthorModel, AuthorModel.id == WorkAuthorModel.author_id)
+                .where(
+                    WorkModel.owner_id == owner_id,
+                    WorkModel.title_normalized == title,
+                    AuthorModel.name_normalized == author,
+                )
+            )
+            author_candidates = list((await session.execute(author_stmt)).scalars().all())
+            if author_candidates:
+                candidates = author_candidates
+        if len(candidates) != 1:
+            return None, None, {
+                "match": "ambiguous" if candidates else "none",
+                "title_normalized": title,
+            }
+        work = candidates[0]
+        memberships = list(
+            (
+                await session.execute(
+                    select(SeriesMembershipModel.series_id).where(
+                        SeriesMembershipModel.owner_id == owner_id,
+                        SeriesMembershipModel.work_id == work.id,
+                    ),
+                )
+            ).scalars().all()
+        )
+        series_id = memberships[0] if len(memberships) == 1 else None
+        return work.id, series_id, {
+            "match": "exact_title_author" if entry.author_name else "exact_title",
+            "title_normalized": title,
+            "series_match": "unique_membership" if series_id else "ambiguous_or_none",
+        }
 
     async def _record_failure(
         self,

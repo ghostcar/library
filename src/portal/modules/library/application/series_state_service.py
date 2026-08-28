@@ -7,12 +7,14 @@ comes from user confirmation or source data, never from arithmetic.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from portal.modules.library.adapters.source_orm import SourceObservationModel
 from portal.modules.library.domain.enums import MembershipType, ReadingStatus
 from portal.modules.library.infrastructure.orm import (
     ReadingStateModel,
@@ -47,6 +49,9 @@ class DerivedSeriesState:
     entries: list[SeriesEntry] = field(default_factory=list)
     user_status_override: str | None = None
     has_new_release: bool = False  # Phase 6: source observations
+    last_observed: datetime | None = None
+    waiting_release: bool = False
+    observation_evidence: list[dict[str, object]] = field(default_factory=list)
 
     @property
     def last_read(self) -> SeriesEntry | None:
@@ -175,6 +180,37 @@ class SeriesStateService:
             entries=entries,
             user_status_override=override,
         )
+        observations = list(
+            (
+                await self._session.execute(
+                    select(SourceObservationModel)
+                    .where(
+                        SourceObservationModel.owner_id == owner_id,
+                        SourceObservationModel.series_id == series_id,
+                    )
+                    .order_by(SourceObservationModel.observed_at.desc()),
+                )
+            ).scalars().all()
+        )
+        if observations:
+            state.last_observed = observations[0].observed_at
+            state.observation_evidence = [
+                {
+                    "source_record_id": str(o.id),
+                    "observed_at": o.observed_at.isoformat(),
+                    **o.match_evidence,
+                }
+                for o in observations[:20]
+            ]
+            owned_ids = {entry.work_id for entry in entries}
+            state.has_new_release = any(
+                o.work_id is not None and o.work_id not in owned_ids for o in observations
+            )
+            state.waiting_release = (
+                state.next_available_unread is None
+                and not state.has_new_release
+                and state.series_status == "caught_up"
+            )
         return state
 
     async def list_series_overview(self, owner_id: UUID) -> list[DerivedSeriesState]:

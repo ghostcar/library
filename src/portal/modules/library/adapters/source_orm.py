@@ -105,6 +105,15 @@ class SourceObservationModel(Base):
     author_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     url: Mapped[str | None] = mapped_column(Text, nullable=True)
     parser_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    work_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("works.id", ondelete="SET NULL"), nullable=True
+    )
+    series_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("series.id", ondelete="SET NULL"), nullable=True
+    )
+    match_evidence: Mapped[dict[str, object]] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
     raw: Mapped[dict[str, object]] = mapped_column(
         JSONB,
         nullable=False,
@@ -120,6 +129,8 @@ class SourceObservationModel(Base):
         # dedup: one observation per (rule, external item)
         UniqueConstraint("watch_rule_id", "external_id", name="uq_observations_rule_external"),
         Index("ix_observations_owner_seen", "owner_id", "observed_at"),
+        Index("ix_observations_owner_work", "owner_id", "work_id"),
+        Index("ix_observations_owner_series", "owner_id", "series_id"),
     )
 
 
