@@ -209,3 +209,14 @@
 - Flibusta включена отдельным профилем generic OPDS с metadata/author/series
   capabilities и `acquisition=false`.
 - В форме источников добавлен выбор `Flibusta (metadata-only)`; фоновых скачиваний нет.
+
+## Сессия 24 — 2026-08-28 — abstract source management (partial)
+
+- Коммиты `e857d7e`, `b8e485d`, `c54aa38`, `82fb991`, `b8f829f`, `b387f3f`:
+  Flibusta profile, source endpoints/links schema 0011, endpoint settings UI,
+  author cards, direct entity-source read/display.
+- Production не менялся: `41a9068`, schema 0010.
+- Пакет намеренно помечен PARTIAL: нет SourceLink CRUD, preferred/inheritance,
+  series source UI и merged metadata/acquisition state.
+- Последние targeted checks: source tests 10 passed, frontend security 3 passed,
+  Ruff/diff-check clean. Full suite/fresh migration требуют повторного прогона.

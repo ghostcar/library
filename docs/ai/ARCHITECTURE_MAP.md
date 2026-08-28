@@ -67,5 +67,5 @@ scripts/                 — dev/test/lint
 ## База данных (18 таблиц)
 
 - core: users, api_tokens, audit_log, outbox_events, jobs
-- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, assets (+work_id, is_preferred), asset_relations, reading_states, import_batches, import_items, duplicate_candidates, normalization_runs
+- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, source_endpoints, source_links, watch_rules, source_observations, assets (+work_id, is_preferred), asset_relations, reading_states, import_batches, import_items, duplicate_candidates, normalization_runs
 - Все пользовательские данные: `owner_id UUID → users.id` (FK CASCADE)

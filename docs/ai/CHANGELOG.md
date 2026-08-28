@@ -100,3 +100,13 @@
 - Audit remediation развёрнут на тестовом контуре: образ `b7351b2`, schema `0008`.
 - Исправлена доставка локальных SVG-иконок в Docker-образе.
 - Worker больше не отображается unhealthy из-за неприменимого HTTP healthcheck.
+
+## 2026-08-28 (source management, not deployed)
+
+- Добавлен Flibusta OPDS metadata-only профиль без фонового скачивания.
+- Добавлена абстрактная модель endpoint-источников и нескольких metadata/acquisition
+  связей для автора, серии и книги (migration 0011).
+- На странице источников появился create/list UI endpoint; добавлены страницы
+  авторов и direct source blocks у автора/книги.
+- Срез ещё не deployed и не завершён: preferred, inheritance, SourceLink CRUD и
+  карточка серии остаются следующей задачей.

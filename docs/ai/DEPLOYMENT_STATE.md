@@ -9,6 +9,14 @@
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
 
+### Pending, не развёрнуто
+
+- Repository HEAD до memory-sync: `b387f3f`; Test VPS остаётся на `41a9068`.
+- Pending commits добавляют Flibusta metadata-only, source endpoints/links,
+  migration 0011, endpoint settings UI, author cards и direct source blocks.
+- Не deploy до завершения source-management slice и прохождения fresh migration,
+  full tests и browser smoke. Production schema остаётся `0010`.
+
 ## Окружение VPS (факты 2026-08-25)
 
 - Host nginx: 80/443, Cloudflare origin cert, sites: cypht (post.gorbunovr.ru), omniroute (llm.gorbunovr.ru), practice-loop (tracker.gorbunovr.ru), default 444.
