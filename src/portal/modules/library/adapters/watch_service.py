@@ -71,6 +71,7 @@ class WatchService:
         name: str,
         url: str,
         interval_seconds: int = 3600,
+        source_endpoint_id: UUID | None = None,
     ) -> UUID | None:
         descriptor = get_adapter_descriptor(adapter_id)
         if descriptor is None or not descriptor.enabled:
@@ -81,6 +82,7 @@ class WatchService:
             rule = WatchRuleModel(
                 owner_id=owner_id,
                 adapter_id=adapter_id,
+                source_endpoint_id=source_endpoint_id,
                 name=name.strip()[:200] or "Без названия",
                 url=url.strip(),
                 interval_seconds=max(300, min(interval_seconds, 86400)),
@@ -102,6 +104,7 @@ class WatchService:
                 {
                     "id": r.id,
                     "adapter_id": r.adapter_id,
+                    "source_endpoint_id": r.source_endpoint_id,
                     "name": r.name,
                     "url": r.url,
                     "interval_seconds": r.interval_seconds,
@@ -298,10 +301,14 @@ class WatchService:
             if author_candidates:
                 candidates = author_candidates
         if len(candidates) != 1:
-            return None, None, {
-                "match": "ambiguous" if candidates else "none",
-                "title_normalized": title,
-            }
+            return (
+                None,
+                None,
+                {
+                    "match": "ambiguous" if candidates else "none",
+                    "title_normalized": title,
+                },
+            )
         work = candidates[0]
         memberships = list(
             (
@@ -311,14 +318,20 @@ class WatchService:
                         SeriesMembershipModel.work_id == work.id,
                     ),
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         )
         series_id = memberships[0] if len(memberships) == 1 else None
-        return work.id, series_id, {
-            "match": "exact_title_author" if entry.author_name else "exact_title",
-            "title_normalized": title,
-            "series_match": "unique_membership" if series_id else "ambiguous_or_none",
-        }
+        return (
+            work.id,
+            series_id,
+            {
+                "match": "exact_title_author" if entry.author_name else "exact_title",
+                "title_normalized": title,
+                "series_match": "unique_membership" if series_id else "ambiguous_or_none",
+            },
+        )
 
     async def _record_failure(
         self,

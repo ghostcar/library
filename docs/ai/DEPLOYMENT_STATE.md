@@ -11,11 +11,12 @@
 
 ### Pending, не развёрнуто
 
-- Repository HEAD до memory-sync: `b387f3f`; Test VPS остаётся на `41a9068`.
-- Pending commits добавляют Flibusta metadata-only, source endpoints/links,
-  migration 0011, endpoint settings UI, author cards и direct source blocks.
-- Не deploy до завершения source-management slice и прохождения fresh migration,
-  full tests и browser smoke. Production schema остаётся `0010`.
+- Repository baseline перед текущим коммитом: `dcd7434`; Test VPS остаётся на `41a9068`.
+- Pending code добавляет Flibusta metadata-only, endpoint/SourceLink management,
+  migrations 0011/0012 и source cards с наследованием.
+- Fresh migration 0012 и full suite (269 passed) подтверждены. До deploy остаются
+  browser smoke нового UI, immutable build, backup и явное разрешение владельца.
+  Production schema остаётся `0010`.
 
 ## Окружение VPS (факты 2026-08-25)
 

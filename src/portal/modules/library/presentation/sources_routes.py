@@ -4,17 +4,19 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlparse
 from uuid import UUID
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from portal.core.auth.dependencies import CSRFProtected, CurrentUser
 from portal.modules.library.adapters.source_orm import SourceEndpointModel
 from portal.modules.library.adapters.sources import list_adapters
 from portal.modules.library.adapters.watch_service import WatchService
+from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.web.deps import SessionDep
 
 router = APIRouter()
@@ -40,9 +42,15 @@ async def sources_page(
 ) -> HTMLResponse:
     service = _watch_service(request)
     rules = await service.list_rules(current.user.id)
-    endpoints = list((await session.execute(
-        select(SourceEndpointModel).where(SourceEndpointModel.owner_id == current.user.id)
-    )).scalars().all())
+    endpoints = list(
+        (
+            await session.execute(
+                select(SourceEndpointModel).where(SourceEndpointModel.owner_id == current.user.id)
+            )
+        )
+        .scalars()
+        .all()
+    )
     return _templates.TemplateResponse(
         request,
         "sources.html",
@@ -80,10 +88,98 @@ async def create_rule(
         name=name,
         url=url,
         interval_seconds=interval_minutes * 60,
+        source_endpoint_id=endpoint_id,
     )
     if created is None:
         return RedirectResponse("/library/sources?error=rule", status_code=303)
     return RedirectResponse("/library/sources", status_code=303)
+
+
+@router.post("/sources/endpoints/{endpoint_id}/toggle")
+async def toggle_endpoint(
+    endpoint_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+    enabled: Annotated[bool, Form()],
+) -> RedirectResponse:
+    endpoint = await session.get(SourceEndpointModel, endpoint_id)
+    if endpoint is not None and endpoint.owner_id == current.user.id:
+        endpoint.enabled = enabled
+        await session.commit()
+    return RedirectResponse("/library/sources", status_code=303)
+
+
+@router.post("/sources/endpoints/{endpoint_id}/delete")
+async def delete_endpoint(
+    endpoint_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+) -> RedirectResponse:
+    await session.execute(
+        delete(SourceEndpointModel).where(
+            SourceEndpointModel.id == endpoint_id,
+            SourceEndpointModel.owner_id == current.user.id,
+        )
+    )
+    await session.commit()
+    return RedirectResponse("/library/sources", status_code=303)
+
+
+def _safe_back(back: str) -> str:
+    return back if back.startswith("/library/") and not back.startswith("//") else "/library/"
+
+
+@router.post("/sources/links")
+async def create_source_link(
+    current: CSRFProtected,
+    session: SessionDep,
+    endpoint_id: Annotated[UUID, Form()],
+    entity_type: Annotated[str, Form()],
+    entity_id: Annotated[UUID, Form()],
+    role: Annotated[str, Form()],
+    external_url: Annotated[str, Form()] = "",
+    priority: Annotated[int, Form()] = 100,
+    preferred: Annotated[bool, Form()] = False,
+    back: Annotated[str, Form()] = "/library/",
+) -> RedirectResponse:
+    created = await SourceLinkService(session).add(
+        current.user.id,
+        endpoint_id=endpoint_id,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        role=role,
+        external_url=external_url,
+        preferred=preferred,
+        priority=priority,
+    )
+    if not created:
+        return RedirectResponse(f"{_safe_back(back)}?source_error=invalid", status_code=303)
+    await session.commit()
+    return RedirectResponse(_safe_back(back), status_code=303)
+
+
+@router.post("/sources/links/{link_id}/prefer")
+async def prefer_source_link(
+    link_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+    back: Annotated[str, Form()] = "/library/",
+) -> RedirectResponse:
+    if await SourceLinkService(session).prefer(current.user.id, link_id):
+        await session.commit()
+    return RedirectResponse(_safe_back(back), status_code=303)
+
+
+@router.post("/sources/links/{link_id}/delete")
+async def delete_source_link(
+    link_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+    back: Annotated[str, Form()] = "/library/",
+) -> RedirectResponse:
+    if await SourceLinkService(session).remove(current.user.id, link_id):
+        await session.commit()
+    return RedirectResponse(_safe_back(back), status_code=303)
 
 
 @router.post("/sources/endpoints")
@@ -97,9 +193,20 @@ async def create_endpoint(
     adapter_id: Annotated[str, Form()],
     url: Annotated[str, Form()],
 ) -> RedirectResponse:
-    if source_type not in {"opds", "html"} or role not in {
-        "metadata", "acquisition", "metadata+acquisition"
-    }:
+    clean_url = url.strip()
+    if (
+        source_type not in {"opds", "html"}
+        or role
+        not in {
+            "metadata",
+            "acquisition",
+            "metadata+acquisition",
+        }
+        or urlparse(clean_url).scheme not in {"http", "https"}
+    ):
+        return RedirectResponse("/library/sources?error=endpoint", status_code=303)
+    allowed_adapters = {"opds", "flibusta"} if source_type == "opds" else {"html"}
+    if adapter_id not in allowed_adapters:
         return RedirectResponse("/library/sources?error=endpoint", status_code=303)
     session.add(
         SourceEndpointModel(
@@ -108,7 +215,7 @@ async def create_endpoint(
             source_type=source_type,
             role=role,
             adapter_id=adapter_id,
-            url=url.strip(),
+            url=clean_url,
         )
     )
     await session.commit()

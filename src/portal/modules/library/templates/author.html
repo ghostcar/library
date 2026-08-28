@@ -1,5 +1,5 @@
 {% extends "base.html" %}{% block content %}
-<h1 class="u-display u-weight-normal">Автор</h1>
-{% if sources %}<div class="card"><p class="meta">ИСТОЧНИКИ</p>{% for source in sources %}<p class="u-my-4"><span class="chip">{{ source.role }}</span> <a href="{{ source.url }}" rel="noreferrer noopener">{{ source.name }}</a></p>{% endfor %}</div>{% endif %}
+<h1 class="u-display u-weight-normal">{{ author.name }}</h1>
+{% set source_entity_type = 'author' %}{% set source_entity_id = author.id %}{% set source_back = '/library/authors/' ~ author.id %}{% include "_source_links.html" %}
 <div class="card"><p class="meta">ПРОИЗВЕДЕНИЯ АВТОРА</p>{% for w in works %}<p><a class="u-on-surface" href="/library/works/{{ w.work_id }}">{{ w.title }}</a></p>{% else %}<p class="meta">Произведений пока нет.</p>{% endfor %}</div>
 {% endblock %}

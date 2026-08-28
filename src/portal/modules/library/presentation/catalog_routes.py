@@ -12,7 +12,9 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 
 from portal.core.auth.dependencies import CurrentUser
-from portal.modules.library.adapters.source_orm import SourceEndpointModel, SourceLinkModel
+from portal.modules.library.adapters.source_orm import SourceEndpointModel
+from portal.modules.library.application.source_link_service import SourceLinkService
+from portal.modules.library.infrastructure.orm import AuthorModel
 from portal.web.deps import SessionDep
 
 router = APIRouter()
@@ -25,15 +27,19 @@ _templates = Jinja2Templates(
 )
 
 
-async def _sources(
-    session: Any, owner_id: UUID, kind: str, entity_id: UUID
-) -> list[dict[str, str]]:
-    rows = (await session.execute(select(SourceLinkModel, SourceEndpointModel).join(
-        SourceEndpointModel, SourceEndpointModel.id == SourceLinkModel.source_endpoint_id
-    ).where(SourceLinkModel.owner_id == owner_id, SourceLinkModel.entity_type == kind,
-            SourceLinkModel.entity_id == entity_id))).all()
-    return [{"name": endpoint.name, "role": link.role, "url": link.external_url or endpoint.url}
-            for link, endpoint in rows]
+async def _endpoints(session: Any, owner_id: UUID) -> list[SourceEndpointModel]:
+    return list(
+        (
+            await session.execute(
+                select(SourceEndpointModel)
+                .where(
+                    SourceEndpointModel.owner_id == owner_id,
+                    SourceEndpointModel.enabled.is_(True),
+                )
+                .order_by(SourceEndpointModel.name)
+            )
+        ).scalars()
+    )
 
 
 @router.get("/catalog", response_class=HTMLResponse)
@@ -92,11 +98,16 @@ async def work_page(
             {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
             status_code=404,
         )
-    detail["sources"] = await _sources(session, current.user.id, "work", work_id)
+    detail["sources"] = await SourceLinkService(session).resolved(current.user.id, "work", work_id)
     return _templates.TemplateResponse(
         request,
         "work_detail.html",
-        {"user": current.user, "title": f"{detail['title']} — Библиотека", "work": detail},
+        {
+            "user": current.user,
+            "title": f"{detail['title']} — Библиотека",
+            "work": detail,
+            "source_endpoints": await _endpoints(session, current.user.id),
+        },
     )
 
 
@@ -105,9 +116,15 @@ async def authors_page(request: Request, current: CurrentUser, session: SessionD
     from portal.modules.library.application.opds_catalog_service import OpdsCatalogService
 
     authors = await OpdsCatalogService(session).authors_list(current.user.id)
-    return _templates.TemplateResponse(request, "authors.html", {
-        "user": current.user, "title": "Авторы — Библиотека", "authors": authors,
-    })
+    return _templates.TemplateResponse(
+        request,
+        "authors.html",
+        {
+            "user": current.user,
+            "title": "Авторы — Библиотека",
+            "authors": authors,
+        },
+    )
 
 
 @router.get("/authors/{author_id}", response_class=HTMLResponse)
@@ -118,14 +135,25 @@ async def author_page(
 
     service = OpdsCatalogService(session)
     works = await service.author_works(current.user.id, author_id)
-    if works is None:
+    author = await session.get(AuthorModel, author_id)
+    if works is None or author is None or author.owner_id != current.user.id:
         return _templates.TemplateResponse(
             request,
             "not_found.html",
             {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
             status_code=404,
         )
-    return _templates.TemplateResponse(request, "author.html", {
-        "user": current.user, "title": "Автор — Библиотека", "works": works, "author_id": author_id,
-        "sources": await _sources(session, current.user.id, "author", author_id),
-    })
+    return _templates.TemplateResponse(
+        request,
+        "author.html",
+        {
+            "user": current.user,
+            "title": f"{author.name} — Библиотека",
+            "works": works,
+            "author": author,
+            "sources": await SourceLinkService(session).resolved(
+                current.user.id, "author", author_id
+            ),
+            "source_endpoints": await _endpoints(session, current.user.id),
+        },
+    )

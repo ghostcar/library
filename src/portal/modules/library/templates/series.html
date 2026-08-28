@@ -10,6 +10,7 @@
   {% if state.waiting_release %}<span class="chip chip--warn">ждём продолжение</span>{% endif %}
   {% if state.last_observed %}<span class="chip">последнее наблюдение {{ state.last_observed.strftime('%d.%m.%Y %H:%M') }}</span>{% endif %}
 </div>
+{% set source_entity_type = 'series' %}{% set source_entity_id = state.series_id %}{% set source_back = '/library/series/' ~ state.series_id %}{% include "_source_links.html" %}
 {% if state.observation_evidence %}
 <details class="observation-details u-mt-8">
   <summary class="meta">Показать evidence наблюдений ({{ state.observation_evidence | length }})</summary>

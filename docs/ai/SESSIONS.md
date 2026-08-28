@@ -220,3 +220,12 @@
   series source UI и merged metadata/acquisition state.
 - Последние targeted checks: source tests 10 passed, frontend security 3 passed,
   Ruff/diff-check clean. Full suite/fresh migration требуют повторного прогона.
+
+## Сессия 25 — 2026-08-28 — source management completion
+
+- Migration 0012 добавляет preferred/priority и уникальность основного источника на роль.
+- Endpoint settings получили toggle/delete; provenance endpoint сохраняется в watch rule.
+- Реализован owner-scoped SourceLink service и UI CRUD у автора, цикла и книги.
+- Metadata/acquisition разрешаются независимо по цепочке work→series→author→global.
+- Fresh migration и целевые integration: 9 passed; полный набор: 269 passed.
+- Production не менялся: image `41a9068`, schema `0010`; deploy требует отдельной команды.

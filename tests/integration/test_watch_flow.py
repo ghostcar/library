@@ -10,6 +10,7 @@ import pytest
 from fastapi import FastAPI, Request, Response
 
 from portal.modules.library.adapters.opds_adapter import OPDSAdapter
+from portal.modules.library.adapters.source_orm import SourceEndpointModel
 from portal.modules.library.adapters.watch_service import WatchService
 
 pytestmark = pytest.mark.integration
@@ -91,6 +92,34 @@ async def authed(client: httpx.AsyncClient) -> tuple[httpx.AsyncClient, UUID]:
 
 
 class TestPollFlow:
+    async def test_rule_keeps_selected_endpoint(self, authed) -> None:
+        client, owner = authed
+        container = client._transport.app.state.container
+        async with container["session_factory"]() as session:
+            endpoint = SourceEndpointModel(
+                owner_id=owner,
+                name="OPDS",
+                source_type="opds",
+                role="metadata",
+                adapter_id="opds",
+                url="http://opds/feed",
+            )
+            session.add(endpoint)
+            await session.commit()
+            endpoint_id = endpoint.id
+
+        service = _service_for(client, _fake_opds_app(FEED_V1))
+        rule_id = await service.create_rule(
+            owner,
+            adapter_id="opds",
+            name="Endpoint rule",
+            url="http://opds/feed",
+            source_endpoint_id=endpoint_id,
+        )
+        assert rule_id is not None
+        rules = await service.list_rules(owner)
+        assert rules[0]["source_endpoint_id"] == endpoint_id
+
     async def test_poll_creates_observations_and_notifications_once(
         self,
         authed,
@@ -196,18 +225,19 @@ class TestPollFlow:
         rules = await service.list_rules(owner)
         rule_id = rules[0]["id"]
 
-        # disabled adapter rejected
-        bad = await service.create_rule(
+        # Flibusta is an enabled metadata-only profile.
+        flibusta_rule = await service.create_rule(
             owner,
             adapter_id="flibusta",
             name="x",
             url="http://x/feed",
         )
-        assert bad is None
+        assert flibusta_rule is not None
 
         # delete via HTTP
         response = await client.post(f"/library/sources/rules/{rule_id}/delete")
         assert response.status_code == 303
+        await service.delete_rule(owner, flibusta_rule)
         assert await service.list_rules(owner) == []
 
     async def test_owner_isolation_on_poll(self, authed) -> None:

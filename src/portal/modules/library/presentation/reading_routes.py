@@ -9,11 +9,14 @@ from uuid import UUID
 from fastapi import APIRouter, Form, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 
 from portal.core.auth.dependencies import CSRFProtected, CurrentUser, OptionalUser
+from portal.modules.library.adapters.source_orm import SourceEndpointModel
 from portal.modules.library.adapters.watch_service import WatchService
 from portal.modules.library.application.reading_service import ReadingStateService
 from portal.modules.library.application.series_state_service import SeriesStateService
+from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.modules.library.domain.enums import ReadingChangeSource, ReadingStatus
 from portal.web.deps import SessionDep
 
@@ -94,6 +97,21 @@ async def series_page(
             "user": current.user,
             "title": f"{state.title} — Библиотека",
             "state": state,
+            "sources": await SourceLinkService(session).resolved(
+                current.user.id, "series", series_id
+            ),
+            "source_endpoints": list(
+                (
+                    await session.execute(
+                        select(SourceEndpointModel)
+                        .where(
+                            SourceEndpointModel.owner_id == current.user.id,
+                            SourceEndpointModel.enabled.is_(True),
+                        )
+                        .order_by(SourceEndpointModel.name)
+                    )
+                ).scalars()
+            ),
         },
     )
 

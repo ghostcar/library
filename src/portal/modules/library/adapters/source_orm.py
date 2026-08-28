@@ -67,16 +67,34 @@ class SourceLinkModel(Base):
     role: Mapped[str] = mapped_column(String(24), nullable=False)
     external_id: Mapped[str | None] = mapped_column(Text, nullable=True)
     external_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_preferred: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
+    priority: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=100, server_default=text("100")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
     __table_args__ = (
         UniqueConstraint(
-            "source_endpoint_id", "entity_type", "entity_id", "role",
+            "source_endpoint_id",
+            "entity_type",
+            "entity_id",
+            "role",
             name="uq_source_links_entity_role",
         ),
         Index("ix_source_links_owner_entity", "owner_id", "entity_type", "entity_id"),
+        Index(
+            "uq_source_links_preferred_role",
+            "owner_id",
+            "entity_type",
+            "entity_id",
+            "role",
+            unique=True,
+            postgresql_where=text("is_preferred"),
+        ),
     )
 
 
