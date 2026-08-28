@@ -197,3 +197,8 @@
 - Добавлена иконка menu в локальный SVG sprite, fixture исправлен на существующие icon ids.
 - Chromium smoke: 1280×800 и 390×844 — OK.
 - Деплой `a4859e7`: backup `20260828-024823`, web/worker healthy, HTTP smoke OK.
+
+## Сессия 22 — 2026-08-28 — visual series state
+
+- В карточки циклов добавлены chips `новый релиз`, `ждём продолжение`, `последнее наблюдение`.
+- В деталях цикла добавлен доступный disclosure evidence наблюдений.

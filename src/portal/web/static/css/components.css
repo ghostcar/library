@@ -236,6 +236,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .chip--ok { color: var(--success); border-color: var(--success); }
 .chip--warn { color: var(--warning); border-color: var(--warning); }
 .chip--error { color: var(--error); border-color: var(--error); }
+.observation-details summary { cursor: pointer; color: var(--secondary); }
+.observation-details ul { padding-left: 20px; }
 
 /* tables */
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }

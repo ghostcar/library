@@ -12,6 +12,11 @@
         {% if s.last_read %} · последняя прочитанная: {{ s.last_read.title }}{% endif %}
         {% if s.missing_indices %} · пропущены №{{ s.missing_indices | join(", №") }}{% endif %}
       </p>
+      <div class="u-flex u-gap-8 u-wrap u-mt-8">
+        {% if s.has_new_release %}<span class="chip chip--ok">новый релиз</span>{% endif %}
+        {% if s.waiting_release %}<span class="chip chip--warn">ждём продолжение</span>{% endif %}
+        {% if s.last_observed %}<span class="chip">наблюдалось {{ s.last_observed.strftime('%d.%m.%Y') }}</span>{% endif %}
+      </div>
     </div>
     {% if s.next_available_unread %}
     <form method="post" action="/library/works/{{ s.next_available_unread.work_id }}/status">

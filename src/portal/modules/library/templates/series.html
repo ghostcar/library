@@ -5,6 +5,19 @@
   статус: {{ state.series_status }} · уверенность завершённости: {{ state.completion_confidence }}
   {% if state.missing_indices %} · пропущены: №{{ state.missing_indices | join(", №") }}{% endif %}
 </p>
+<div class="u-flex u-gap-8 u-wrap u-mt-8">
+  {% if state.has_new_release %}<span class="chip chip--ok">новый релиз</span>{% endif %}
+  {% if state.waiting_release %}<span class="chip chip--warn">ждём продолжение</span>{% endif %}
+  {% if state.last_observed %}<span class="chip">последнее наблюдение {{ state.last_observed.strftime('%d.%m.%Y %H:%M') }}</span>{% endif %}
+</div>
+{% if state.observation_evidence %}
+<details class="observation-details u-mt-8">
+  <summary class="meta">Показать evidence наблюдений ({{ state.observation_evidence | length }})</summary>
+  <ul class="meta u-mt-4">
+    {% for evidence in state.observation_evidence[:5] %}<li>{{ evidence.match }} · {{ evidence.observed_at }}</li>{% endfor %}
+  </ul>
+</details>
+{% endif %}
 
 {% set next_up = state.next_available_unread %}
 {% if next_up %}
