@@ -35,7 +35,7 @@
 | Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
-| Alembic 0001+0010 | `IMPLEMENTED` | migrations/versions/ |
+| Alembic 0001+0011 | `IMPLEMENTED` | migrations/versions/ |
 | Auth SSR (login, защищённая /library, logout, settings) | `IMPLEMENTED` | src/portal/web (password change, CSRF-защищённый logout) |
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |

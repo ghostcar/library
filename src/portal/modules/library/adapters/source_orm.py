@@ -24,6 +24,62 @@ from sqlalchemy.orm import Mapped, mapped_column
 from portal.core.database.engine import Base
 
 
+class SourceEndpointModel(Base):
+    """Owner-scoped abstract source configuration (OPDS or HTML)."""
+
+    __tablename__ = "source_endpoints"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    source_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    role: Mapped[str] = mapped_column(String(24), nullable=False, server_default=text("'metadata'"))
+    adapter_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (Index("ix_source_endpoints_owner", "owner_id"),)
+
+
+class SourceLinkModel(Base):
+    """A source may describe and/or provide the same canonical entity."""
+
+    __tablename__ = "source_links"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    source_endpoint_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("source_endpoints.id", ondelete="CASCADE"), nullable=False
+    )
+    entity_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    entity_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    role: Mapped[str] = mapped_column(String(24), nullable=False)
+    external_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    external_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_endpoint_id", "entity_type", "entity_id", "role",
+            name="uq_source_links_entity_role",
+        ),
+        Index("ix_source_links_owner_entity", "owner_id", "entity_type", "entity_id"),
+    )
+
+
 class WatchRuleModel(Base):
     __tablename__ = "watch_rules"
 
@@ -38,6 +94,9 @@ class WatchRuleModel(Base):
         nullable=False,
     )
     adapter_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_endpoint_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("source_endpoints.id", ondelete="SET NULL"), nullable=True
+    )
     name: Mapped[str] = mapped_column(Text, nullable=False)
     url: Mapped[str] = mapped_column(Text, nullable=False)
     interval_seconds: Mapped[int] = mapped_column(
