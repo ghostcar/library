@@ -271,3 +271,12 @@
 - Декоративные изображения/орбитальная графика не добавлялись: реализация сохраняет
   информативный интерфейс реальной библиотеки. Следующий узкий visual slice —
   каталог/dashboard с воспроизводимыми заполненными данными.
+
+## Сессия 31 — 2026-08-28 — FB2 continuation-link candidates
+
+- При импорте локального FB2 извлекаются public links с ближайшим контекстом о
+  продолжении/новой книге; создаются owner-scoped review candidates (migration 0013).
+- Владелец вручную проверяет только page title; HTTPS/public-host/robots/size/type/
+  redirect guards fail closed. Нет чтения глав, acquisition или автосоздания work.
+- Test DB migrated to 0013; unit extractor 2 passed, import integration 11 passed.
+- Не deployed: VPS остаётся на image `8bc0f60`, schema `0012`.

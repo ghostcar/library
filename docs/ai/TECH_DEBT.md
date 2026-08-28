@@ -19,3 +19,4 @@
 | 13 | Author.Today HTML polling реализован; generic HTML отсутствует. Litnet намеренно не реализуется: соглашение запрещает automated collection (ADR-0020). | остальные разрешённые сайты не опрашиваются автоматически | low | agent | появление разрешённого второго HTML-сайта |
 | 14 | ~~SourceLink preferred/priority, CRUD, inheritance и series card отсутствуют~~ РЕШЕНО: migration 0012, owner-scoped service/UI, work→series→author→global | — | — | — | — |
 | 15 | ~~Fresh migration/full suite для source schema не подтверждены~~ РЕШЕНО: fresh migration 0012 и 281 tests passed | — | — | — | — |
+| 16 | Continuation-link title matching is exact normalized title only; site-specific title cleanup and EPUB extraction are intentionally absent | some candidates need manual review | low | agent | repeated false negatives in real imported books |

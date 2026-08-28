@@ -43,12 +43,12 @@ async def _inbox_context(
     owner_id: UUID,
     scan_result: Sequence[object] | None = None,
 ) -> dict[str, object]:
+    from portal.modules.library.application.continuation_link_service import ContinuationLinkService
     from portal.modules.library.infrastructure.import_repositories import (
         DuplicateCandidateRepository,
         ImportBatchRepository,
         ImportItemRepository,
     )
-
     settings: Settings = request.app.state.settings
     return {
         "user_id": owner_id,
@@ -60,6 +60,7 @@ async def _inbox_context(
             limit=20,
         ),
         "candidates": await DuplicateCandidateRepository(session).list_pending(owner_id),
+        "continuation_candidates": await ContinuationLinkService(session).list_pending(owner_id),
         "max_file_mb": settings.max_file_mb,
         "max_files": settings.max_files_per_batch,
         "scan_roots": settings.import_roots,
@@ -81,6 +82,30 @@ async def import_page(
         "import.html",
         {"user": current.user, "title": "Импорт — Библиотека", **context},
     )
+
+
+@router.post("/continuation-links/{candidate_id}/resolve")
+async def resolve_continuation_link(
+    candidate_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+) -> RedirectResponse:
+    from portal.modules.library.application.continuation_link_service import ContinuationLinkService
+
+    await ContinuationLinkService(session).resolve_title(current.user.id, candidate_id)
+    return RedirectResponse("/library/import", status_code=303)
+
+
+@router.post("/continuation-links/{candidate_id}/dismiss")
+async def dismiss_continuation_link(
+    candidate_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+) -> RedirectResponse:
+    from portal.modules.library.application.continuation_link_service import ContinuationLinkService
+
+    await ContinuationLinkService(session).dismiss(current.user.id, candidate_id)
+    return RedirectResponse("/library/import", status_code=303)
 
 
 @router.post("/import/upload")

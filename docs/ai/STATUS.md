@@ -35,7 +35,7 @@
 | Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
-| Alembic 0001+0012 | `IMPLEMENTED` | Код и Test VPS schema head=0012 |
+| Alembic 0001+0013 | `IMPLEMENTED` | Код и Test DB schema head=0013; VPS ещё на 0012 |
 | Auth SSR (login, защищённая /library, logout, settings) | `IMPLEMENTED` | src/portal/web (password change, CSRF-защищённый logout) |
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |
@@ -78,6 +78,7 @@
 | Abstract source endpoints | `IMPLEMENTED` | create/list/toggle/delete, OPDS/Flibusta/HTML profiles; выбранный endpoint сохраняется в новых watch rules |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
+| FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual safe title check → exact catalog match or review candidate; migration 0013, not deployed |
 
 ## Инфраструктурные факты
 

@@ -295,6 +295,15 @@ class ImportService:
                 ),
             )
 
+            if info.format is AssetFormat.FB2:
+                from portal.modules.library.application.continuation_link_service import (
+                    ContinuationLinkService,
+                )
+
+                await ContinuationLinkService(session).discover(
+                    owner_id, asset.id, work_id, content
+                )
+
             # same work+format with different content → duplicate candidate (§2.3)
             if work_id is not None:
                 sibling = await assets.find_by_work_and_format(
