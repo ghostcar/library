@@ -1,6 +1,6 @@
 # TaskContext: source management release gate
 
-- Status: release_ready (production mutation awaits explicit authorization)
+- Status: completed_and_deployed
 - Goal: verify the committed source-management UI against current code and prepare a safe VPS release.
 - Baseline: git `123602e`; deployed image `41a9068`, production schema `0010`.
 - Plan:
@@ -14,4 +14,5 @@
   - targeted source integration: 3 passed;
   - full suite with the new regression: 270 passed;
   - Chromium shell smoke: desktop 1280×800 and mobile 390×844 passed;
-  - release candidate remains local; Test VPS is unchanged.
+  - immutable image `a531fd1` deployed; GHCR digest `sha256:9fd209…a488ec9`;
+  - backup `20260828-060545`, migrations 0010→0012 and post-deploy smoke passed.

@@ -237,3 +237,10 @@
 - Chromium shell smoke прошёл на 1280×800 и 390×844.
 - Fresh migration/full suite: 270 passed; targeted source integration: 3 passed.
 - Release candidate готов; production по-прежнему `41a9068`, schema `0010`.
+
+## Сессия 27 — 2026-08-28 — source management deploy
+
+- Собран/pushed immutable image `a531fd1`, digest `sha256:9fd209…a488ec9`.
+- Проверенный backup `20260828-060545` создан на schema 0010.
+- Миграции 0011/0012 применены до переключения; web/worker работают на `a531fd1`.
+- Local/external health, ready, auth redirect, SVG/security headers и логи — OK.
