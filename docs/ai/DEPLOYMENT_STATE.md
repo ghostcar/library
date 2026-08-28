@@ -11,7 +11,10 @@
 
 ### Pending, не развёрнуто
 
-- Нет: Author.Today metadata release `8bc0f60` развёрнут, production schema `0012`.
+- FB2 continuation-link candidates: local commit `84e8bed`, migration `0013`.
+  Перед rollout нужны backup → build/push → migration → smoke. Проверка title
+  запускается только вручную и сначала соблюдает robots.txt (см. runbook
+  `fb2-continuation-link-check.md`).
 - Generic HTML/Litnet polling остаются будущими срезами.
 
 ## Окружение VPS (факты 2026-08-25)

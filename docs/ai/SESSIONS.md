@@ -280,3 +280,11 @@
   redirect guards fail closed. Нет чтения глав, acquisition или автосоздания work.
 - Test DB migrated to 0013; unit extractor 2 passed, import integration 11 passed.
 - Не deployed: VPS остаётся на image `8bc0f60`, schema `0012`.
+
+## Сессия 32 — 2026-08-28 — robots policy documentation
+
+- Канонически зафиксированы назначение и точная последовательность проверки
+  `robots.txt` в ручном FB2 title-check: runbook, ADR, status, architecture,
+  deployment state и handoff.
+- Проверка не относится к импорту FB2 или source polling в целом: она выполняется
+  только перед единственным внешним HTML GET по кнопке владельца и fail closed.

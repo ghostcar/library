@@ -20,3 +20,4 @@
 | 14 | ~~SourceLink preferred/priority, CRUD, inheritance и series card отсутствуют~~ РЕШЕНО: migration 0012, owner-scoped service/UI, work→series→author→global | — | — | — | — |
 | 15 | ~~Fresh migration/full suite для source schema не подтверждены~~ РЕШЕНО: fresh migration 0012 и 281 tests passed | — | — | — | — |
 | 16 | Continuation-link title matching is exact normalized title only; site-specific title cleanup and EPUB extraction are intentionally absent | some candidates need manual review | low | agent | repeated false negatives in real imported books |
+| 17 | robots parser for manual continuation-link checking supports applicable `User-agent`/`Disallow` only | unusual robots syntax may conservatively block or need a standards-complete parser | low | agent | real permitted source requires richer rules |

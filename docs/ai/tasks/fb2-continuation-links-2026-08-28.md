@@ -32,5 +32,7 @@ and present missing works as reviewable candidates.
   match from a candidate for a new book.
 - The title check is HTTPS/public-host/robots-aware and bounded to robots.txt plus
   one HTML response; it neither follows redirects nor downloads content/files.
+- Exact operational semantics and rationale for `robots.txt` are in
+  `docs/ai/runbooks/fb2-continuation-link-check.md`.
 - Checks: Ruff + mypy clean; extractor unit tests 2 passed; migration to test DB
   and 11 import integration tests passed. No production deployment was performed.

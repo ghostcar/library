@@ -63,6 +63,7 @@ scripts/                 — dev/test/lint
 | core.auth | IMPLEMENTED | /auth/register, /auth/login, /auth/refresh, /auth/logout, /auth/me, /auth/tokens, /login (SSR), /logout (SSR) |
 | core.health | IMPLEMENTED | GET /healthz, /readyz |
 | library | PARTIAL | dashboard/catalog/authors/series/import/normalization/sources/notifications/settings + OPDS delivery |
+| FB2 continuation candidates | IMPLEMENTED, pending deploy | local FB2 extractor → `continuation_link_candidates` → manual title resolver → Work match or review candidate |
 
 ## Source monitoring
 
@@ -71,9 +72,12 @@ scripts/                 — dev/test/lint
 - `OPDSAdapter`: safe Atom/OPDS parser, conditional GET.
 - `AuthorTodayAdapter`: только публичные `/u/<slug>/works`, HTML parser v1,
   quiet baseline и revision events; без auth/private API/content/acquisition (ADR-0019).
+- `ContinuationLinkService`: не мониторинг источников, а ручная title-only
+  проверка ссылки из локального FB2. Перед одним HTML GET проверяет public HTTPS
+  host и applicable rules из `robots.txt`; детали — ADR-0021 и runbook.
 
 ## База данных (18 таблиц)
 
 - core: users, api_tokens, audit_log, outbox_events, jobs
-- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, source_endpoints, source_links, watch_rules, source_observations, assets (+work_id, is_preferred), asset_relations, reading_states, import_batches, import_items, duplicate_candidates, normalization_runs
+- library: authors, author_aliases, works, work_authors, series, series_aliases, series_memberships, source_records, source_author_records, source_endpoints, source_links, watch_rules, source_observations, assets (+work_id, is_preferred), asset_relations, reading_states, import_batches, import_items, duplicate_candidates, continuation_link_candidates, normalization_runs
 - Все пользовательские данные: `owner_id UUID → users.id` (FK CASCADE)
