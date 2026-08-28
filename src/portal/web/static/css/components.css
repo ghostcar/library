@@ -103,6 +103,7 @@ input:focus-visible {
 .brand { color: var(--on-surface); text-decoration: none; }
 .brand--sidebar { padding: var(--space-4); border-bottom: 1px solid var(--outline-variant); }
 .brand--mobile { display: none; }
+.mobile-menu { display: none; }
 
 .sidebar {
   position: fixed;
@@ -256,6 +257,21 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   body:has(.sidebar) .topbar,
   body:has(.sidebar) .container { margin-left: 0; }
   .brand--mobile { display: block; }
+  .mobile-menu { display: block; position: relative; order: 2; }
+  .mobile-menu > summary { list-style: none; }
+  .mobile-menu > summary::-webkit-details-marker { display: none; }
+  .mobile-menu__panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 40;
+    min-width: 220px;
+    padding: var(--space-2);
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    box-shadow: var(--elevation-2);
+  }
+  .mobile-menu__panel .nav-link { min-height: 44px; }
   .topbar { position: sticky; top: 0; z-index: 20; padding: 0 var(--space-3); flex-wrap: nowrap; }
   .container { padding: var(--space-3) var(--space-3); }
   .bottom-nav {

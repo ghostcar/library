@@ -16,7 +16,7 @@
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; derived source evidence включено |
 | Phase 6. Source monitoring | `IMPLEMENTED` | OPDS-адаптер, scheduler/backoff/degraded, watch rules, in-app уведомления; formal adapter contracts; AT/Litnet/Flibusta — disabled (ADR-0011) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
-| Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
+| Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
 | Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:b7351b2, schema 0008, https://library.gorbunovr.ru |
 
 ## Компоненты

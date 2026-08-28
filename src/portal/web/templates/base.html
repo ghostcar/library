@@ -27,6 +27,18 @@
   {% endif %}
   <header class="topbar">
     <a class="brand brand--mobile" href="/library/">Ghostcar<small>LIBRARY ARCHIVE</small></a>
+    {% if user %}
+    <details class="mobile-menu">
+      <summary class="icon-button" aria-label="Открыть навигацию" title="Навигация">
+        <svg class="icon" aria-hidden="true"><use href="/static/icons/sprite.svg#menu"></use></svg>
+      </summary>
+      <nav class="mobile-menu__panel" aria-label="Дополнительная навигация">
+        {% for href, icon, label in [('/library/sources', 'radar', 'Источники'), ('/library/notifications', 'notifications', 'Уведомления'), ('/library/opds-settings', 'opds', 'OPDS'), ('/library/settings', 'settings', 'Настройки')] %}
+        <a href="{{ href }}" class="nav-link{% if path == href or path.startswith(href + '/') %} is-active{% endif %}"><svg class="icon" aria-hidden="true"><use href="/static/icons/sprite.svg#{{ icon }}"></use></svg><span>{{ label }}</span></a>
+        {% endfor %}
+      </nav>
+    </details>
+    {% endif %}
     <div class="topbar__actions">
       <button id="theme-toggle" class="icon-button" type="button" title="Переключить тему" aria-label="Переключить тему"><svg class="icon"><use href="/static/icons/sprite.svg#theme"></use></svg></button>
       {% if user %}

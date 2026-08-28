@@ -189,3 +189,10 @@
   регистрационная валидация.
 - OPDS получил стабильный adapter id; неготовые интеграции не включались.
 - Ruff clean, 26 targeted tests passed.
+
+## Сессия 21 — 2026-08-28 — responsive navigation
+
+- Desktop: полный sidebar; mobile: bottom-nav для частых действий и overflow-меню
+  в topbar для Источников/Уведомлений/OPDS/Настроек.
+- Добавлена иконка menu в локальный SVG sprite, fixture исправлен на существующие icon ids.
+- Chromium smoke: 1280×800 и 390×844 — OK.
