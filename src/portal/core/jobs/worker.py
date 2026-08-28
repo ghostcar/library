@@ -25,10 +25,17 @@ logger = logging.getLogger("portal.worker")
 
 Handler = Callable[[dict[str, Any]], Awaitable[None]]
 _handlers: dict[str, Handler] = {}
+EventHandler = Callable[[dict[str, Any]], Awaitable[None]]
+_event_handlers: dict[str, EventHandler] = {}
 
 
 def register_handler(kind: str, handler: Handler) -> None:
     _handlers[kind] = handler
+
+
+def register_event_handler(event_type: str, handler: EventHandler) -> None:
+    """Register an idempotent typed event consumer by explicit event name."""
+    _event_handlers[event_type] = handler
 
 
 async def _noop_handler(payload: dict[str, Any]) -> None:
@@ -88,6 +95,28 @@ async def _poll_watch_handler(payload: dict[str, Any]) -> None:
 register_handler("noop", _noop_handler)
 register_handler("normalize", _normalize_handler)
 register_handler("poll_watch", _poll_watch_handler)
+
+
+async def _observed_event_handler(payload: dict[str, Any]) -> None:
+    """Default durable observer until a feature consumer is installed."""
+    logger.info("domain event observed payload=%s", payload)
+
+
+for _event_type in (
+    "BookFileImported",
+    "WorkMatched",
+    "DuplicateSuspected",
+    "NormalizationRequested",
+    "NormalizationCompleted",
+    "NormalizationFailed",
+    "SourceRecordObserved",
+    "NewReleaseDetected",
+    "BookAcquired",
+    "BookMarkedRead",
+    "SeriesProgressChanged",
+    "NotificationRequested",
+):
+    register_event_handler(_event_type, _observed_event_handler)
 
 
 async def run_retention_safe(session_factory: async_sessionmaker[AsyncSession]) -> None:
@@ -189,9 +218,13 @@ async def process_outbox(session_factory: async_sessionmaker[AsyncSession]) -> i
         events = await repo.fetch_pending(limit=100)
         for event in events:
             try:
-                logger.info("domain event %s payload=%s", event.event_type, event.payload)
+                handler = _event_handlers.get(event.event_type)
+                if handler is None:
+                    raise LookupError(f"no outbox handler for event '{event.event_type}'")
+                await handler(dict(event.payload))
                 await repo.mark_processed(event.id)
             except Exception as exc:
+                logger.exception("outbox event %s failed", event.id)
                 await repo.mark_failed(event.id, str(exc))
         return len(events)
 

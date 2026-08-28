@@ -164,3 +164,12 @@
 - `scripts/test-browser.sh` больше не использует tracker checkout или внешний
   `NODE_PATH`; после `npm ci` запускается локальный `npm run test:browser`.
 - Проверено: Chromium smoke desktop 1280×800 и mobile 390×844 — OK.
+
+## Сессия 18 — 2026-08-28 — typed outbox retries
+
+- Добавлены explicit event handler registry и unknown-event rejection.
+- Outbox получил durable `next_attempt_at`, exponential backoff и terminal
+  `failed` после 5 попыток (Alembic 0009).
+- `scripts/test.sh` теперь применяет `alembic upgrade head` перед тестами.
+- Проверено: lint clean, targeted 30 passed, полный набор 263 passed.
+- Outbox-срез ещё не развёрнут; текущий Test VPS остаётся на `b7351b2`.

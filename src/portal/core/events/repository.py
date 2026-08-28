@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
@@ -26,7 +26,11 @@ class OutboxRepository:
     async def fetch_pending(self, limit: int = 100) -> list[OutboxEventModel]:
         stmt = (
             select(OutboxEventModel)
-            .where(OutboxEventModel.status == OutboxStatus.PENDING.value)
+            .where(
+                OutboxEventModel.status == OutboxStatus.PENDING.value,
+                (OutboxEventModel.next_attempt_at.is_(None))
+                | (OutboxEventModel.next_attempt_at <= datetime.now(UTC)),
+            )
             .order_by(OutboxEventModel.created_at)
             .limit(limit)
             .with_for_update(skip_locked=True)
@@ -40,13 +44,38 @@ class OutboxRepository:
             .values(status=OutboxStatus.PROCESSED.value, processed_at=datetime.now(UTC)),
         )
 
-    async def mark_failed(self, event_id: UUID, error: str) -> None:
+    async def mark_failed(
+        self,
+        event_id: UUID,
+        error: str,
+        *,
+        max_attempts: int = 5,
+    ) -> None:
+        event = await self._session.get(OutboxEventModel, event_id)
+        if event is None:
+            return
+        attempts = event.attempts + 1
+        if attempts < max_attempts:
+            delay = min(3600, 2 ** min(attempts, 10))
+            await self._session.execute(
+                update(OutboxEventModel)
+                .where(OutboxEventModel.id == event_id)
+                .values(
+                    status=OutboxStatus.PENDING.value,
+                    attempts=attempts,
+                    last_error=error[:2000],
+                    next_attempt_at=datetime.now(UTC) + timedelta(seconds=delay),
+                ),
+            )
+            return
         await self._session.execute(
             update(OutboxEventModel)
             .where(OutboxEventModel.id == event_id)
             .values(
                 status=OutboxStatus.FAILED.value,
+                attempts=attempts,
                 last_error=error[:2000],
+                next_attempt_at=None,
             ),
         )
 

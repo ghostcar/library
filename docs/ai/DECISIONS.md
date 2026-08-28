@@ -19,3 +19,4 @@
 | 0013 | accepted | Токены в CSS (обе темы) + UI kit dev-only; security headers/CSP; Docker-образ multi-stage non-root; backup/restore round-trip |
 | 0014 | accepted | Модель auto/best-free и деплой в GHCR |
 | 0015 | accepted | Audit remediation: HTML errors, transactional outbox, recoverable jobs, local SVG icons |
+| 0016 | accepted | Typed outbox registry, bounded exponential retry и migration 0009 |

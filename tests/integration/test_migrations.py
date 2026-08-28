@@ -108,7 +108,7 @@ def test_migration_upgrade_head_on_fresh_database() -> None:
                     "WHERE table_schema = 'public' ORDER BY table_name",
                 )
                 version = await conn.fetchval("SELECT version_num FROM alembic_version")
-                assert version == "0008"
+                assert version == "0009"
                 return [r["table_name"] for r in rows]
             finally:
                 await conn.close()

@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-27 (audit remediation: security, reliability, frontend shell)
+Последняя проверка: 2026-08-28 (outbox retries, reproducible browser toolchain)
 
 ## Фазы мастер-промпта (§20)
 
@@ -29,13 +29,13 @@
 | Core: module registry | `IMPLEMENTED` | src/portal/core/module_registry |
 | Core: auth (users, JWT, refresh/device, CSRF+forms, rate limit) | `IMPLEMENTED` | src/portal/core/auth (ADR-0006, CSRF accepts form field) |
 | Core: audit log | `IMPLEMENTED` | src/portal/core/audit |
-| Core: outbox (transactional) | `IMPLEMENTED` | события пишутся в транзакции use case; worker обрабатывает pending events |
+| Core: outbox (transactional) | `IMPLEMENTED` | transactional events, typed registry, exponential retry до 5 попыток, terminal failed |
 | Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | claim до handler; stale running jobs requeue через 15 мин |
 | Core: storage port + local adapter | `IMPLEMENTED` | src/portal/core/storage |
 | Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
-| Alembic 0001+0002 | `IMPLEMENTED` | migrations/versions/ |
+| Alembic 0001+0009 | `IMPLEMENTED` | migrations/versions/ |
 | Auth SSR (login, защищённая /library, logout, settings) | `IMPLEMENTED` | src/portal/web (password change, CSRF-защищённый logout) |
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |

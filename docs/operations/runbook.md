@@ -13,7 +13,7 @@ docker logs library-web --tail 100
 docker logs library-worker --tail 100 -f
 
 # миграции (внутри web-контейнера)
-docker compose -f compose.prod.yaml exec web alembic upgrade head
+docker compose -f compose.prod.yaml exec web alembic -x "database_url=$LIBRARY_DATABASE_URL" upgrade head
 ```
 
 ## Backup / Restore (§14.3)
@@ -40,7 +40,7 @@ scripts/backup.sh backups/
 # 3. обновить тег в compose.prod.yaml и применить
 LIBRARY_IMAGE=ghcr.io/ghostcar/library:<git-sha> docker compose -f compose.prod.yaml pull
 LIBRARY_IMAGE=ghcr.io/ghostcar/library:<git-sha> docker compose -f compose.prod.yaml up -d
-docker compose -f compose.prod.yaml exec web alembic upgrade head
+docker compose -f compose.prod.yaml exec web alembic -x "database_url=$LIBRARY_DATABASE_URL" upgrade head
 
 # 4. smoke
 curl -s http://127.0.0.1:8001/healthz && curl -s http://127.0.0.1:8001/readyz
