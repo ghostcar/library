@@ -18,4 +18,4 @@
 | 12 | Pixel-by-pixel сверка Stitch-экранов не выполнялась; shell/navigation теперь покрыты responsive smoke | возможен локальный visual drift отдельных страниц | low | agent | стабилизация контента и эталонных fixtures |
 | 13 | Author.Today HTML polling реализован; generic HTML и Litnet adapter отсутствуют | остальные сайты не опрашиваются автоматически | low | agent | решение OPEN_QUESTIONS#10 или второй HTML-сайт |
 | 14 | ~~SourceLink preferred/priority, CRUD, inheritance и series card отсутствуют~~ РЕШЕНО: migration 0012, owner-scoped service/UI, work→series→author→global | — | — | — | — |
-| 15 | ~~Fresh migration/full suite для source schema не подтверждены~~ РЕШЕНО: fresh migration 0012 и 269 tests passed | — | — | — | — |
+| 15 | ~~Fresh migration/full suite для source schema не подтверждены~~ РЕШЕНО: fresh migration 0012 и 281 tests passed | — | — | — | — |
