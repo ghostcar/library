@@ -157,3 +157,10 @@
 - Исправлены deploy blockers: Alembic files в runtime image, worker healthcheck,
   prod-volume backup/restore, SHA-tag injection, packaged SVG sprite.
 - Smoke: local/external health, ready, HTML auth redirect, CSP, icons, worker, EPUBCheck — OK.
+
+## Сессия 17 — 2026-08-28 — reproducible browser handoff
+
+- Добавлены `package.json`/`package-lock.json` с pinned `playwright@1.62.1`.
+- `scripts/test-browser.sh` больше не использует tracker checkout или внешний
+  `NODE_PATH`; после `npm ci` запускается локальный `npm run test:browser`.
+- Проверено: Chromium smoke desktop 1280×800 и mobile 390×844 — OK.

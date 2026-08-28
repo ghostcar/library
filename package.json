@@ -1,0 +1,10 @@
+{
+  "name": "library-portal-browser-tests",
+  "private": true,
+  "scripts": {
+    "test:browser": "node tests/browser/shell.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

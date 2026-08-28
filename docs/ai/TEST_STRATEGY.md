@@ -8,6 +8,7 @@
 - **Integration**: репозитории на PostgreSQL (docker compose, тестовая БД), миграции с чистой схемы.
 - **Contract**: source adapter/OPDS serializer и capability registry покрыты unit-тестами.
 - **E2E**: HTTP end-to-end через ASGITransport; Chromium browser smoke для desktop/mobile shell.
+  Browser toolchain pinned в `package-lock.json` (`playwright@1.62.1`).
 - **Security**: upload/XXE/ZIP bomb, owner isolation, OPDS token scope, auth CSRF и library-form CSRF реализованы.
 - **Property-based**: PLANNED (Hypothesis: filenames, unicode, series indices — Phase 2/3).
 
