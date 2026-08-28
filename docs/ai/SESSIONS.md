@@ -253,3 +253,12 @@
 - Проверено: live page parsed (30 works), targeted 23 unit + 7 integration, full 281 passed.
 - Деплой `8bc0f60`: backup `20260828-063254`, schema `0012`, web healthy/worker running.
 - Local/external и authenticated sources UI smoke — OK; rollback image `a531fd1`.
+
+## Сессия 29 — 2026-08-28 — Litnet source research
+
+- Проверены публичные правила Litnet для prerequisites `OPEN_QUESTIONS#10`.
+- Пользовательское соглашение прямо запрещает автоматизированный сбор информации;
+  поэтому HTML adapter не реализован и остаётся disabled (ADR-0020).
+- Не выполнялись авторизация, browser automation, внутренние API, сбор контента
+  или изменения production; следующий допустимый источник требует собственной
+  правовой и технической проверки.

@@ -23,3 +23,4 @@
 | 0017 | accepted | Formal adapter contracts и explicit capability registration |
 | 0018 | accepted | Flibusta подключается как OPDS metadata-only профиль без фонового acquisition |
 | 0019 | accepted | Author.Today: публичный HTML metadata-only, quiet baseline, revision events, без auth/API/content |
+| 0020 | accepted | Litnet: автоматическое HTML-наблюдение не включать — соглашение запрещает automated collection |

@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-28 (Author.Today adapter deployed)
+Последняя проверка: 2026-08-28 (Litnet research completed; adapter remains disabled)
 
 ## Фазы мастер-промпта (§20)
 
@@ -14,7 +14,7 @@
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `IMPLEMENTED` | auto/best-free, ретрай на cold-start, live propose в проде, кэш, corrections, UI propose/apply |
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; derived source evidence включено |
-| Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, source management и Author.Today public HTML metadata adapter развёрнуты; Litnet отсутствует |
+| Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
 | Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:8bc0f60, schema 0012, https://library.gorbunovr.ru |
@@ -58,7 +58,7 @@
 | Watch rules + scheduler | `IMPLEMENTED` | watch_rules, worker tick 30s, backoff+jitter, degraded |
 | In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
 | Author.Today metadata | `IMPLEMENTED` | public `/u/<slug>/works`, conditional GET, quiet baseline/revisions, без auth/API/content; deployed (ADR-0019) |
-| Litnet | `ABSENT` | отключён до исследования HTML и правовых ограничений (ADR-0011) |
+| Litnet | `ABSENT` | намеренно отключён: пользовательское соглашение запрещает automated collection (ADR-0020) |
 | Flibusta OPDS metadata | `IMPLEMENTED` | отдельный профиль поверх OPDS; acquisition=false, фоновые скачивания отсутствуют |
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
 | OPDS download | `IMPLEMENTED` | /opds/download/{id}, Content-Disposition, preferred→normalized→original |
