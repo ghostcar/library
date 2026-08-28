@@ -229,3 +229,11 @@
 - Metadata/acquisition разрешаются независимо по цепочке work→series→author→global.
 - Fresh migration и целевые integration: 9 passed; полный набор: 269 passed.
 - Production не менялся: image `41a9068`, schema `0010`; deploy требует отдельной команды.
+
+## Сессия 26 — 2026-08-28 — source management release gate
+
+- Добавлен HTTP end-to-end сценарий endpoint/SourceLink UI для author/series/work,
+  включая наследование и отключение endpoint.
+- Chromium shell smoke прошёл на 1280×800 и 390×844.
+- Fresh migration/full suite: 270 passed; targeted source integration: 3 passed.
+- Release candidate готов; production по-прежнему `41a9068`, schema `0010`.

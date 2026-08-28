@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-28 (source management package complete, not deployed)
+Последняя проверка: 2026-08-28 (source management release gate complete, not deployed)
 
 ## Фазы мастер-промпта (§20)
 

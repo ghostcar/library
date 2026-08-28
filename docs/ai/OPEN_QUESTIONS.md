@@ -11,7 +11,7 @@
 | 5 | ЗАКРЫТО 2026-08-26: один агент — атомарные коммиты в main (Conventional Commits), feature-ветки опционально для рискованных задач. | Git workflow | — | 2026-08-26 |
 | 9 | Author.Today: исследование официального API (авторизация, rate limits, допустимость наблюдения). Решить до включения адаптера. | ADR-0011 | low | 2026-08-26 |
 | 10 | Litnet: правовая и техническая оценка HTML-наблюдения (selectors versioning, fixtures) или отказ. Flibusta решена как OPDS metadata-only (ADR-0018). | ADR-0011/0018 | low | 2026-08-26 |
-| 11 | Политика preferred/inherited source: подтверждено направление `work > series > author > global`; нужно формально решить хранение preferred и поведение при конфликте metadata/acquisition. | source_links | high | 2026-08-28 |
+| 11 | ЗАКРЫТО 2026-08-28: preferred хранится на `SourceLink` отдельно для каждой роли; metadata/acquisition разрешаются независимо по цепочке `work > series > author > global`. | source_links, migration 0012 | — | 2026-08-28 |
 | 7 | SSO между поддоменами *.gorbunovr.ru и миграция tracker'а на общую auth: общий домен cookie или RS256/JWKS? Решить при появлении второго web-сервиса. | ADR-0006 | low | 2026-08-25 |
 | 8 | ЗАКРЫТО 2026-08-26: LIBRARY_AUDIT_RETENTION_DAYS (0 = хранить всегда) + очистка processed outbox (30 дней) в worker'е каждые 6ч. | core/retention.py | — | 2026-08-26 |
 | 6 | ЗАКРЫТО 2026-08-26: обе темы реализованы (tokens.css), переключатель «Тема» в шапке (localStorage). Default — Astral (тёмная); сменить default — одна строка в tokens.css/base. | ADR-0004/0013 | — | 2026-08-26 |

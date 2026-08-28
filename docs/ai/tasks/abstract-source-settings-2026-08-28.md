@@ -12,7 +12,7 @@
   - owner-scoped SourceLink create/update-by-key/prefer/delete with URL validation;
   - independent role resolution `work > series > author > global` (series also inherits author links);
   - shared source block on author/series/work cards with merged release/file state;
-  - fresh migration and full suite: 269 passed.
+  - fresh migration and current full suite: 270 passed.
 - Remaining follow-up:
   - HTML endpoints are declarative settings/links; actual per-site HTML polling adapters remain a separate slice;
   - deploy repository schema 0011/0012 only after explicit user command.

@@ -14,8 +14,8 @@
 - Repository baseline перед текущим коммитом: `dcd7434`; Test VPS остаётся на `41a9068`.
 - Pending code добавляет Flibusta metadata-only, endpoint/SourceLink management,
   migrations 0011/0012 и source cards с наследованием.
-- Fresh migration 0012 и full suite (269 passed) подтверждены. До deploy остаются
-  browser smoke нового UI, immutable build, backup и явное разрешение владельца.
+- Fresh migration 0012, full suite (270 passed), HTTP UI regression и Chromium
+  desktop/mobile подтверждены. До deploy остаются immutable build, backup и явное разрешение владельца.
   Production schema остаётся `0010`.
 
 ## Окружение VPS (факты 2026-08-25)
