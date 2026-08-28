@@ -6,7 +6,7 @@
 
 | Источник | Роль | Статус |
 |----------|------|--------|
-| `design/ghostcar-design/` | Документированная дизайн-система макропортала: tokens, layout, navigation, components, tailwind, themes, логотип | PRIMARY (токены) |
+| `design/ghostcar-design/` | Документированная дизайн-система макропортала: tokens, layout, navigation, components, themes, логотип | PRIMARY (токены) |
 | `design/stitch_library/` | 20+ экранов библиотеки, 3 семейства (см. DESIGN_SOURCE_OF_TRUTH.md) | PRIMARY (экраны) |
 | `design/stitch_homelab_infrastructure_dashboard/` | Референс: паттерны дашборда/навигации | REFERENCE |
 | `design/stitch_sing_box_management_portal/` | Референс: паттерны admin/user порталов, 4 темы | REFERENCE |
@@ -17,9 +17,11 @@
 | Артефакт | Статус | Где |
 |----------|--------|-----|
 | DESIGN_SOURCE_OF_TRUTH.md (матрица) | PARTIAL | docs/design/ |
-| Tailwind-конфиг из токенов | PLANNED | Phase 1/8 |
-| UI kit page (dev-only) | PLANNED | Phase 8 |
-| Visual regression | PLANNED | Phase 8 |
+| CSS tokens + local components | IMPLEMENTED | `static/css/tokens.css`, `components.css` |
+| Tailwind-конфиг | NOT_USED | осознанно не добавлялся поверх работающей token/component системы |
+| UI kit page (dev-only) | IMPLEMENTED | `/library/ui-kit` |
+| Responsive browser smoke | IMPLEMENTED | Chromium, 1280×800 и 390×844 |
+| Pixel-level visual regression | PLANNED | после стабилизации representative data/fixtures |
 
 ## Правила
 

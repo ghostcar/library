@@ -262,3 +262,12 @@
 - Не выполнялись авторизация, browser automation, внутренние API, сбор контента
   или изменения production; следующий допустимый источник требует собственной
   правовой и технической проверки.
+
+## Сессия 30 — 2026-08-28 — design-context reconciliation
+
+- Сверены Ghostcar/Stitch reference, tokens, shared components и shell template.
+- Исправлен документальный drift: локальные CSS tokens/components, dev-only UI kit
+  и responsive Chromium smoke уже реализованы; Tailwind намеренно не используется.
+- Декоративные изображения/орбитальная графика не добавлялись: реализация сохраняет
+  информативный интерфейс реальной библиотеки. Следующий узкий visual slice —
+  каталог/dashboard с воспроизводимыми заполненными данными.
