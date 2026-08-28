@@ -84,3 +84,33 @@ async def work_page(
         "work_detail.html",
         {"user": current.user, "title": f"{detail['title']} — Библиотека", "work": detail},
     )
+
+
+@router.get("/authors", response_class=HTMLResponse)
+async def authors_page(request: Request, current: CurrentUser, session: SessionDep) -> HTMLResponse:
+    from portal.modules.library.application.opds_catalog_service import OpdsCatalogService
+
+    authors = await OpdsCatalogService(session).authors_list(current.user.id)
+    return _templates.TemplateResponse(request, "authors.html", {
+        "user": current.user, "title": "Авторы — Библиотека", "authors": authors,
+    })
+
+
+@router.get("/authors/{author_id}", response_class=HTMLResponse)
+async def author_page(
+    request: Request, author_id: UUID, current: CurrentUser, session: SessionDep
+) -> HTMLResponse:
+    from portal.modules.library.application.opds_catalog_service import OpdsCatalogService
+
+    service = OpdsCatalogService(session)
+    works = await service.author_works(current.user.id, author_id)
+    if works is None:
+        return _templates.TemplateResponse(
+            request,
+            "not_found.html",
+            {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
+            status_code=404,
+        )
+    return _templates.TemplateResponse(request, "author.html", {
+        "user": current.user, "title": "Автор — Библиотека", "works": works, "author_id": author_id,
+    })

@@ -17,7 +17,7 @@
   <aside class="sidebar" aria-label="Основная навигация">
     <a class="brand brand--sidebar" href="/library/">Ghostcar<small>LIBRARY ARCHIVE</small></a>
     <nav class="side-nav">
-      {% for href, icon, label in [('/library/', 'dashboard', 'Обзор'), ('/library/catalog', 'library', 'Каталог'), ('/library/series', 'series', 'Циклы'), ('/library/queue', 'queue', 'Очередь'), ('/library/import', 'upload', 'Импорт'), ('/library/sources', 'radar', 'Источники'), ('/library/opds-settings', 'opds', 'OPDS')] %}
+      {% for href, icon, label in [('/library/', 'dashboard', 'Обзор'), ('/library/catalog', 'library', 'Каталог'), ('/library/authors', 'library', 'Авторы'), ('/library/series', 'series', 'Циклы'), ('/library/queue', 'queue', 'Очередь'), ('/library/import', 'upload', 'Импорт'), ('/library/sources', 'radar', 'Источники'), ('/library/opds-settings', 'opds', 'OPDS')] %}
       <a href="{{ href }}" class="nav-link{% if path == href or (href != '/library/' and path.startswith(href)) %} is-active{% endif %}">
         <svg class="icon" aria-hidden="true"><use href="/static/icons/sprite.svg#{{ icon }}"></use></svg><span>{{ label }}</span>
       </a>

@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="u-display u-weight-normal">Авторы</h1>
+<div class="u-grid u-card-grid u-gap-16 u-mt-24">{% for a in authors %}<a class="card u-block u-no-decoration u-color-inherit" href="/library/authors/{{ a.id }}"><p class="u-display u-text-18 u-m-0">{{ a.title }}</p><p class="meta">{{ a.count }} произведений</p></a>{% else %}<div class="card"><p class="meta">Авторов пока нет.</p></div>{% endfor %}</div>
+{% endblock %}
