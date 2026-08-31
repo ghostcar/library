@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="u-display u-weight-normal">Сопоставить книгу источника</h1>
+
+<div class="card">
+  <p class="meta">ИСТОЧНИК · {{ state.title }}</p>
+  <p class="u-my-4"><strong>{{ entry.title }}</strong>{% if entry.author_name %} · {{ entry.author_name }}{% endif %}</p>
+  {% if entry.url %}<p class="meta"><a href="{{ entry.url }}" target="_blank" rel="noopener noreferrer">Открыть страницу источника</a></p>{% endif %}
+  <form method="get" action="/library/series/{{ state.series_id }}/source-works/{{ entry.observation_id }}/assign" role="search">
+    <label for="catalog-query">Найти существующую книгу</label>
+    <div class="u-flex u-gap-8 u-items-center u-wrap">
+      <input id="catalog-query" name="q" value="{{ query }}" placeholder="Название, автор или цикл" class="u-grow u-min-220" autofocus>
+      <button type="submit" class="u-m-0 u-w-auto">Найти</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <p class="meta">РЕЗУЛЬТАТЫ ПОИСКА ({{ works | length }})</p>
+  {% if works %}
+    {% for work in works %}
+    <div class="u-flex u-gap-12 u-items-center u-between u-wrap u-my-12 u-border-bottom u-pb-8">
+      <div class="u-grow u-min-220">
+        <p class="u-my-2"><strong>{{ work.title }}</strong></p>
+        <p class="meta u-my-2">
+          {% if work.authors %}{{ work.authors | join(', ') }}{% else %}автор не указан{% endif %}
+          {% if work.series %} · {{ work.series | map(attribute='title') | join(', ') }}{% endif %}
+        </p>
+      </div>
+      <form method="post" action="/library/series/{{ state.series_id }}/source-works/{{ entry.observation_id }}/reconcile">
+        {% include "_csrf.html" %}
+        <input type="hidden" name="decision" value="assign">
+        <input type="hidden" name="work_id" value="{{ work.id }}">
+        <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Связать с этой книгой</button>
+      </form>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p>Совпадений нет. Измените запрос или создайте карточку по данным источника.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <p class="meta">НОВАЯ КАРТОЧКА</p>
+  <p>Название, автор и цикл будут взяты из сохранённого наблюдения источника.</p>
+  <form method="post" action="/library/series/{{ state.series_id }}/source-works/{{ entry.observation_id }}/reconcile">
+    {% include "_csrf.html" %}
+    <input type="hidden" name="decision" value="create">
+    <button type="submit" class="u-m-0 u-w-auto">Создать карточку</button>
+  </form>
+</div>
+
+<p class="u-mt-24"><a href="/library/series/{{ state.series_id }}" class="u-primary u-mono u-text-13">← {{ state.title }}</a></p>
+{% endblock %}

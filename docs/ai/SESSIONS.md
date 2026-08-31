@@ -386,3 +386,15 @@
 - Проверено: import integration 14 passed, full suite 294 passed, Ruff/format/mypy
   green, Chromium shell desktop/mobile green.
 - Production не менялся: image `1f98181`, schema `0013`.
+
+## Сессия 39 — 2026-08-31 — searchable source-work reconciliation
+
+- Удалён select первых 250 catalog works из карточки серии и соответствующий
+  тяжёлый запрос при каждом открытии страницы.
+- Missing/ambiguous source work теперь открывает отдельный owner-scoped поиск по
+  title/author/series; исходное название автоматически становится первым запросом.
+- На основном и поисковом экранах создание новой карточки остаётся отдельным
+  явным действием; запись проходит через прежнюю проверенную reconciliation boundary.
+- Проверено: source integration 4 passed, полный Ruff/format/mypy green; предыдущий
+  полный gate 294 passed + Chromium desktop/mobile остаётся актуален.
+- Production не менялся: image `1f98181`, schema `0013`.

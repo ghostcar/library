@@ -78,7 +78,7 @@
 | Abstract source endpoints | `IMPLEMENTED` | product UI разделён на OPDS/сайты; OPDS one-step создаёт endpoint+rule; toggle/delete синхронно управляют правилом; технический CRUD сохранён для диагностики |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
-| Guided source onboarding | `PARTIAL` | локально: реестр профилей на карточке автора; Author.Today автонаблюдается, другой сайт сохраняется как ссылка, Litnet disabled; далее кандидаты циклов, сравнение и reconciliation книг. Второй разрешённый HTML auto-adapter пока отсутствует (ADR-0023) |
+| Guided source onboarding | `PARTIAL` | локально: реестр профилей на карточке автора; Author.Today автонаблюдается, другой сайт сохраняется как ссылка, Litnet disabled; далее кандидаты циклов, сравнение и searchable reconciliation книг без UUID. Второй разрешённый HTML auto-adapter пока отсутствует (ADR-0023) |
 | FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual HTTPS title check with robots/public-host guards → exact catalog match or review candidate; migration 0013 deployed (ADR-0021/runbook) |
 
 ## Инфраструктурные факты

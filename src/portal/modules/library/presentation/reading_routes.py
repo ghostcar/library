@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Form, HTTPException, Request, Response
+from fastapi import APIRouter, Form, HTTPException, Query, Request, Response
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
@@ -91,8 +91,6 @@ async def series_page(
             {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
             status_code=404,
         )
-    from portal.modules.library.infrastructure.import_repositories import CatalogQueries
-
     return _templates.TemplateResponse(
         request,
         "series.html",
@@ -115,11 +113,57 @@ async def series_page(
                     )
                 ).scalars()
             ),
-            "assignable_works": (
-                await CatalogQueries(session).works_with_authors(current.user.id, limit=250)
-                if any(entry.catalog_status != "present" for entry in state.source_entries)
-                else []
+        },
+    )
+
+
+@router.get(
+    "/series/{series_id}/source-works/{observation_id}/assign",
+    response_class=HTMLResponse,
+)
+async def source_work_assignment_page(
+    request: Request,
+    series_id: UUID,
+    observation_id: UUID,
+    current: CurrentUser,
+    session: SessionDep,
+    query: Annotated[str, Query(alias="q", max_length=200)] = "",
+) -> Response:
+    state = await SeriesStateService(session).for_series(current.user.id, series_id)
+    entry = (
+        next(
+            (
+                candidate
+                for candidate in state.source_entries
+                if candidate.observation_id == observation_id
+                and candidate.catalog_status != "present"
             ),
+            None,
+        )
+        if state is not None
+        else None
+    )
+    if state is None or entry is None:
+        return RedirectResponse(f"/library/series/{series_id}", status_code=303)
+
+    from portal.modules.library.infrastructure.import_repositories import CatalogQueries
+
+    effective_query = query.strip() or entry.title
+    works = await CatalogQueries(session).works_with_authors(
+        current.user.id,
+        limit=50,
+        query=effective_query,
+    )
+    return _templates.TemplateResponse(
+        request,
+        "assign_source_work.html",
+        {
+            "user": current.user,
+            "title": "Сопоставление книги — Библиотека",
+            "state": state,
+            "entry": entry,
+            "query": effective_query,
+            "works": works,
         },
     )
 

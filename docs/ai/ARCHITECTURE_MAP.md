@@ -78,6 +78,10 @@ scripts/                 — dev/test/lint
   выполняет owner-confirmed reconciliation: owner-scoped выбор existing work либо
   явное создание через `CatalogService`, membership и direct work source link
   (ADR-0023).
+- Для missing/ambiguous source entry карточка серии ведёт на отдельный
+  `/series/{series_id}/source-works/{observation_id}/assign`: начальный запрос равен
+  source title, дальнейший поиск использует общий normalized title/author/series
+  read model. Запись по-прежнему выполняет `reconcile_source_work`.
 - `source_profiles.py` — продуктовый реестр guided-профилей автора. Он явно
   различает `watch`, manual `link` и `disabled`; generic link никогда не создаёт
   watch rule. Author endpoints изолированы по owner+author, даже при одинаковом URL.

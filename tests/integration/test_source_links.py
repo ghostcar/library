@@ -14,6 +14,7 @@ from portal.modules.library.adapters.source_orm import (
     SourceObservationModel,
     WatchRuleModel,
 )
+from portal.modules.library.application.series_state_service import SeriesStateService
 from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.modules.library.infrastructure.orm import (
     AuthorModel,
@@ -415,10 +416,12 @@ async def test_author_source_onboarding_creates_series_from_observation(
         await session.commit()
         series_id = series.id
         assigned_work_id = assigned_work.id
+        derived = await SeriesStateService(session).for_series(owner_id, series_id)
+        assert derived is not None
         missing_observation_id = next(
-            observation.id
-            for observation in observations
-            if observation.raw.get("work_id") == "777"
+            entry.observation_id
+            for entry in derived.source_entries
+            if entry.title == "Первая книга цикла"
         )
         ambiguous_observation_id = ambiguous_observation.id
 
@@ -434,6 +437,18 @@ async def test_author_source_onboarding_creates_series_from_observation(
     assert "1 нужно уточнить" in series_page.text
     assert "Книга уже в каталоге" in series_page.text
     assert "Неоднозначная книга" in series_page.text
+    assert "Найти в каталоге" in series_page.text
+    assert 'id="source-work-' not in series_page.text
+
+    picker = await client.get(
+        f"/library/series/{series_id}/source-works/{missing_observation_id}/assign",
+        params={"q": "Выбранная"},
+    )
+    assert picker.status_code == 200
+    assert "Сопоставить книгу источника" in picker.text
+    assert "Выбранная существующая книга" in picker.text
+    assert "Название, автор или цикл" in picker.text
+    assert "UUID" not in picker.text
 
     assigned = await client.post(
         f"/library/series/{series_id}/source-works/{missing_observation_id}/reconcile",

@@ -34,6 +34,8 @@ scripts/test-browser.sh  # responsive shell в локальном Chromium/Playw
 - `scripts/test-browser.sh` — Chromium desktop 1280×800 и mobile 390×844 — green.
 - Import integration — **14 passed**; picker проверен через HTTP от поиска по
   циклу до фактической привязки asset/import item к owner-scoped work.
+- Source integration — **4 passed** после замены series reconciliation select:
+  HTTP-поиск и подтверждение existing work входят в onboarding E2E.
 - Устранён drift migration test (`0012` → фактический `0013` +
   `continuation_link_candidates`); семь ранее закоммиченных файлов механически
   приведены к текущему Ruff formatter.

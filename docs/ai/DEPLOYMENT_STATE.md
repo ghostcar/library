@@ -14,7 +14,8 @@
 - Release candidate после `642d658..ec6dc3c` + текущий searchable-import slice:
   guided Author.Today onboarding, series source comparison, source-work
   reconciliation, website profiles, раздельные OPDS/site settings и поиск
-  существующей книги по title/author/series без UUID.
+  существующей книги по title/author/series без UUID как для import item, так и
+  для missing/ambiguous книги источника на карточке цикла.
   Gate: 294 tests, full Ruff/mypy и Chromium desktop/mobile — green.
 - Generic HTML polling остаётся будущим срезом до выбора конкретного разрешённого
   сайта; Litnet automation disabled по ADR-0020.

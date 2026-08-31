@@ -37,9 +37,10 @@
   получают `series_id` по точному owner-scoped названию серии, даже если canonical
   work пока отсутствует.
 - Для отсутствующих и неоднозначных source works владелец выбирает существующую
-  книгу из каталога либо отдельно подтверждает создание карточки. Reconciliation
-  связывает все ревизии, series membership и direct work source link; title-only
-  evidence не создаёт книгу автоматически.
+  книгу через owner-scoped поиск по названию, автору или циклу либо отдельно
+  подтверждает создание карточки. Reconciliation связывает все ревизии, series
+  membership и direct work source link; title-only evidence не создаёт книгу
+  автоматически, а UUID пользователю не показывается.
 - Guided UX использует реестр профилей: Author.Today=`watch`, generic website=`link`
   без фонового запроса, запрещённый профиль=`disabled` с причиной. Остальные
   разрешённые website adapters должны подключаться через тот же контракт только
