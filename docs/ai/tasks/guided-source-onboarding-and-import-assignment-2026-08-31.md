@@ -40,8 +40,13 @@ catalog-first workflow.
   series and the series URL is taken from persisted source evidence. Connected
   candidates become a stable `отслеживается` state instead of retaining an action.
 
-## Next checkpoint
+## Series comparison checkpoint
 
-Implement the series-card comparison of source observations against canonical
-works/assets: present locally, missing locally, and ambiguous. Keep missing items
-reviewable; do not create catalog works from title-only evidence automatically.
+- Implemented latest-per-source-work comparison on the series card. Revisions of
+  the same external work are deduplicated; states are `present`, `missing`, and
+  `ambiguous`.
+- Exact owner-scoped source series titles now set `series_id` even when no local
+  work matches, so future releases appear on the accepted series card.
+- Next: add owner-confirmed reconciliation for a missing/ambiguous source work:
+  choose an existing catalog work or explicitly create a new candidate/card. Do
+  not auto-create from title-only evidence.

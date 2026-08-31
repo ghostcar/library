@@ -329,3 +329,14 @@
 - Защита: подложное имя кандидата не создаёт серию; URL берётся только из observation.
 - Проверено: Ruff, mypy, unit Author.Today 9 passed, source integration 4 passed.
 - Production не менялся: image `1f98181`, schema `0013`.
+
+## Сессия 34 — 2026-08-31 — series source/catalog comparison
+
+- `SeriesStateService` строит latest-per-source-work список и статусы `present`,
+  `missing`, `ambiguous`; повторные revision observations не завышают число книг.
+- Карточка серии показывает сводные счётчики, внешние ссылки и прямую ссылку на
+  локальную карточку для найденных книг.
+- Исправлен matching будущих релизов: точное название уже принятой серии сохраняет
+  `series_id` observation даже при отсутствии canonical work.
+- Проверено: 28 unit, 11 source/watch integration, Ruff и mypy — green.
+- Production не менялся: image `1f98181`, schema `0013`.

@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+from urllib.parse import urlparse
 from uuid import UUID
 
 from sqlalchemy import select
@@ -43,6 +44,17 @@ class SeriesEntry:
 
 
 @dataclass(slots=True)
+class SeriesSourceEntry:
+    title: str
+    author_name: str | None
+    url: str | None
+    work_id: UUID | None
+    observed_at: datetime
+    publication_status: str | None
+    catalog_status: str
+
+
+@dataclass(slots=True)
 class DerivedSeriesState:
     series_id: UUID
     title: str
@@ -52,6 +64,19 @@ class DerivedSeriesState:
     last_observed: datetime | None = None
     waiting_release: bool = False
     observation_evidence: list[dict[str, object]] = field(default_factory=list)
+    source_entries: list[SeriesSourceEntry] = field(default_factory=list)
+
+    @property
+    def source_present_count(self) -> int:
+        return sum(entry.catalog_status == "present" for entry in self.source_entries)
+
+    @property
+    def source_missing_count(self) -> int:
+        return sum(entry.catalog_status == "missing" for entry in self.source_entries)
+
+    @property
+    def source_ambiguous_count(self) -> int:
+        return sum(entry.catalog_status == "ambiguous" for entry in self.source_entries)
 
     @property
     def last_read(self) -> SeriesEntry | None:
@@ -190,7 +215,9 @@ class SeriesStateService:
                     )
                     .order_by(SourceObservationModel.observed_at.desc()),
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         )
         if observations:
             state.last_observed = observations[0].observed_at
@@ -202,9 +229,48 @@ class SeriesStateService:
                 }
                 for o in observations[:20]
             ]
+            seen_source_works: set[str] = set()
+            for observation in observations:
+                source_work_key = f"{observation.adapter_id}:" + str(
+                    observation.raw.get("work_id")
+                    or observation.url
+                    or f"{observation.title}\0{observation.author_name or ''}"
+                )
+                if source_work_key in seen_source_works:
+                    continue
+                seen_source_works.add(source_work_key)
+                match = str(observation.match_evidence.get("match") or "none")
+                catalog_status = (
+                    "present"
+                    if observation.work_id is not None
+                    else "ambiguous"
+                    if match == "ambiguous"
+                    else "missing"
+                )
+                state.source_entries.append(
+                    SeriesSourceEntry(
+                        title=observation.title,
+                        author_name=observation.author_name,
+                        url=(
+                            observation.url
+                            if observation.url
+                            and urlparse(observation.url).scheme in {"http", "https"}
+                            else None
+                        ),
+                        work_id=observation.work_id,
+                        observed_at=observation.observed_at,
+                        publication_status=(
+                            str(observation.raw["status"])
+                            if observation.raw.get("status")
+                            else None
+                        ),
+                        catalog_status=catalog_status,
+                    )
+                )
             owned_ids = {entry.work_id for entry in entries}
             state.has_new_release = any(
-                o.work_id is not None and o.work_id not in owned_ids for o in observations
+                entry.work_id is None or entry.work_id not in owned_ids
+                for entry in state.source_entries
             )
             state.waiting_release = (
                 state.next_available_unread is None

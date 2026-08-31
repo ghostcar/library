@@ -20,6 +20,7 @@ from portal.modules.library.adapters.source_orm import (
     SourceObservationModel,
 )
 from portal.modules.library.adapters.watch_service import WatchService
+from portal.modules.library.infrastructure.orm import SeriesModel
 
 pytestmark = pytest.mark.integration
 
@@ -115,6 +116,7 @@ class TestPollFlow:
                     '<div class="book-row"><div class="book-title">'
                     '<a href="/work/777">Новая книга AT</a></div>'
                     '<span><i class="book-status-icon"></i> в процессе</span>'
+                    '<a href="/work/series/55">Тестовый цикл</a>'
                     f'<span data-hint="Обновление " data-time="{revision["value"]}"></span>'
                     "</div></body></html>"
                 ),
@@ -122,6 +124,15 @@ class TestPollFlow:
             )
 
         container = client._transport.app.state.container
+        async with container["session_factory"]() as session:
+            series = SeriesModel(
+                owner_id=owner,
+                title="Тестовый цикл",
+                title_normalized="тестовый цикл",
+            )
+            session.add(series)
+            await session.commit()
+            series_id = series.id
         at_client = httpx.AsyncClient(transport=httpx.ASGITransport(app=fake))
         service = WatchService(
             session_factory=container["session_factory"],
@@ -151,6 +162,7 @@ class TestPollFlow:
         assert observation.external_id == ("author-today:work:777:revision:2026-08-28T01:00:00Z")
         assert observation.parser_version == AUTHOR_TODAY_PARSER_VERSION
         assert observation.raw["status"] == "в процессе"
+        assert observation.series_id == series_id
         assert await service.notifications(owner) == []  # initial page is a quiet baseline
 
         revision["value"] = "2026-08-28T02:00:00Z"

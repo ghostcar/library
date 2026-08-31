@@ -20,6 +20,28 @@
 </details>
 {% endif %}
 
+{% if state.source_entries %}
+<div class="card">
+  <p class="meta">КНИГИ У ИСТОЧНИКА ({{ state.source_entries | length }})</p>
+  <div class="u-flex u-gap-8 u-wrap u-mt-8">
+    {% if state.source_present_count %}<span class="chip chip--ok">{{ state.source_present_count }} есть в каталоге</span>{% endif %}
+    {% if state.source_missing_count %}<span class="chip chip--warn">{{ state.source_missing_count }} нет в каталоге</span>{% endif %}
+    {% if state.source_ambiguous_count %}<span class="chip">{{ state.source_ambiguous_count }} нужно уточнить</span>{% endif %}
+  </div>
+  {% for entry in state.source_entries %}
+  <div class="u-flex u-gap-8 u-wrap u-items-center u-my-8">
+    <span class="u-grow u-min-160">
+      {% if entry.url %}<a href="{{ entry.url }}" target="_blank" rel="noopener noreferrer" class="u-on-surface">{{ entry.title }}</a>{% else %}<strong>{{ entry.title }}</strong>{% endif %}
+      {% if entry.publication_status %}<span class="meta">· {{ entry.publication_status }}</span>{% endif %}
+    </span>
+    {% if entry.catalog_status == 'present' %}<a href="/library/works/{{ entry.work_id }}" class="chip chip--ok">есть в каталоге</a>
+    {% elif entry.catalog_status == 'ambiguous' %}<span class="chip">нужно уточнить</span>
+    {% else %}<span class="chip chip--warn">нет в каталоге</span>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% set next_up = state.next_available_unread %}
 {% if next_up %}
 <div class="card u-border-secondary">

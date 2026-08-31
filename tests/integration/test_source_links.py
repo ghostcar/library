@@ -363,6 +363,60 @@ async def test_author_source_onboarding_creates_series_from_observation(
         assert series_link.external_url == "https://author.today/work/series/55"
         assert all(observation.series_id == series.id for observation in observations)
 
+        present_work = WorkModel(
+            owner_id=owner_id,
+            title="Книга уже в каталоге",
+            title_normalized="книга уже в каталоге",
+        )
+        session.add(present_work)
+        await session.flush()
+        rule_id = (
+            await session.execute(
+                select(WatchRuleModel.id).where(WatchRuleModel.owner_id == owner_id)
+            )
+        ).scalar_one()
+        session.add_all(
+            [
+                SourceObservationModel(
+                    owner_id=owner_id,
+                    watch_rule_id=rule_id,
+                    adapter_id="author_today",
+                    external_id="author-today:work:888:revision:published",
+                    title=present_work.title,
+                    author_name="Автор наблюдения",
+                    url="https://author.today/work/888",
+                    parser_version="author-today-public-v1",
+                    work_id=present_work.id,
+                    series_id=series.id,
+                    match_evidence={"match": "exact_title_author"},
+                    raw={"work_id": "888", "series": series.title},
+                ),
+                SourceObservationModel(
+                    owner_id=owner_id,
+                    watch_rule_id=rule_id,
+                    adapter_id="author_today",
+                    external_id="author-today:work:999:revision:published",
+                    title="Неоднозначная книга",
+                    author_name="Автор наблюдения",
+                    url="https://author.today/work/999",
+                    parser_version="author-today-public-v1",
+                    series_id=series.id,
+                    match_evidence={"match": "ambiguous"},
+                    raw={"work_id": "999", "series": series.title},
+                ),
+            ]
+        )
+        await session.commit()
+
     page = await client.get(f"/library/authors/{author_id}")
     assert "отслеживается" in page.text
     assert "Подключить наблюдение" not in page.text
+
+    series_page = await client.get(f"/library/series/{series.id}")
+    assert series_page.status_code == 200
+    assert "КНИГИ У ИСТОЧНИКА (3)" in series_page.text
+    assert "1 есть в каталоге" in series_page.text
+    assert "1 нет в каталоге" in series_page.text
+    assert "1 нужно уточнить" in series_page.text
+    assert "Книга уже в каталоге" in series_page.text
+    assert "Неоднозначная книга" in series_page.text

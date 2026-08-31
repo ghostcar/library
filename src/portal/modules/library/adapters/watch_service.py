@@ -34,6 +34,7 @@ from portal.modules.library.domain.entities import normalize_title
 from portal.modules.library.infrastructure.orm import (
     AuthorModel,
     SeriesMembershipModel,
+    SeriesModel,
     WorkAuthorModel,
     WorkModel,
 )
@@ -305,6 +306,27 @@ class WatchService:
     ) -> tuple[UUID | None, UUID | None, dict[str, object]]:
         """Link only deterministic, owner-scoped matches; leave ambiguity unresolved."""
         title = normalize_title(entry.title)
+        raw_series = str(entry.raw.get("series") or "").strip()
+        series_candidates = []
+        if raw_series:
+            series_candidates = list(
+                (
+                    await session.execute(
+                        select(SeriesModel).where(
+                            SeriesModel.owner_id == owner_id,
+                            SeriesModel.title_normalized == normalize_title(raw_series),
+                        )
+                    )
+                ).scalars()
+            )
+        source_series_id = series_candidates[0].id if len(series_candidates) == 1 else None
+        source_series_match = (
+            "exact_title"
+            if source_series_id is not None
+            else "ambiguous"
+            if series_candidates
+            else "none"
+        )
         stmt = select(WorkModel).where(
             WorkModel.owner_id == owner_id,
             WorkModel.title_normalized == title,
@@ -323,15 +345,15 @@ class WatchService:
                 )
             )
             author_candidates = list((await session.execute(author_stmt)).scalars().all())
-            if author_candidates:
-                candidates = author_candidates
+            candidates = author_candidates
         if len(candidates) != 1:
             return (
                 None,
-                None,
+                source_series_id,
                 {
                     "match": "ambiguous" if candidates else "none",
                     "title_normalized": title,
+                    "series_match": source_series_match,
                 },
             )
         work = candidates[0]
@@ -347,14 +369,20 @@ class WatchService:
             .scalars()
             .all()
         )
-        series_id = memberships[0] if len(memberships) == 1 else None
+        series_id = source_series_id or (memberships[0] if len(memberships) == 1 else None)
         return (
             work.id,
             series_id,
             {
                 "match": "exact_title_author" if entry.author_name else "exact_title",
                 "title_normalized": title,
-                "series_match": "unique_membership" if series_id else "ambiguous_or_none",
+                "series_match": (
+                    "exact_title"
+                    if source_series_id is not None
+                    else "unique_membership"
+                    if series_id
+                    else "ambiguous_or_none"
+                ),
             },
         )
 

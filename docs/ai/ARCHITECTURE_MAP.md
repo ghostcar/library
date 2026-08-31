@@ -75,6 +75,11 @@ scripts/                 — dev/test/lint
 - `SourceOnboardingService`: catalog-first orchestration с карточки автора: создаёт
   endpoint/link/rule, группирует серии из persisted observations и по подтверждению
   создаёт/reuses series card с source link (ADR-0023).
+- `SeriesStateService` дедуплицирует ревизии source observations по внешней книге и
+  строит сравнение с локальным каталогом: `present`, `missing`, `ambiguous`.
+- `WatchService._match_canonical` связывает новую отсутствующую локально книгу с
+  принятой серией по точному owner-scoped названию из source metadata; поэтому
+  новые релизы продолжают появляться на карточке серии.
 - `ContinuationLinkService`: не мониторинг источников, а ручная title-only
   проверка ссылки из локального FB2. Перед одним HTML GET проверяет public HTTPS
   host и applicable rules из `robots.txt`; детали — ADR-0021 и runbook.
