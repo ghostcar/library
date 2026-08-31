@@ -1,7 +1,7 @@
 # TaskContext: guided source onboarding and import assignment
 
 **Date:** 2026-08-31
-**Status:** `in_progress`
+**Status:** `complete`
 **Goal:** replace technical source/watch setup and UUID file assignment with a
 catalog-first workflow.
 
@@ -29,9 +29,10 @@ catalog-first workflow.
 
 ## Progress
 
-- Import inbox now renders a catalog picker (title, authors, first series) for
-  manual assignment; UUID input is removed. The existing owner-scoped assign
-  route remains the enforcement point.
+- Import inbox links to a dedicated owner-scoped catalog search (title, author,
+  or series) for manual assignment. Results are filtered in SQL before the
+  50-row limit; UUID input is removed from both inbox and proposal review. The
+  existing assign route remains the enforcement point.
 - Author card now has one-step Author.Today onboarding. It atomically creates or
   reuses endpoint/link/watch rule. Poll observations are grouped into series
   candidates; acceptance creates/reuses a series card, links its source and
@@ -86,3 +87,17 @@ catalog-first workflow.
 - Migration test drift and pre-existing formatter/typecheck debt discovered by
   the gate were corrected. Production remains unchanged pending an explicit
   deployment command.
+
+## Searchable import assignment checkpoint
+
+- Replaced the embedded 250-work select with a dedicated responsive assignment
+  page: search existing catalog or explicitly start creation from file metadata.
+- Search covers normalized work title, author name, and series title and is
+  owner-scoped at query and assignment boundaries. The submitted work id is an
+  internal hidden value; malformed or foreign values fail safely.
+- Removed raw `match_existing_work_id` inputs from both AI proposal states. A
+  user who recognizes an existing book follows the same catalog search.
+- Verification: import integration 14 passed; full suite 294 passed; Ruff,
+  formatter, mypy, and Chromium desktop/mobile shell are green.
+- Production remains image `1f98181`, schema `0013`; deployment still requires
+  a separate explicit user command.

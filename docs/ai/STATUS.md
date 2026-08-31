@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-31 (guided source release candidate: 294 tests + full lint + Chromium green; production remains `1f98181`, schema 0013)
+Последняя проверка: 2026-08-31 (guided source + searchable import assignment: 294 tests + full lint + Chromium green; production remains `1f98181`, schema 0013)
 
 ## Фазы мастер-промпта (§20)
 
@@ -48,7 +48,7 @@
 | Нормализатор FB2/EPUB | `IMPLEMENTED` | normalizer/, NormalizationService (ADR-0008) |
 | Очередь нормализации + отчёты | `IMPLEMENTED` | /library/normalization, /library/normalization/{id} |
 | Download с Content-Disposition | `IMPLEMENTED` | /library/assets/{id}/download |
-| Review UI (unmatched, duplicates) | `IMPLEMENTED` | assign/resolve на /library/import |
+| Review UI (unmatched, duplicates) | `IMPLEMENTED` | inbox → owner-scoped поиск существующей книги по title/author/series либо явное создание; UUID не показывается |
 | AI matching (digest→proposal→apply) | `IMPLEMENTED` | ai/, queued bulk proposal for unmatched imports, idempotent cache and ordered co-authors; ADR-0009/0022; live — нужен валидный ключ |
 | Кэш proposals + corrections dataset | `IMPLEMENTED` | ai_proposals, ai_corrections |
 | Series state (last/next/missing/status) | `IMPLEMENTED` | SeriesStateService: last_observed, has_new_release, waiting_release, evidence |

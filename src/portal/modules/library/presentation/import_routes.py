@@ -45,7 +45,6 @@ async def _inbox_context(
 ) -> dict[str, object]:
     from portal.modules.library.application.continuation_link_service import ContinuationLinkService
     from portal.modules.library.infrastructure.import_repositories import (
-        CatalogQueries,
         DuplicateCandidateRepository,
         ImportBatchRepository,
         ImportItemRepository,
@@ -58,7 +57,6 @@ async def _inbox_context(
         "batches": await ImportBatchRepository(session).list_recent(owner_id),
         "unmatched": unmatched,
         "can_enqueue_ai": any(not item.match_evidence.get("ai_status") for item in unmatched),
-        "assignable_works": await CatalogQueries(session).works_with_authors(owner_id, limit=250),
         "duplicates": await ImportItemRepository(session).list_recent_by_status(
             owner_id,
             statuses=["duplicate", "rejected", "failed"],

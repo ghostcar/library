@@ -2,16 +2,62 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Form
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Form, Query, Request, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 
-from portal.core.auth.dependencies import CSRFProtected
+from portal.core.auth.dependencies import CSRFProtected, CurrentUser
 from portal.web.deps import SessionDep
 
 router = APIRouter()
+
+_templates = Jinja2Templates(
+    directory=[
+        str(Path(__file__).resolve().parents[1] / "templates"),
+        str(Path(__file__).resolve().parents[3] / "web" / "templates"),
+    ],
+)
+
+
+@router.get("/import/items/{item_id}/assign", response_class=HTMLResponse)
+async def assignment_page(
+    request: Request,
+    item_id: UUID,
+    current: CurrentUser,
+    session: SessionDep,
+    query: Annotated[str, Query(alias="q", max_length=200)] = "",
+) -> Response:
+    """Offer an owner-scoped catalog search for an unmatched import item."""
+    from portal.modules.library.domain import import_entities as ie
+    from portal.modules.library.infrastructure.import_repositories import (
+        CatalogQueries,
+        ImportItemRepository,
+    )
+
+    item = await ImportItemRepository(session).get(current.user.id, item_id)
+    if item is None or item.status is not ie.ItemStatus.STORED_UNMATCHED:
+        return RedirectResponse("/library/import", status_code=303)
+
+    works = await CatalogQueries(session).works_with_authors(
+        current.user.id,
+        limit=50,
+        query=query,
+    )
+    return _templates.TemplateResponse(
+        request,
+        "assign_import_item.html",
+        {
+            "user": current.user,
+            "title": "Выбор книги — Библиотека",
+            "item": item,
+            "query": query,
+            "works": works,
+        },
+    )
 
 
 @router.post("/import/items/{item_id}/assign")
@@ -33,7 +79,11 @@ async def assign_item(
 
     if not work_id:
         return RedirectResponse("/library/import", status_code=303)
-    work = await WorkRepository(session).get(current.user.id, UUID(work_id))
+    try:
+        parsed_work_id = UUID(work_id)
+    except ValueError:
+        return RedirectResponse(f"/library/import/items/{item_id}/assign", status_code=303)
+    work = await WorkRepository(session).get(current.user.id, parsed_work_id)
     if work is None:
         return RedirectResponse("/library/import", status_code=303)
 

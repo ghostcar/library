@@ -11,7 +11,8 @@ import pytest
 from sqlalchemy import select
 
 from portal.modules.library.application.watched_inbox import WatchedInboxService
-from portal.modules.library.infrastructure.import_orm import ImportBatchModel
+from portal.modules.library.infrastructure.import_orm import ImportBatchModel, ImportItemModel
+from portal.modules.library.infrastructure.orm import WorkModel
 
 pytestmark = pytest.mark.integration
 
@@ -73,9 +74,50 @@ class TestUploadImport:
         )
         await _upload(authed_client, [("непонятный файл.fb2", _fb2("Без метаданных"))])
         page = await authed_client.get("/library/import")
-        assert 'name="work_id"' in page.text
-        assert "UUID произведения" not in page.text
-        assert "Уже в каталоге" in page.text
+        assert "Выбрать из каталога" in page.text
+        assert 'name="work_id"' not in page.text
+
+        container = authed_client._transport.app.state.container
+        async with container["session_factory"]() as session:
+            item = (
+                await session.execute(
+                    select(ImportItemModel).where(
+                        ImportItemModel.status == "stored_unmatched",
+                    ),
+                )
+            ).scalar_one()
+            work = (
+                await session.execute(
+                    select(WorkModel).where(WorkModel.title == "Уже в каталоге"),
+                )
+            ).scalar_one()
+
+        picker = await authed_client.get(
+            f"/library/import/items/{item.id}/assign",
+            params={"q": "Цикл"},
+        )
+        assert picker.status_code == 200
+        assert "Уже в каталоге" in picker.text
+        assert "Название, автор или цикл" in picker.text
+        assert "UUID" not in picker.text
+
+        invalid = await authed_client.post(
+            f"/library/import/items/{item.id}/assign",
+            data={"work_id": "not-a-valid-id"},
+        )
+        assert invalid.status_code == 303
+        assert invalid.headers["location"].endswith(f"/items/{item.id}/assign")
+
+        assigned = await authed_client.post(
+            f"/library/import/items/{item.id}/assign",
+            data={"work_id": str(work.id)},
+        )
+        assert assigned.status_code == 303
+        async with container["session_factory"]() as session:
+            assigned_item = await session.get(ImportItemModel, item.id)
+            assert assigned_item is not None
+            assert assigned_item.status == "matched"
+            assert assigned_item.work_id == work.id
 
     async def test_reupload_restores_missing_original_and_applies_metadata(
         self, authed_client: httpx.AsyncClient, app_settings

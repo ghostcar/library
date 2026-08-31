@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from portal.modules.library.domain import import_entities as ie
@@ -262,7 +262,9 @@ class CatalogQueries:
         owner_id: UUID,
         limit: int = 100,
         offset: int = 0,
+        query: str = "",
     ) -> list[dict[str, object]]:
+        from portal.modules.library.domain.entities import normalize_title
         from portal.modules.library.infrastructure.orm import (
             AuthorModel,
             SeriesMembershipModel,
@@ -271,14 +273,35 @@ class CatalogQueries:
             WorkModel,
         )
 
+        works_stmt = select(WorkModel).where(WorkModel.owner_id == owner_id)
+        normalized_query = normalize_title(query)
+        if normalized_query:
+            pattern = f"%{normalized_query}%"
+            works_stmt = (
+                works_stmt.outerjoin(
+                    WorkAuthorModel,
+                    WorkAuthorModel.work_id == WorkModel.id,
+                )
+                .outerjoin(AuthorModel, AuthorModel.id == WorkAuthorModel.author_id)
+                .outerjoin(
+                    SeriesMembershipModel,
+                    SeriesMembershipModel.work_id == WorkModel.id,
+                )
+                .outerjoin(SeriesModel, SeriesModel.id == SeriesMembershipModel.series_id)
+                .where(
+                    or_(
+                        WorkModel.title_normalized.like(pattern),
+                        AuthorModel.name_normalized.like(pattern),
+                        SeriesModel.title_normalized.like(pattern),
+                    ),
+                )
+                .distinct()
+            )
+
         work_rows = (
             (
                 await self._session.execute(
-                    select(WorkModel)
-                    .where(WorkModel.owner_id == owner_id)
-                    .order_by(WorkModel.created_at.desc())
-                    .limit(limit)
-                    .offset(offset),
+                    works_stmt.order_by(WorkModel.created_at.desc()).limit(limit).offset(offset),
                 )
             )
             .scalars()

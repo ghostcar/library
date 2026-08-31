@@ -374,3 +374,15 @@
 - Финальный единый прогон: 294 passed за 175.54s; Ruff check/format и mypy по 113
   source-файлам — green; Chromium shell desktop/mobile — green.
 - Production не менялся: image `1f98181`, schema `0013`.
+
+## Сессия 38 — 2026-08-31 — searchable import assignment
+
+- Убран неполный select первых 250 книг из inbox; каждый unmatched file ведёт на
+  отдельный поиск по названию, автору или циклу с SQL-фильтрацией до лимита.
+- Экран даёт два понятных пути: owner-scoped привязка к найденной книге либо
+  явный разбор метаданных для новой карточки. UUID-поля удалены и из proposal UI.
+- Некорректный/чужой work id не применяется; скрытый id остаётся только внутренним
+  значением подтверждённого результата поиска.
+- Проверено: import integration 14 passed, full suite 294 passed, Ruff/format/mypy
+  green, Chromium shell desktop/mobile green.
+- Production не менялся: image `1f98181`, schema `0013`.

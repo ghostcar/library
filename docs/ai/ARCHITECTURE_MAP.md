@@ -95,6 +95,11 @@ scripts/                 — dev/test/lint
 - `ImportService` ставит каждый `stored_unmatched` item в `core.jobs` как
   `propose_import`; worker вызывает `ProposalService`. Import inbox может разово
   поставить в ту же очередь старые items без `ai_status` (ADR-0022).
+- Ручное назначение unmatched item вынесено на
+  `/library/import/items/{item_id}/assign`: `CatalogQueries` фильтрует owner-scoped
+  каталог по нормализованным title/author/series до лимита результатов. UI
+  предлагает либо выбрать результат, либо явно перейти к созданию карточки из
+  метаданных; технический UUID пользователю не вводится и не показывается.
 
 ## База данных (18 таблиц)
 

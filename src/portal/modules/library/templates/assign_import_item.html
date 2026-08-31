@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="u-display u-weight-normal">Куда добавить файл</h1>
+
+<div class="card">
+  <p class="meta">ФАЙЛ</p>
+  <p class="u-mono u-text-13">{{ item.filename }}</p>
+  <form method="get" action="/library/import/items/{{ item.id }}/assign" role="search">
+    <label for="catalog-query">Найти существующую книгу</label>
+    <div class="u-flex u-gap-8 u-items-center u-wrap">
+      <input id="catalog-query" name="q" value="{{ query }}" placeholder="Название, автор или цикл" class="u-grow u-min-220" autofocus>
+      <button type="submit" class="u-m-0 u-w-auto">Найти</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <p class="meta">{% if query %}РЕЗУЛЬТАТЫ ПОИСКА{% else %}НЕДАВНИЕ КНИГИ{% endif %} ({{ works | length }})</p>
+  {% if works %}
+    {% for work in works %}
+    <div class="u-flex u-gap-12 u-items-center u-between u-wrap u-my-12 u-border-bottom u-pb-8">
+      <div class="u-grow u-min-220">
+        <p class="u-my-2"><strong>{{ work.title }}</strong></p>
+        <p class="meta u-my-2">
+          {% if work.authors %}{{ work.authors | join(', ') }}{% else %}автор не указан{% endif %}
+          {% if work.series %} · {{ work.series | map(attribute='title') | join(', ') }}{% endif %}
+        </p>
+      </div>
+      <form method="post" action="/library/import/items/{{ item.id }}/assign">
+        {% include "_csrf.html" %}
+        <input type="hidden" name="work_id" value="{{ work.id }}">
+        <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Привязать файл</button>
+      </form>
+    </div>
+    {% endfor %}
+  {% elif query %}
+    <p>По запросу «{{ query }}» ничего не найдено. Можно изменить запрос или создать новую карточку.</p>
+  {% else %}
+    <p>В каталоге пока нет книг. Создайте первую карточку из данных файла.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <p class="meta">НОВАЯ КАРТОЧКА</p>
+  <p>Если этой книги ещё нет в каталоге, разберите метаданные файла и проверьте результат перед созданием.</p>
+  <form method="post" action="/library/import/items/{{ item.id }}/propose">
+    {% include "_csrf.html" %}
+    <button type="submit" class="u-m-0 u-w-auto">Разобрать данные и создать карточку</button>
+  </form>
+</div>
+
+<p class="u-mt-24"><a href="/library/import" class="u-primary u-mono u-text-13">← Импорт</a></p>
+{% endblock %}

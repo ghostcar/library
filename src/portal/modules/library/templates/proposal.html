@@ -20,14 +20,13 @@
     <input id="series" name="series" value="{{ proposal.series or '' }}">
     <label for="series_index_raw">Номер в цикле</label>
     <input id="series_index_raw" name="series_index_raw" value="{{ proposal.series_index_raw or '' }}">
-    <label for="match_existing_work_id">Или привязать к существующему (UUID)</label>
-    <input id="match_existing_work_id" name="match_existing_work_id" value="{{ proposal.match_existing_work_id or '' }}">
     {% if proposal.ambiguities %}
     <p class="meta u-mt-12">НЕОДНОЗНАЧНОСТИ:</p>
     {% for a in proposal.ambiguities %}<p class="meta u-my-2">· {{ a }}</p>{% endfor %}
     {% endif %}
     <button type="submit">Применить</button>
   </form>
+  <p class="meta u-mt-8">Если книга уже есть в каталоге, <a href="/library/import/items/{{ item_id }}/assign">найдите и выберите её</a>. Эта форма создаёт или уточняет карточку.</p>
   <p class="meta u-mt-8">Поправьте поля при необходимости — ваша правка сохраняется как пример для оценки качества (evaluation dataset).</p>
 </div>
 {% else %}
@@ -44,10 +43,9 @@
     <input id="series" name="series" value="">
     <label for="series_index_raw">Номер в цикле</label>
     <input id="series_index_raw" name="series_index_raw" value="">
-    <label for="match_existing_work_id">Или привязать к существующему (UUID)</label>
-    <input id="match_existing_work_id" name="match_existing_work_id" value="">
     <button type="submit">Применить</button>
   </form>
+  <p class="meta u-mt-8">Если книга уже есть в каталоге, <a href="/library/import/items/{{ item_id }}/assign">найдите и выберите её</a>.</p>
 </div>
 {% endif %}
 
