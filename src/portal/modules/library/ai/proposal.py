@@ -10,7 +10,7 @@ import json
 import re
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 PROPOSAL_SCHEMA_VERSION = 1
 
@@ -21,6 +21,7 @@ class MatchProposal(BaseModel):
     """Structured match proposal for an unmatched book file."""
 
     author: str | None = Field(default=None, max_length=256)
+    authors: list[str] = Field(default_factory=list, max_length=8)
     title: str | None = Field(default=None, max_length=512)
     series: str | None = Field(default=None, max_length=256)
     series_index_raw: str | None = Field(default=None, max_length=32)
@@ -29,6 +30,24 @@ class MatchProposal(BaseModel):
     requires_review: bool = True
     field_evidence: dict[str, str] = Field(default_factory=dict)
     ambiguities: list[str] = Field(default_factory=list)
+
+    @field_validator("authors")
+    @classmethod
+    def normalize_authors(cls, values: list[str]) -> list[str]:
+        result: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            name = value.strip()
+            key = name.casefold()
+            if name and key not in seen:
+                seen.add(key)
+                result.append(name)
+        return result
+
+    @property
+    def author_names(self) -> list[str]:
+        """Ordered authors; legacy singular field stays valid for old cache rows."""
+        return self.authors or ([self.author] if self.author else [])
 
 
 def validate_proposal(raw: str) -> MatchProposal | None:

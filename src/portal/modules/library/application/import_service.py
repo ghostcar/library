@@ -295,7 +295,7 @@ class ImportService:
                 ),
             )
 
-            if info.format is AssetFormat.FB2:
+            if info.format.value == AssetFormat.FB2.value:
                 from portal.modules.library.application.continuation_link_service import (
                     ContinuationLinkService,
                 )
@@ -327,7 +327,17 @@ class ImportService:
                 ie.ItemStatus.MATCHED if work_id is not None else ie.ItemStatus.STORED_UNMATCHED
             )
             item.match_evidence = evidence
-            await items.update(item)
+            if item.status is ie.ItemStatus.STORED_UNMATCHED:
+                from portal.core.jobs.repository import JobRepository
+
+                item.match_evidence["ai_status"] = "queued"
+                await items.update(item)
+                await JobRepository(session).enqueue(
+                    "propose_import",
+                    {"owner_id": str(owner_id), "item_id": str(item.id)},
+                )
+            else:
+                await items.update(item)
             await self._discard_quarantine(quarantine_path)
 
             await self._emit(

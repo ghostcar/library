@@ -64,14 +64,18 @@
 
 {% if unmatched %}
 <div class="card">
-  <p class="meta">ТРЕБУЮТ РАЗБОРА ({{ unmatched | length }})</p>
+  <div class="u-flex u-gap-12 u-items-center u-between u-wrap">
+    <p class="meta u-m-0">ТРЕБУЮТ РАЗБОРА ({{ unmatched | length }})</p>
+    {% if can_enqueue_ai %}<form method="post" action="/library/import/propose-unmatched">{% include "_csrf.html" %}<button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Разобрать всё</button></form>{% endif %}
+  </div>
   {% for item in unmatched %}
   <div class="u-flex u-gap-12 u-items-center u-my-6 u-wrap">
     <span class="u-mono u-text-13 u-grow u-min-180">{{ item.filename }}</span>
     <form method="post" action="/library/import/items/{{ item.id }}/propose">
       {% include "_csrf.html" %}
-      <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Разобрать с LLM</button>
+      <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">{{ 'Открыть авторазбор' if item.match_evidence.ai_status else 'Разобрать с LLM' }}</button>
     </form>
+    {% if item.match_evidence.ai_status %}<span class="chip{% if item.match_evidence.ai_status == 'review_ready' %} chip--ok{% else %} chip--warn{% endif %}">{{ item.match_evidence.ai_status }}</span>{% endif %}
     <form method="post" action="/library/import/items/{{ item.id }}/assign" class="u-flex u-gap-8 u-items-center">
       {% include "_csrf.html" %}
       <input type="text" name="work_id" placeholder="UUID произведения"
@@ -80,7 +84,7 @@
     </form>
   </div>
   {% endfor %}
-  <p class="meta">Автоматический разбор имён (LLM) — Phase 4. UUID произведения — на странице карточки в каталоге.</p>
+  <p class="meta">Новые файлы разбираются в фоне автоматически. «Разобрать всё» нужен только для ранее загруженных записей. UUID произведения — на странице карточки в каталоге.</p>
 </div>
 {% endif %}
 

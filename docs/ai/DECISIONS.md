@@ -25,3 +25,4 @@
 | 0019 | accepted | Author.Today: публичный HTML metadata-only, quiet baseline, revision events, без auth/API/content |
 | 0020 | accepted | Litnet: автоматическое HTML-наблюдение не включать — соглашение запрещает automated collection |
 | 0021 | accepted | FB2 continuation links: локальное evidence → ручная title-only проверка → review candidate, без автосоздания книги |
+| 0022 | accepted | Новые unmatched imports разбираются worker'ом; кэш идемпотентен, LLM/form поддерживают ordered co-authors |

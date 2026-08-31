@@ -40,6 +40,14 @@ class TestValidateProposal:
         assert proposal.confidence == 0.92
         assert proposal.requires_review is False
 
+    def test_multiple_authors_are_ordered_and_legacy_author_stays_compatible(self) -> None:
+        proposal = validate_proposal(
+            '{"authors":["Автор Один", "Автор Два", "Автор Один"], "title":"Книга"}'
+        )
+        assert proposal is not None
+        assert proposal.author_names == ["Автор Один", "Автор Два"]
+        assert MatchProposal(author="Автор").author_names == ["Автор"]
+
     def test_json_inside_chatter_repaired(self) -> None:
         noisy = "Вот моё предложение:\n```json\n" + VALID_JSON + "\n```\nНадеюсь, помог!"
         proposal = validate_proposal(noisy)

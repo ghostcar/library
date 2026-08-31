@@ -21,3 +21,4 @@
 | 15 | ~~Fresh migration/full suite для source schema не подтверждены~~ РЕШЕНО: fresh migration 0012 и 281 tests passed | — | — | — | — |
 | 16 | Continuation-link title matching is exact normalized title only; site-specific title cleanup and EPUB extraction are intentionally absent | some candidates need manual review | low | agent | repeated false negatives in real imported books |
 | 17 | robots parser for manual continuation-link checking supports applicable `User-agent`/`Disallow` only | unusual robots syntax may conservatively block or need a standards-complete parser | low | agent | real permitted source requires richer rules |
+| 18 | Romanized/slit filename conventions are policy-gated review even after bulk AI proposal | some real imports remain `review_ready` until model/user confirms metadata | low | agent | enough real corrections to add a deterministic parser profile |

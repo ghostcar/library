@@ -18,6 +18,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from portal.modules.library.ai.digest import PROMPT_VERSION, CatalogCandidate, DigestBuilder
@@ -72,7 +73,11 @@ class PolicyEngine:
                 return PolicyDecision.AUTO_APPLY
             return PolicyDecision.REVIEW
 
-        if proposal.author and proposal.title and proposal.confidence >= AUTO_APPLY_CONFIDENCE:
+        if (
+            proposal.author_names
+            and proposal.title
+            and proposal.confidence >= AUTO_APPLY_CONFIDENCE
+        ):
             # new entities are created as candidates, never merged silently
             return PolicyDecision.REVIEW if proposal.requires_review else PolicyDecision.AUTO_APPLY
 
@@ -201,7 +206,7 @@ class ProposalService:
             work_id: UUID | None = None
             if proposal.match_existing_work_id:
                 work_id = UUID(proposal.match_existing_work_id)
-            elif proposal.author and proposal.title:
+            elif proposal.author_names and proposal.title:
                 from portal.modules.library.application.services import (
                     CatalogService,
                     RegisterWorkInput,
@@ -221,7 +226,7 @@ class ProposalService:
                     RegisterWorkInput(
                         owner_id=owner_id,
                         title=proposal.title,
-                        author_names=[proposal.author],
+                        author_names=proposal.author_names,
                         series_title=proposal.series,
                         series_index_raw=proposal.series_index_raw,
                     ),
@@ -260,6 +265,25 @@ class ProposalService:
                 ),
             )
             return work_id or item.id
+
+    async def auto_process_for_item(self, owner_id: UUID, item_id: UUID) -> ProposalOutcome:
+        """Run one queued proposal; only policy-approved results mutate the catalog."""
+        outcome = await self.propose_for_item(owner_id, item_id)
+        if outcome.proposal is not None and outcome.decision == PolicyDecision.AUTO_APPLY:
+            await self.apply_proposal(owner_id, item_id, outcome.proposal, corrected=False)
+            return outcome
+
+        async with self._session_factory() as session, session.begin():
+            item = await ImportItemRepository(session).get(owner_id, item_id)
+            if item is not None:
+                item.match_evidence = {
+                    **item.match_evidence,
+                    "ai_status": "review_ready" if outcome.proposal else "unavailable",
+                    "ai_note": outcome.note,
+                    "ai_decision": outcome.decision,
+                }
+                await ImportItemRepository(session).update(item)
+        return outcome
 
     # --- internals ---------------------------------------------------------
 
@@ -333,15 +357,19 @@ class ProposalService:
     ) -> None:
         digest_hash, model, prompt_version, schema_version = key
         async with self._session_factory() as session, session.begin():
-            session.add(
-                AIProposalModel(
+            await session.execute(
+                insert(AIProposalModel)
+                .values(
                     digest_hash=digest_hash,
                     model=model,
                     prompt_version=prompt_version,
                     schema_version=schema_version,
                     proposal=proposal,
                     raw_response=raw_response,
-                ),
+                )
+                .on_conflict_do_nothing(
+                    index_elements=["digest_hash", "model", "prompt_version", "schema_version"]
+                )
             )
 
 

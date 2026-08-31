@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-28 (FB2 continuation candidates implemented locally; pending deploy)
+Последняя проверка: 2026-08-31 (bulk AI import/co-authors implemented locally; pending deploy)
 
 ## Фазы мастер-промпта (§20)
 
@@ -49,7 +49,7 @@
 | Очередь нормализации + отчёты | `IMPLEMENTED` | /library/normalization, /library/normalization/{id} |
 | Download с Content-Disposition | `IMPLEMENTED` | /library/assets/{id}/download |
 | Review UI (unmatched, duplicates) | `IMPLEMENTED` | assign/resolve на /library/import |
-| AI matching (digest→proposal→apply) | `IMPLEMENTED` | ai/, ADR-0009; fake-server тесты; live — нужен валидный ключ |
+| AI matching (digest→proposal→apply) | `IMPLEMENTED` | ai/, queued bulk proposal for unmatched imports, idempotent cache and ordered co-authors; ADR-0009/0022; live — нужен валидный ключ |
 | Кэш proposals + corrections dataset | `IMPLEMENTED` | ai_proposals, ai_corrections |
 | Series state (last/next/missing/status) | `IMPLEMENTED` | SeriesStateService: last_observed, has_new_release, waiting_release, evidence |
 | Чтение: действия + история + очередь | `IMPLEMENTED` | ReadingStateService, /library/queue, /library/series |

@@ -12,8 +12,8 @@
   <p class="meta">ПРЕДЛОЖЕНИЕ (confidence {{ "%.2f" | format(proposal.confidence) }})</p>
   <form method="post" action="/library/import/items/{{ item_id }}/apply">
     {% include "_csrf.html" %}
-    <label for="author">Автор</label>
-    <input id="author" name="author" value="{{ proposal.author or '' }}">
+    <label for="authors">Авторы (через запятую)</label>
+    <input id="authors" name="authors" value="{{ proposal.author_names | join(', ') }}">
     <label for="title">Название</label>
     <input id="title" name="title" value="{{ proposal.title or '' }}">
     <label for="series">Цикл</label>
@@ -36,8 +36,8 @@
   <p>LLM недоступен или вернул невалидный ответ. Заполните поля вручную:</p>
   <form method="post" action="/library/import/items/{{ item_id }}/apply">
     {% include "_csrf.html" %}
-    <label for="author">Автор</label>
-    <input id="author" name="author" value="">
+    <label for="authors">Авторы (через запятую)</label>
+    <input id="authors" name="authors" value="">
     <label for="title">Название</label>
     <input id="title" name="title" value="">
     <label for="series">Цикл</label>

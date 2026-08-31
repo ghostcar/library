@@ -50,10 +50,12 @@ async def _inbox_context(
         ImportItemRepository,
     )
     settings: Settings = request.app.state.settings
+    unmatched = await ImportItemRepository(session).list_recent_unmatched(owner_id)
     return {
         "user_id": owner_id,
         "batches": await ImportBatchRepository(session).list_recent(owner_id),
-        "unmatched": await ImportItemRepository(session).list_recent_unmatched(owner_id),
+        "unmatched": unmatched,
+        "can_enqueue_ai": any(not item.match_evidence.get("ai_status") for item in unmatched),
         "duplicates": await ImportItemRepository(session).list_recent_by_status(
             owner_id,
             statuses=["duplicate", "rejected", "failed"],
@@ -133,6 +135,30 @@ async def upload_files(
         await service.import_uploads(current.user.id, uploads)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return RedirectResponse("/library/import", status_code=303)
+
+
+@router.post("/import/propose-unmatched")
+async def enqueue_pending_proposals(
+    current: CSRFProtected,
+    session: SessionDep,
+) -> RedirectResponse:
+    """Queue old unmatched imports once, without duplicating queued work."""
+    from portal.core.jobs.repository import JobRepository
+    from portal.modules.library.infrastructure.import_repositories import ImportItemRepository
+
+    items = await ImportItemRepository(session).list_recent_unmatched(current.user.id)
+    jobs = JobRepository(session)
+    repository = ImportItemRepository(session)
+    for item in items:
+        if item.match_evidence.get("ai_status"):
+            continue
+        item.match_evidence["ai_status"] = "queued"
+        await repository.update(item)
+        await jobs.enqueue(
+            "propose_import",
+            {"owner_id": str(current.user.id), "item_id": str(item.id)},
+        )
     return RedirectResponse("/library/import", status_code=303)
 
 

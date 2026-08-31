@@ -75,6 +75,9 @@ scripts/                 — dev/test/lint
 - `ContinuationLinkService`: не мониторинг источников, а ручная title-only
   проверка ссылки из локального FB2. Перед одним HTML GET проверяет public HTTPS
   host и applicable rules из `robots.txt`; детали — ADR-0021 и runbook.
+- `ImportService` ставит каждый `stored_unmatched` item в `core.jobs` как
+  `propose_import`; worker вызывает `ProposalService`. Import inbox может разово
+  поставить в ту же очередь старые items без `ai_status` (ADR-0022).
 
 ## База данных (18 таблиц)
 

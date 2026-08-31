@@ -81,7 +81,7 @@ async def _upload_unmatched(client: httpx.AsyncClient, name: str) -> None:
     content = (
         '<?xml version="1.0"?><FictionBook '
         'xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">'
-        "<body><section><p>Текст.</p></section></body></FictionBook>"
+        f"<body><section><p>{name}</p></section></body></FictionBook>"
     ).encode()
     response = await client.post(
         "/library/import/upload",
@@ -108,6 +108,49 @@ def _service_for(client: httpx.AsyncClient, settings: Settings) -> ProposalServi
 
 
 class TestProposalFlow:
+    async def test_batch_action_queues_previously_unmatched_imports(
+        self, authed: httpx.AsyncClient
+    ) -> None:
+        await _upload_unmatched(authed, "старый импорт один.fb2")
+        await _upload_unmatched(authed, "старый импорт два.fb2")
+        from sqlalchemy import delete, select
+
+        from portal.core.jobs.orm import JobModel
+
+        container = authed._transport.app.state.container
+        async with container["session_factory"]() as session, session.begin():
+            await session.execute(delete(JobModel).where(JobModel.kind == "propose_import"))
+            from portal.modules.library.infrastructure.import_orm import ImportItemModel
+
+            rows = list((await session.execute(select(ImportItemModel))).scalars())
+            for row in rows:
+                row.match_evidence = {"parser": "deterministic-v1"}
+
+        response = await authed.post("/library/import/propose-unmatched")
+        assert response.status_code == 303
+        async with container["session_factory"]() as session:
+            jobs = list(
+                (await session.execute(select(JobModel).where(JobModel.kind == "propose_import")))
+                .scalars()
+            )
+        assert len(jobs) == 2
+
+    async def test_unmatched_import_enqueues_background_proposal(
+        self, authed: httpx.AsyncClient
+    ) -> None:
+        await _upload_unmatched(authed, "авторазбор очередь.fb2")
+        from sqlalchemy import select
+
+        from portal.core.jobs.orm import JobModel
+
+        container = authed._transport.app.state.container
+        async with container["session_factory"]() as session:
+            jobs = list(
+                (await session.execute(select(JobModel).where(JobModel.kind == "propose_import")))
+                .scalars()
+            )
+        assert len(jobs) == 1
+
     async def test_valid_proposal_creates_work_and_records_correction(
         self,
         authed: httpx.AsyncClient,
@@ -230,6 +273,21 @@ class TestProposalFlow:
         catalog = await authed.get("/library/catalog")
         assert "Волшебники" in catalog.text
         assert "Макс Фрай" in catalog.text
+
+    async def test_apply_form_preserves_multiple_authors(self, authed: httpx.AsyncClient) -> None:
+        await _upload_unmatched(authed, "соавторы форма.fb2")
+        item_id = await _first_unmatched_item_id(authed)
+        response = await authed.post(
+            f"/library/import/items/{item_id}/apply",
+            data={
+                "authors": "Автор Один, Автор Два",
+                "title": "Общая книга",
+            },
+        )
+        assert response.status_code == 303
+        catalog = await authed.get("/library/catalog")
+        assert "Автор Один" in catalog.text
+        assert "Автор Два" in catalog.text
 
     async def test_ai_down_falls_back(self, authed: httpx.AsyncClient) -> None:
         ai_app = _fake_ai_app(None, status=500)

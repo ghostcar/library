@@ -15,6 +15,9 @@
   Перед rollout нужны backup → build/push → migration → smoke. Проверка title
   запускается только вручную и сначала соблюдает robots.txt (см. runbook
   `fb2-continuation-link-check.md`).
+- Bulk AI import/co-authors: local only, без новой migration. Перед rollout
+  проверить worker `propose_import` на одном тестовом upload и отсутствие ошибок
+  `uq_ai_proposals_cache` в web/worker logs.
 - Generic HTML/Litnet polling остаются будущими срезами.
 
 ## Окружение VPS (факты 2026-08-25)

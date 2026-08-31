@@ -68,6 +68,7 @@ async def apply_proposal(
     current: CSRFProtected,
     session: SessionDep,
     author: Annotated[str, Form()] = "",
+    authors: Annotated[str, Form()] = "",
     title: Annotated[str, Form()] = "",
     series: Annotated[str, Form()] = "",
     series_index_raw: Annotated[str, Form()] = "",
@@ -77,6 +78,7 @@ async def apply_proposal(
     service = _proposal_service(request)
     proposal = MatchProposal(
         author=author.strip() or None,
+        authors=[name.strip() for name in authors.split(",") if name.strip()],
         title=title.strip() or None,
         series=series.strip() or None,
         series_index_raw=series_index_raw.strip() or None,
@@ -85,7 +87,7 @@ async def apply_proposal(
         requires_review=False,
         field_evidence={"source": "user_confirmed_form"},
     )
-    corrected = proposal.author is not None  # user saw the form; treat as review step
+    corrected = bool(proposal.author_names)  # user saw the form; treat as review step
     try:
         await service.apply_proposal(
             current.user.id,

@@ -2,6 +2,17 @@
 
 Краткие факты завершённых сессий. Без chain-of-thought.
 
+## Сессия 33 — 2026-08-31 — массовый AI-разбор и соавторы
+
+- По production-логам установлена причина 500 при повторном ручном разборе:
+  `uq_ai_proposals_cache` при конкурентной/повторной вставке cache row.
+- Cache write заменён на PostgreSQL `ON CONFLICT DO NOTHING`; новый unmatched
+  import получает фоновый job `propose_import`, а старые записи можно поставить
+  одной командой «Разобрать всё» без дублирования уже queued/reviewed items.
+- LLM schema и review form поддерживают упорядоченный список авторов; каталог
+  сохраняет отдельных `WorkAuthor` для каждого имени, legacy `author` совместим.
+- Проверки: Ruff/mypy, 16 unit и 10 AI integration tests — green. Не развёрнуто.
+
 ## Сессия 1 — 2026-08-25 — Phase 0 + первый slice (Phase 1)
 
 - Прочитан мастер-промпт целиком; окружение VPS проаудировано (соседи: tracker:8000, pg:5432/55433, OmniRoute:20128, host nginx 80/443).

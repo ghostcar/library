@@ -92,9 +92,30 @@ async def _poll_watch_handler(payload: dict[str, Any]) -> None:
         await container["engine"].dispose()
 
 
+async def _propose_import_handler(payload: dict[str, Any]) -> None:
+    """Analyse a newly unmatched import without blocking the upload request."""
+    from portal.modules.library.ai.omniroute import OmniRouteAdapter
+    from portal.modules.library.ai.proposal_service import ProposalService
+
+    settings = get_settings()
+    container = build_container(settings)
+    service = ProposalService(
+        session_factory=container["session_factory"],
+        ai=OmniRouteAdapter(settings),
+    )
+    try:
+        outcome = await service.auto_process_for_item(
+            UUID(payload["owner_id"]), UUID(payload["item_id"])
+        )
+        logger.info("auto proposal item=%s decision=%s", payload["item_id"], outcome.decision)
+    finally:
+        await container["engine"].dispose()
+
+
 register_handler("noop", _noop_handler)
 register_handler("normalize", _normalize_handler)
 register_handler("poll_watch", _poll_watch_handler)
+register_handler("propose_import", _propose_import_handler)
 
 
 async def _observed_event_handler(payload: dict[str, Any]) -> None:
