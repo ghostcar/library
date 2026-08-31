@@ -398,3 +398,15 @@
 - Проверено: source integration 4 passed, полный Ruff/format/mypy green; предыдущий
   полный gate 294 passed + Chromium desktop/mobile остаётся актуален.
 - Production не менялся: image `1f98181`, schema `0013`.
+
+## Сессия 40 — 2026-08-31 — guided sources deploy
+
+- Immutable image `00e6089` опубликован в GHCR с digest
+  `sha256:8db69e…f6702`; pre-deploy backup `20260831-082135` проверен, schema `0013`.
+- Миграционного delta нет. Web и worker переключены с `1f98181` на `00e6089`,
+  persistent storage доступен обоим контейнерам.
+- Local/external health 200, ready 200, auth redirect 303, SVG/CSP/security headers,
+  новые templates/routes и отсутствие ERROR/Traceback/500 в логах — подтверждены.
+- Временная регистрация для authenticated smoke отклонена ожидаемым 403, потому что
+  registration закрыта; проверено, что тестовый пользователь не создан.
+- Rollback: image `1f98181`; schema совместима, backup требуется только для DB restore.

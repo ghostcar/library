@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-31 (guided source + searchable import assignment: 294 tests + full lint + Chromium green; production remains `1f98181`, schema 0013)
+Последняя проверка: 2026-08-31 (guided source release deployed as `00e6089`; schema 0013; local/external smoke green)
 
 ## Фазы мастер-промпта (§20)
 
@@ -14,10 +14,10 @@
 | Phase 3. Deterministic normalizer | `IMPLEMENTED` | FB2+EPUB, prose_compact, fingerprints, manifest, review UI, идемпотентность; EPUBCheck — skipped (нет Java) |
 | Phase 4. LLM-assisted normalization | `IMPLEMENTED` | auto/best-free, ретрай на cold-start, live propose в проде, кэш, corrections, UI propose/apply |
 | Phase 5. Series and reading state | `IMPLEMENTED` | SeriesStateService, история чтения, очередь, dashboard, массовые действия; derived source evidence включено |
-| Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
+| Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, guided source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
-| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:1f98181, schema 0013, https://library.gorbunovr.ru |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:00e6089, schema 0013, https://library.gorbunovr.ru |
 
 ## Компоненты
 
@@ -78,7 +78,7 @@
 | Abstract source endpoints | `IMPLEMENTED` | product UI разделён на OPDS/сайты; OPDS one-step создаёт endpoint+rule; toggle/delete синхронно управляют правилом; технический CRUD сохранён для диагностики |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
-| Guided source onboarding | `PARTIAL` | локально: реестр профилей на карточке автора; Author.Today автонаблюдается, другой сайт сохраняется как ссылка, Litnet disabled; далее кандидаты циклов, сравнение и searchable reconciliation книг без UUID. Второй разрешённый HTML auto-adapter пока отсутствует (ADR-0023) |
+| Guided source onboarding | `PARTIAL` | развёрнуто: реестр профилей на карточке автора; Author.Today автонаблюдается, другой сайт сохраняется как ссылка, Litnet disabled; далее кандидаты циклов, сравнение и searchable reconciliation книг без UUID. Второй разрешённый HTML auto-adapter пока отсутствует (ADR-0023) |
 | FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual HTTPS title check with robots/public-host guards → exact catalog match or review candidate; migration 0013 deployed (ADR-0021/runbook) |
 
 ## Инфраструктурные факты

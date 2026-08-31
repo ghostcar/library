@@ -4,19 +4,13 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:1f98181 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:00e6089 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
 
 ### Pending, не развёрнуто
 
-- Release candidate после `642d658..ec6dc3c` + текущий searchable-import slice:
-  guided Author.Today onboarding, series source comparison, source-work
-  reconciliation, website profiles, раздельные OPDS/site settings и поиск
-  существующей книги по title/author/series без UUID как для import item, так и
-  для missing/ambiguous книги источника на карточке цикла.
-  Gate: 294 tests, full Ruff/mypy и Chromium desktop/mobile — green.
 - Generic HTML polling остаётся будущим срезом до выбора конкретного разрешённого
   сайта; Litnet automation disabled по ADR-0020.
 
@@ -145,3 +139,17 @@ scripts/dev.sh
   rejecting it as an exact duplicate.
 - Health/ready = 200 and anonymous `/library/` = 303. Owner must re-upload the
   six retained source files; no user book was uploaded during smoke.
+
+## Деплой 2026-08-31 — guided sources and searchable assignment
+
+- Git/SHA: `00e6089`; GHCR digest:
+  `sha256:8db69ebf9d5c4d55eaa8a3aed759b459a78dea7fa80e2bf2164352bf0daf6702`.
+- Backup: `backups/pre-deploy/*-20260831-082135.*`; DB gzip, storage tar and
+  manifest validated, source schema `0013`. Миграций нет.
+- Web/worker переключены с `1f98181` на `00e6089`; web healthy, worker running,
+  persistent `/data/storage` доступен обоим, schema остаётся `0013 (head)`.
+- Local/external health = 200, ready = 200, anonymous library = 303 to login,
+  SVG/security headers and packaged guided-assignment templates/routes — OK.
+- Свежие web/worker logs без ERROR/Traceback/500. Authenticated smoke через
+  временную регистрацию не выполнялся: registration закрыта (ожидаемый 403),
+  пользователь не создан. Rollback image: `1f98181`, схема совместима.
