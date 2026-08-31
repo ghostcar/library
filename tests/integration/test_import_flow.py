@@ -64,6 +64,18 @@ async def _upload(client: httpx.AsyncClient, files: list[tuple[str, bytes]]) -> 
 
 
 class TestUploadImport:
+    async def test_unmatched_assignment_offers_catalog_picker(
+        self, authed_client: httpx.AsyncClient
+    ) -> None:
+        await _upload(
+            authed_client,
+            [("Автор — Цикл 01 — Уже в каталоге.fb2", _fb2("Уже в каталоге"))],
+        )
+        await _upload(authed_client, [("непонятный файл.fb2", _fb2("Без метаданных"))])
+        page = await authed_client.get("/library/import")
+        assert 'name="work_id"' in page.text
+        assert "UUID произведения" not in page.text
+        assert "Уже в каталоге" in page.text
     async def test_reupload_restores_missing_original_and_applies_metadata(
         self, authed_client: httpx.AsyncClient, app_settings
     ) -> None:
