@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:949314d | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:1f98181 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -124,3 +124,17 @@ scripts/dev.sh
   `review_ready`. Один transient `AI gateway unreachable` обработан fallback.
 - Rollback image: `ghcr.io/ghostcar/library:8bc0f60`; откат БД — только restore
   преддеплойного backup.
+
+## Деплой 2026-08-31 — persistent storage + FB2 metadata
+
+- Git/SHA: `1f98181`; GHCR digest:
+  `sha256:db6cf76a3887bba7ed0548a024bdebc29113393301319d907b3b8483ea00f6ad`.
+- Backup: `backups/pre-deploy/*-20260831-025216.*`, gzip/tar validated.
+- Web and worker now explicitly use mounted `/data/storage`; verified in both
+  running containers. There is no schema migration.
+- Browser upload filter accepts FB2, EPUB and ZIP including `.fb2.zip`. FB2
+  `title-info` is primary deterministic import evidence; a re-upload of a
+  missing original restores the content-addressed object instead of silently
+  rejecting it as an exact duplicate.
+- Health/ready = 200 and anonymous `/library/` = 303. Owner must re-upload the
+  six retained source files; no user book was uploaded during smoke.

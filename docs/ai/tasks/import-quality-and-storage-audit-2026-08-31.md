@@ -1,7 +1,7 @@
 # TaskContext: import quality and storage incident audit
 
 **Date:** 2026-08-31
-**Status:** `in_progress`
+**Status:** `deployed_ready_for_reupload`
 **Goal:** diagnose unusable bulk AI metadata extraction and verify originals after
 the deployment rollout.
 
@@ -38,3 +38,11 @@ the deployment rollout.
 
 - The owner has the six source files and will re-upload them after persistent
   storage and the browser archive filter are repaired.
+
+## Deployment result
+
+- `1f98181` is deployed. Both web and worker report `/data/storage`; smoke
+  health/ready passed and no book was added during deployment.
+- The owner can now submit all six sources in one upload (a `.fb2.zip` is
+  accepted). Re-upload restores missing content-addressed originals and FB2
+  metadata is applied before filename/LLM fallback.

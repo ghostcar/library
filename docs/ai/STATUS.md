@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-31 (bulk AI import/co-authors deployed; schema 0013)
+Последняя проверка: 2026-08-31 (persistent import storage + FB2 metadata deployed; schema 0013)
 
 ## Фазы мастер-промпта (§20)
 
@@ -17,7 +17,7 @@
 | Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
-| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:949314d, schema 0013, https://library.gorbunovr.ru |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:1f98181, schema 0013, https://library.gorbunovr.ru |
 
 ## Компоненты
 
@@ -40,7 +40,7 @@
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |
 | UI shell | `IMPLEMENTED` | desktop sidebar + mobile bottom nav + local SVG sprite; локальные CSS components/utilities, без inline CSS |
-| Импорт: upload (FB2/EPUB/ZIP) + local dirs | `IMPLEMENTED` | ImportService + expand_book_archive, ADR-0007 |
+| Импорт: upload (FB2/EPUB/ZIP) + local dirs | `IMPLEMENTED` | persistent `/data/storage`, ImportService + expand_book_archive; FB2 `title-info` primary, filename fallback (ADR-0007) |
 | Каталог UI (список, карточка) | `IMPLEMENTED` | /library/catalog, /library/works/{id} |
 | Import inbox UI | `IMPLEMENTED` | /library/import (upload, scan, unmatched, duplicates) |
 | Duplicate candidates | `IMPLEMENTED` | exact_content + same_work_format; review — Phase 3 |

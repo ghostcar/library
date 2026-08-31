@@ -23,6 +23,15 @@
 - Семь исторических unmatched imports пользователя поставлены одной операцией в
   `propose_import`: worker завершил все, `review_ready=7`, cache conflict не возник.
 
+## Сессия 35 — 2026-08-31 — storage recovery safeguard
+
+- После обнаружения потери originals в mutable container layer deployed
+  `1f98181`: web и worker принудительно используют volume `/data/storage`.
+- Upload picker принимает `.fb2.zip`; re-upload missing content-addressed
+  original restores объект вместо простого duplicate rejection.
+- FB2 `title-info` (authors/title/sequence) стал primary deterministic evidence;
+  broken filename — только fallback. Health/ready и auth redirect прошли.
+
 ## Сессия 1 — 2026-08-25 — Phase 0 + первый slice (Phase 1)
 
 - Прочитан мастер-промпт целиком; окружение VPS проаудировано (соседи: tracker:8000, pg:5432/55433, OmniRoute:20128, host nginx 80/443).
