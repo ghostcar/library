@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
-PROPOSAL_SCHEMA_VERSION = 1
+PROPOSAL_SCHEMA_VERSION = 2
 
 _JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
 

@@ -33,6 +33,8 @@ services:
     environment:
       LIBRARY_DATABASE_URL: postgresql+asyncpg://library:${LIBRARY_PG_PASSWORD}@postgres:5432/library
       LIBRARY_HOST: 0.0.0.0
+      # Originals must survive a web/worker container recreation.
+      LIBRARY_STORAGE_ROOT: /data/storage
     ports:
       - "127.0.0.1:8001:8001"
     volumes:
@@ -53,6 +55,7 @@ services:
     env_file: .env
     environment:
       LIBRARY_DATABASE_URL: postgresql+asyncpg://library:${LIBRARY_PG_PASSWORD}@postgres:5432/library
+      LIBRARY_STORAGE_ROOT: /data/storage
     volumes:
       - library_storage:/data/storage
     depends_on:

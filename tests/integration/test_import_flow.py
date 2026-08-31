@@ -28,6 +28,17 @@ def _fb2(title: str, body: str = "Текст произведения.") -> byte
     ).encode()
 
 
+def _fb2_with_metadata() -> bytes:
+    return (
+        '<?xml version="1.0" encoding="utf-8"?>'
+        '<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0">'
+        "<description><title-info><book-title>Верное название</book-title>"
+        "<author><first-name>Иван</first-name><last-name>Авторов</last-name></author>"
+        '<sequence name="Верный цикл" number="7"/></title-info></description>'
+        "<body><section><p>Текст.</p></section></body></FictionBook>"
+    ).encode()
+
+
 def _epub(marker: str) -> bytes:
     buffer = BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
@@ -53,6 +64,37 @@ async def _upload(client: httpx.AsyncClient, files: list[tuple[str, bytes]]) -> 
 
 
 class TestUploadImport:
+    async def test_reupload_restores_missing_original_and_applies_metadata(
+        self, authed_client: httpx.AsyncClient, app_settings
+    ) -> None:
+        content = _fb2_with_metadata()
+        await _upload(authed_client, [("broken_name.fb2", content)])
+        from portal.modules.library.infrastructure.orm import AssetModel
+
+        container = authed_client._transport.app.state.container
+        async with container["session_factory"]() as session:
+            asset = (await session.execute(select(AssetModel))).scalar_one()
+            storage_path = asset.storage_path
+        (Path(app_settings.storage_root) / storage_path).unlink()
+
+        response = await _upload(authed_client, [("recovery.fb2", content)])
+        assert response.status_code == 303
+        assert (Path(app_settings.storage_root) / storage_path).is_file()
+        catalog = await authed_client.get("/library/catalog")
+        assert "Верное название" in catalog.text
+
+    async def test_embedded_fb2_metadata_beats_broken_filename(
+        self, authed_client: httpx.AsyncClient
+    ) -> None:
+        response = await _upload(
+            authed_client,
+            [("broken_romanized_name_777.fb2", _fb2_with_metadata())],
+        )
+        assert response.status_code == 303
+        catalog = await authed_client.get("/library/catalog")
+        assert "Верное название" in catalog.text
+        assert "Иван Авторов" in catalog.text
+        assert "Верный цикл" in catalog.text
     async def test_well_formed_upload_creates_work_and_asset(
         self,
         authed_client: httpx.AsyncClient,

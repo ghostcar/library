@@ -1,7 +1,7 @@
 # TaskContext: import quality and storage incident audit
 
-**Date:** 2026-08-31  
-**Status:** `investigated_blocked_for_direction`  
+**Date:** 2026-08-31
+**Status:** `in_progress`
 **Goal:** diagnose unusable bulk AI metadata extraction and verify originals after
 the deployment rollout.
 
@@ -33,3 +33,8 @@ the deployment rollout.
    damaged filename.
 5. Add a batch-review UI only for genuine conflicts and a correction feedback
    loop; it must not replace correct automatic extraction.
+
+## Owner recovery input
+
+- The owner has the six source files and will re-upload them after persistent
+  storage and the browser archive filter are repaired.

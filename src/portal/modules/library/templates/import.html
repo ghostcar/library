@@ -9,10 +9,10 @@
 </div>
 
 <div class="card">
-  <p class="meta">ЗАГРУЗКА ФАЙЛОВ · до {{ max_files }} файлов, до {{ max_file_mb }} МБ каждый (FB2/EPUB)</p>
+  <p class="meta">ЗАГРУЗКА ФАЙЛОВ · до {{ max_files }} файлов, до {{ max_file_mb }} МБ каждый (FB2/EPUB/ZIP)</p>
   <form method="post" action="/library/import/upload" enctype="multipart/form-data">
     {% include "_csrf.html" %}
-    <input type="file" name="files" multiple accept=".fb2,.epub" required
+    <input type="file" name="files" multiple accept=".fb2,.epub,.zip,.fb2.zip,application/zip" required
            class="u-border u-p-8 u-w-full u-on-surface">
     <button type="submit">Импортировать</button>
   </form>

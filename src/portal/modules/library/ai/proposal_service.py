@@ -31,6 +31,7 @@ from portal.modules.library.ai.proposal import (
     proposal_to_dict,
     validate_proposal,
 )
+from portal.modules.library.application.book_metadata import extract_embedded_metadata
 from portal.modules.library.application.filename_parser import parse_filename
 from portal.modules.library.domain import import_entities as ie
 from portal.modules.library.infrastructure.import_repositories import ImportItemRepository
@@ -107,12 +108,35 @@ class ProposalService:
                 raise LookupError(msg)
 
             parsed = parse_filename(item.filename)
-            candidates = await self._catalog_candidates(session, owner_id, parsed.title or "")
+            asset_content = None
+            if item.asset_id is not None:
+                from pathlib import Path
+
+                from portal.core.config.config import get_settings
+                from portal.core.storage.local import LocalStorageAdapter, StorageError
+                from portal.modules.library.infrastructure.repositories import AssetRepository
+
+                asset = await AssetRepository(session).get(owner_id, item.asset_id)
+                if asset is not None:
+                    try:
+                        storage = LocalStorageAdapter(Path(get_settings().storage_root))
+                        asset_content = await storage.open(asset.storage_path)
+                    except StorageError:
+                        pass
+            metadata = (
+                extract_embedded_metadata(asset_content, item.detected_format or "")
+                if asset_content
+                else None
+            )
+            candidates = await self._catalog_candidates(
+                session, owner_id, (metadata.title if metadata else None) or parsed.title or ""
+            )
             digest = self._digest_builder.build(
                 item.filename,
                 parsed,
                 candidates,
                 detected_format=item.detected_format,
+                embedded_metadata=metadata.to_evidence() if metadata else None,
                 warnings=[item.error] if item.error else None,
             )
 

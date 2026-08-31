@@ -15,7 +15,7 @@ from uuid import UUID
 from portal.modules.library.ai.proposal import PROPOSAL_SCHEMA_VERSION
 from portal.modules.library.application.filename_parser import ParsedFilename
 
-PROMPT_VERSION = 1
+PROMPT_VERSION = 2
 
 
 @dataclass(slots=True)
@@ -40,6 +40,7 @@ class MatchDigest:
     parsed: dict[str, Any]
     candidates: list[CatalogCandidate]
     format: str | None = None
+    embedded_metadata: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
     def to_json(self) -> str:
@@ -48,6 +49,7 @@ class MatchDigest:
             "filename": self.filename,
             "parsed_filename": self.parsed,
             "format": self.format,
+            "embedded_metadata": self.embedded_metadata,
             "warnings": self.warnings,
             "catalog_candidates": [c.to_dict() for c in self.candidates],
         }
@@ -84,6 +86,7 @@ class DigestBuilder:
         candidates: list[CatalogCandidate],
         *,
         detected_format: str | None = None,
+        embedded_metadata: dict[str, Any] | None = None,
         warnings: list[str] | None = None,
     ) -> MatchDigest:
         return MatchDigest(
@@ -97,5 +100,6 @@ class DigestBuilder:
             },
             candidates=candidates[: self._max_candidates],
             format=detected_format,
+            embedded_metadata=embedded_metadata or {},
             warnings=warnings or [],
         )

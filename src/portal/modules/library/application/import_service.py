@@ -21,6 +21,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from portal.core.events.repository import OutboxRepository
 from portal.core.storage.local import LocalStorageAdapter, StorageError
+from portal.modules.library.application.book_metadata import (
+    EmbeddedBookMetadata,
+    extract_embedded_metadata,
+)
 from portal.modules.library.application.filename_parser import ParsedFilename, parse_filename
 from portal.modules.library.application.services import CatalogService, RegisterWorkInput
 from portal.modules.library.domain import entities as de
@@ -243,16 +247,53 @@ class ImportService:
                 return item
             item.detected_format = info.format.value
             item.sha256 = Sha256(_sha256_hex(content))
+            metadata = extract_embedded_metadata(content, info.format.value)
 
             # 3. exact-content duplicate check
             assets = AssetRepository(session)
             existing = await assets.get_by_sha256(owner_id, item.sha256)
             if existing is not None:
+                was_missing = not await self._storage.exists(existing.storage_path)
+                if was_missing:
+                    restored = await self._storage.save("originals", content, info.format.value)
+                    if restored.storage_path != existing.storage_path:
+                        item.fail("recovery storage path does not match asset digest")
+                        await items.update(item)
+                        return item
+                    parsed = parse_filename(filename)
+                    work_id, evidence = await self._match_or_create(
+                        session, owner_id, parsed, metadata
+                    )
+                    if work_id is not None:
+                        await assets.update_work_link(owner_id, existing.id, work_id)
+                    item.status = (
+                        ie.ItemStatus.MATCHED
+                        if work_id is not None
+                        else ie.ItemStatus.STORED_UNMATCHED
+                    )
+                    item.asset_id = existing.id
+                    item.work_id = work_id
+                    item.match_evidence = {
+                        **evidence,
+                        "reason": "restored_missing_original",
+                        "existing_asset": str(existing.id),
+                    }
+                    await items.update(item)
+                    if item.status is ie.ItemStatus.STORED_UNMATCHED:
+                        from portal.core.jobs.repository import JobRepository
+
+                        item.match_evidence["ai_status"] = "queued"
+                        await items.update(item)
+                        await JobRepository(session).enqueue(
+                            "propose_import",
+                            {"owner_id": str(owner_id), "item_id": str(item.id)},
+                        )
+                    return item
                 item.status = ie.ItemStatus.DUPLICATE
                 item.asset_id = existing.id
                 item.work_id = existing.work_id
                 item.match_evidence = {
-                    "reason": "exact_content",
+                    "reason": "restored_missing_original" if was_missing else "exact_content",
                     "existing_asset": str(existing.id),
                 }
                 await items.update(item)
@@ -280,7 +321,7 @@ class ImportService:
 
             # 5. deterministic match by filename
             parsed = parse_filename(filename)
-            work_id, evidence = await self._match_or_create(session, owner_id, parsed)
+            work_id, evidence = await self._match_or_create(session, owner_id, parsed, metadata)
 
             asset = await assets.add(
                 de.Asset(
@@ -422,6 +463,7 @@ class ImportService:
         session: AsyncSession,
         owner_id: UUID,
         parsed: ParsedFilename,
+        metadata: EmbeddedBookMetadata,
     ) -> tuple[UUID | None, dict[str, Any]]:
         """Deterministic policy (master prompt 8.5):
         well-formed filename (author+title) → create/reuse canon entities;
@@ -436,7 +478,14 @@ class ImportService:
                 "title": parsed.title,
             },
         }
-        if not parsed.is_well_formed:
+        evidence["embedded_metadata"] = metadata.to_evidence()
+        title = metadata.title or parsed.title
+        authors = list(metadata.authors) or ([parsed.author] if parsed.author else [])
+        series = metadata.series or parsed.series
+        series_index_raw = metadata.series_index_raw or (
+            str(parsed.series_index) if parsed.series_index else None
+        )
+        if not title or not authors:
             return None, evidence
 
         catalog = CatalogService(
@@ -447,14 +496,18 @@ class ImportService:
         work = await catalog.register_work(
             RegisterWorkInput(
                 owner_id=owner_id,
-                title=parsed.title,
-                author_names=[parsed.author] if parsed.author else [],
-                series_title=parsed.series,
-                series_index_raw=str(parsed.series_index) if parsed.series_index else None,
+                title=title,
+                author_names=authors,
+                series_title=series,
+                series_index_raw=series_index_raw,
             ),
         )
         evidence["work_id"] = str(work.id)
-        evidence["decision"] = "auto_applied_well_formed_filename"
+        evidence["decision"] = (
+            "auto_applied_embedded_metadata"
+            if metadata.usable_for_catalog
+            else "auto_applied_well_formed_filename"
+        )
         return work.id, evidence
 
     # --- quarantine helpers ------------------------------------------------
