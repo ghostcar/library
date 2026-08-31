@@ -121,6 +121,11 @@ def parse_author_today_works(content: bytes) -> list[SourceEntry]:
                     "series": (
                         " ".join(series_nodes[0].text_content().split()) if series_nodes else None
                     ),
+                    "series_url": (
+                        urljoin("https://author.today", str(series_nodes[0].get("href") or ""))
+                        if series_nodes
+                        else None
+                    ),
                 },
             )
         )

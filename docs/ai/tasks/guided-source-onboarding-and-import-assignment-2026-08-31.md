@@ -32,3 +32,16 @@ catalog-first workflow.
 - Import inbox now renders a catalog picker (title, authors, first series) for
   manual assignment; UUID input is removed. The existing owner-scoped assign
   route remains the enforcement point.
+- Author card now has one-step Author.Today onboarding. It atomically creates or
+  reuses endpoint/link/watch rule. Poll observations are grouped into series
+  candidates; acceptance creates/reuses a series card, links its source and
+  backfills matching observations with the canonical series id.
+- Candidate acceptance is observation-backed: forged form values cannot create a
+  series and the series URL is taken from persisted source evidence. Connected
+  candidates become a stable `отслеживается` state instead of retaining an action.
+
+## Next checkpoint
+
+Implement the series-card comparison of source observations against canonical
+works/assets: present locally, missing locally, and ambiguous. Keep missing items
+reviewable; do not create catalog works from title-only evidence automatically.

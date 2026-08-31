@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 
-from portal.core.auth.dependencies import CurrentUser
+from portal.core.auth.dependencies import CSRFProtected, CurrentUser
+from portal.modules.library.adapters.author_today_adapter import AuthorTodayParseError
 from portal.modules.library.adapters.source_orm import SourceEndpointModel
 from portal.modules.library.application.source_link_service import SourceLinkService
+from portal.modules.library.application.source_onboarding_service import SourceOnboardingService
 from portal.modules.library.infrastructure.orm import AuthorModel
 from portal.web.deps import SessionDep
 
@@ -111,6 +113,34 @@ async def work_page(
     )
 
 
+@router.post("/authors/{author_id}/observe-author-today")
+async def observe_author_today(
+    author_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+    url: Annotated[str, Form()],
+) -> RedirectResponse:
+    try:
+        await SourceOnboardingService(session).connect_author_today(current.user.id, author_id, url)
+    except AuthorTodayParseError:
+        return RedirectResponse(f"/library/authors/{author_id}?source_error=url", status_code=303)
+    return RedirectResponse(f"/library/authors/{author_id}", status_code=303)
+
+
+@router.post("/authors/{author_id}/series-candidates")
+async def accept_series_candidate(
+    author_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+    endpoint_id: Annotated[UUID, Form()],
+    name: Annotated[str, Form()],
+) -> RedirectResponse:
+    await SourceOnboardingService(session).accept_series(
+        current.user.id, author_id, endpoint_id, name
+    )
+    return RedirectResponse(f"/library/authors/{author_id}", status_code=303)
+
+
 @router.get("/authors", response_class=HTMLResponse)
 async def authors_page(request: Request, current: CurrentUser, session: SessionDep) -> HTMLResponse:
     from portal.modules.library.application.opds_catalog_service import OpdsCatalogService
@@ -143,6 +173,7 @@ async def author_page(
             {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
             status_code=404,
         )
+    onboarding = SourceOnboardingService(session)
     return _templates.TemplateResponse(
         request,
         "author.html",
@@ -155,5 +186,8 @@ async def author_page(
                 current.user.id, "author", author_id
             ),
             "source_endpoints": await _endpoints(session, current.user.id),
+            "author_today_status": await onboarding.author_today_status(current.user.id, author_id),
+            "series_candidates": await onboarding.series_candidates(current.user.id, author_id),
+            "source_error": request.query_params.get("source_error"),
         },
     )

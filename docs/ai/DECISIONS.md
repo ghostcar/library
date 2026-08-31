@@ -26,3 +26,4 @@
 | 0020 | accepted | Litnet: автоматическое HTML-наблюдение не включать — соглашение запрещает automated collection |
 | 0021 | accepted | FB2 continuation links: локальное evidence → ручная title-only проверка → review candidate, без автосоздания книги |
 | 0022 | accepted | Новые unmatched imports разбираются worker'ом; кэш идемпотентен, LLM/form поддерживают ordered co-authors |
+| 0023 | accepted | Catalog-first onboarding: страница автора → кандидаты циклов → карточки и source links |

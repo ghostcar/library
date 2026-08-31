@@ -8,7 +8,12 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from portal.modules.library.adapters.source_orm import SourceEndpointModel
+from portal.modules.library.adapters.source_orm import (
+    SourceEndpointModel,
+    SourceLinkModel,
+    SourceObservationModel,
+    WatchRuleModel,
+)
 from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.modules.library.infrastructure.orm import (
     AuthorModel,
@@ -216,3 +221,148 @@ async def test_source_management_http_flow(client: httpx.AsyncClient) -> None:
     assert response.status_code == 303
     work_page = await client.get(f"/library/works/{work_id}")
     assert "Официальный сайт" not in work_page.text
+
+
+async def test_author_source_onboarding_creates_series_from_observation(
+    client: httpx.AsyncClient,
+) -> None:
+    registered = await client.post(
+        "/auth/register",
+        json={"email": "onboarding@test.example", "password": "onboarding-pass-123"},
+    )
+    assert registered.status_code == 201
+    client.headers["x-csrf-token"] = client.cookies["library_csrf"]
+    owner_id = UUID(registered.json()["user"]["id"])
+    container = client._transport.app.state.container
+
+    async with container["session_factory"]() as session:
+        author = AuthorModel(
+            owner_id=owner_id,
+            name="Автор наблюдения",
+            name_normalized="автор наблюдения",
+        )
+        session.add(author)
+        await session.commit()
+        author_id = author.id
+
+    invalid = await client.post(
+        f"/library/authors/{author_id}/observe-author-today",
+        data={"url": "https://example.com/u/test"},
+    )
+    assert invalid.status_code == 303
+    assert invalid.headers["location"].endswith("?source_error=url")
+    error_page = await client.get(invalid.headers["location"])
+    assert "Нужна публичная страница автора" in error_page.text
+
+    response = await client.post(
+        f"/library/authors/{author_id}/observe-author-today",
+        data={"url": "https://author.today/u/test"},
+    )
+    assert response.status_code == 303
+
+    async with container["session_factory"]() as session:
+        endpoint = (
+            await session.execute(
+                select(SourceEndpointModel).where(SourceEndpointModel.owner_id == owner_id)
+            )
+        ).scalar_one()
+        rule = (
+            await session.execute(select(WatchRuleModel).where(WatchRuleModel.owner_id == owner_id))
+        ).scalar_one()
+        author_link = (
+            await session.execute(
+                select(SourceLinkModel).where(
+                    SourceLinkModel.owner_id == owner_id,
+                    SourceLinkModel.entity_type == "author",
+                )
+            )
+        ).scalar_one()
+        assert endpoint.url == "https://author.today/u/test/works"
+        assert rule.source_endpoint_id == endpoint.id
+        assert author_link.entity_id == author_id
+        session.add(
+            SourceObservationModel(
+                owner_id=owner_id,
+                watch_rule_id=rule.id,
+                adapter_id="author_today",
+                external_id="author-today:work:777:revision:published",
+                title="Первая книга цикла",
+                author_name="Автор наблюдения",
+                url="https://author.today/work/777",
+                parser_version="author-today-public-v1",
+                raw={
+                    "work_id": "777",
+                    "series": "Найденный цикл",
+                    "series_url": "https://author.today/work/series/55",
+                },
+            )
+        )
+        session.add(
+            SourceObservationModel(
+                owner_id=owner_id,
+                watch_rule_id=rule.id,
+                adapter_id="author_today",
+                external_id="author-today:work:777:revision:updated",
+                title="Первая книга цикла",
+                author_name="Автор наблюдения",
+                url="https://author.today/work/777",
+                parser_version="author-today-public-v1",
+                raw={
+                    "work_id": "777",
+                    "series": "Найденный цикл",
+                    "series_url": "https://author.today/work/series/55",
+                },
+            )
+        )
+        await session.commit()
+        endpoint_id = endpoint.id
+
+    page = await client.get(f"/library/authors/{author_id}")
+    assert page.status_code == 200
+    assert "Найденный цикл" in page.text
+    assert "1 книг" in page.text
+
+    forged = await client.post(
+        f"/library/authors/{author_id}/series-candidates",
+        data={"endpoint_id": str(endpoint_id), "name": "Подложный цикл"},
+    )
+    assert forged.status_code == 303
+    async with container["session_factory"]() as session:
+        assert (
+            await session.execute(select(SeriesModel).where(SeriesModel.owner_id == owner_id))
+        ).scalar_one_or_none() is None
+
+    accepted = await client.post(
+        f"/library/authors/{author_id}/series-candidates",
+        data={"endpoint_id": str(endpoint_id), "name": "Найденный цикл"},
+    )
+    assert accepted.status_code == 303
+    async with container["session_factory"]() as session:
+        series = (
+            await session.execute(select(SeriesModel).where(SeriesModel.owner_id == owner_id))
+        ).scalar_one()
+        series_link = (
+            await session.execute(
+                select(SourceLinkModel).where(
+                    SourceLinkModel.owner_id == owner_id,
+                    SourceLinkModel.entity_type == "series",
+                )
+            )
+        ).scalar_one()
+        observations = list(
+            (
+                await session.execute(
+                    select(SourceObservationModel).where(
+                        SourceObservationModel.owner_id == owner_id
+                    )
+                )
+            ).scalars()
+        )
+        assert series.title == "Найденный цикл"
+        assert series_link.entity_id == series.id
+        assert series_link.external_url == "https://author.today/work/series/55"
+        assert all(observation.series_id == series.id for observation in observations)
+
+    page = await client.get(f"/library/authors/{author_id}")
+    assert "отслеживается" in page.text
+    assert "Подключить наблюдение" not in page.text

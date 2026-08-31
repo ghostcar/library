@@ -31,6 +31,7 @@ def test_parse_public_author_work_metadata() -> None:
         "updated_at": "2026-08-28T01:02:03Z",
         "status": "в процессе",
         "series": "Тестовый цикл",
+        "series_url": "https://author.today/work/series/55",
     }
 
 

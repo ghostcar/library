@@ -1,5 +1,19 @@
 {% extends "base.html" %}{% block content %}
 <h1 class="u-display u-weight-normal">{{ author.name }}</h1>
+<div class="card">
+  <p class="meta">НАБЛЮДЕНИЕ ЗА АВТОРОМ</p>
+  {% if source_error == 'url' %}<p class="chip chip--warn">Нужна публичная страница автора вида https://author.today/u/имя.</p>{% endif %}
+  <form method="post" action="/library/authors/{{ author.id }}/observe-author-today" class="u-flex u-gap-8 u-wrap u-items-end">
+    {% include "_csrf.html" %}
+    <div class="u-grow u-min-220"><label>Страница автора на Author.Today</label><input type="url" name="url" value="{{ author_today_status.url if author_today_status else '' }}" placeholder="https://author.today/u/…" required></div>
+    <button class="u-m-0 u-w-auto">{{ 'Обновить и проверить сейчас' if author_today_status else 'Добавить и отслеживать' }}</button>
+  </form>
+  {% if author_today_status %}<p class="meta">{% if author_today_status.last_error %}Последняя проверка завершилась ошибкой: {{ author_today_status.last_error }}{% elif author_today_status.last_polled_at %}Источник подключён · последняя проверка {{ author_today_status.last_polled_at }}{% else %}Источник подключён · первая проверка поставлена в очередь.{% endif %}</p>{% else %}<p class="meta">После первого опроса найденные циклы появятся кандидатами ниже.</p>{% endif %}
+</div>
+{% if series_candidates %}<div class="card"><p class="meta">НАЙДЕННЫЕ ЦИКЛЫ</p>
+{% for candidate in series_candidates %}<div class="u-flex u-gap-8 u-wrap u-items-center u-my-8"><span class="u-grow"><strong>{{ candidate.name }}</strong> · {{ candidate.work_count }} книг</span>
+{% if candidate.existing_series_id %}<a href="/library/series/{{ candidate.existing_series_id }}" class="chip">{{ 'отслеживается' if candidate.connected else 'есть карточка' }}</a>{% endif %}{% if not candidate.connected %}<form method="post" action="/library/authors/{{ author.id }}/series-candidates">{% include "_csrf.html" %}<input type="hidden" name="endpoint_id" value="{{ candidate.endpoint_id }}"><input type="hidden" name="name" value="{{ candidate.name }}"><button class="u-m-0 u-w-auto">{{ 'Подключить наблюдение' if candidate.existing_series_id else 'Добавить цикл' }}</button></form>{% endif %}</div>{% endfor %}
+</div>{% endif %}
 {% set source_entity_type = 'author' %}{% set source_entity_id = author.id %}{% set source_back = '/library/authors/' ~ author.id %}{% include "_source_links.html" %}
 <div class="card"><p class="meta">ПРОИЗВЕДЕНИЯ АВТОРА</p>{% for w in works %}<p><a class="u-on-surface" href="/library/works/{{ w.work_id }}">{{ w.title }}</a></p>{% else %}<p class="meta">Произведений пока нет.</p>{% endfor %}</div>
 {% endblock %}

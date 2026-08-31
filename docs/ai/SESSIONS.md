@@ -318,3 +318,14 @@
   deployment state и handoff.
 - Проверка не относится к импорту FB2 или source polling в целом: она выполняется
   только перед единственным внешним HTML GET по кнопке владельца и fail closed.
+
+## Сессия 33 — 2026-08-31 — guided author source onboarding
+
+- Коммит `642d658` заменил UUID назначения import item на owner-scoped catalog picker.
+- Реализован catalog-first поток карточки автора: Author.Today URL автоматически
+  создаёт endpoint/link/watch rule и ставит первую проверку в очередь.
+- Persisted observations группируются в кандидаты циклов; подтверждение создаёт/reuses
+  series card, связывает её с discovered URL и backfill-ит observations.
+- Защита: подложное имя кандидата не создаёт серию; URL берётся только из observation.
+- Проверено: Ruff, mypy, unit Author.Today 9 passed, source integration 4 passed.
+- Production не менялся: image `1f98181`, schema `0013`.

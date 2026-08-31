@@ -72,6 +72,9 @@ scripts/                 — dev/test/lint
 - `OPDSAdapter`: safe Atom/OPDS parser, conditional GET.
 - `AuthorTodayAdapter`: только публичные `/u/<slug>/works`, HTML parser v1,
   quiet baseline и revision events; без auth/private API/content/acquisition (ADR-0019).
+- `SourceOnboardingService`: catalog-first orchestration с карточки автора: создаёт
+  endpoint/link/rule, группирует серии из persisted observations и по подтверждению
+  создаёт/reuses series card с source link (ADR-0023).
 - `ContinuationLinkService`: не мониторинг источников, а ручная title-only
   проверка ссылки из локального FB2. Перед одним HTML GET проверяет public HTTPS
   host и applicable rules из `robots.txt`; детали — ADR-0021 и runbook.
