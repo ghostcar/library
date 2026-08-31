@@ -11,7 +11,17 @@
   одной командой «Разобрать всё» без дублирования уже queued/reviewed items.
 - LLM schema и review form поддерживают упорядоченный список авторов; каталог
   сохраняет отдельных `WorkAuthor` для каждого имени, legacy `author` совместим.
-- Проверки: Ruff/mypy, 16 unit и 10 AI integration tests — green. Не развёрнуто.
+- Проверки: Ruff/mypy, 16 unit и 10 AI integration tests — green; rollout
+  зафиксирован в сессии 34.
+
+## Сессия 34 — 2026-08-31 — rollout bulk AI import
+
+- Опубликован `ghcr.io/ghostcar/library:949314d`; перед rollout создан и проверен
+  backup `*-20260831-021217.*`.
+- Миграция `0012 → 0013` применена одноразовым контейнером до restart web/worker.
+  Health/ready = 200, anonymous `/library/` = 303.
+- Семь исторических unmatched imports пользователя поставлены одной операцией в
+  `propose_import`: worker завершил все, `review_ready=7`, cache conflict не возник.
 
 ## Сессия 1 — 2026-08-25 — Phase 0 + первый slice (Phase 1)
 

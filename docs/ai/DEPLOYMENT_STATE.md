@@ -4,20 +4,13 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:8bc0f60 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-28** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:949314d | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
 
 ### Pending, не развёрнуто
 
-- FB2 continuation-link candidates: local commit `84e8bed`, migration `0013`.
-  Перед rollout нужны backup → build/push → migration → smoke. Проверка title
-  запускается только вручную и сначала соблюдает robots.txt (см. runbook
-  `fb2-continuation-link-check.md`).
-- Bulk AI import/co-authors: local commit `6bc75f8`, без новой migration. Перед rollout
-  проверить worker `propose_import` на одном тестовом upload и отсутствие ошибок
-  `uq_ai_proposals_cache` в web/worker logs.
 - Generic HTML/Litnet polling остаются будущими срезами.
 
 ## Окружение VPS (факты 2026-08-25)
@@ -116,3 +109,18 @@ scripts/dev.sh
 - Smoke: health/ready, external HTTPS, auth redirect и authenticated sources UI — OK;
   Author.Today profile/options присутствуют, ошибок в логах нет.
 - Rollback image: `ghcr.io/ghostcar/library:a531fd1`; схема совместима.
+
+## Деплой 2026-08-31 — continuation candidates + bulk AI import
+
+- Git/SHA: `949314d`; GHCR digest:
+  `sha256:f2b2cd7e0a1f2369933411f39119d928b83a76d6fe2e3db554f154cc32e8c19e`.
+- Backup: `backups/pre-deploy/*-20260831-021217.*`; db gzip и storage tar
+  проверены до миграции.
+- Миграция `0012 → 0013` применена одноразовым контейнером до переключения
+  web/worker. Оба сервиса работают на `949314d`; `/healthz` и `/readyz` = 200,
+  защищённый `/library/` = 303.
+- Все семь старых `stored_unmatched` пользователя были разово поставлены в
+  `propose_import`; worker завершил их без cache exception, все получили
+  `review_ready`. Один transient `AI gateway unreachable` обработан fallback.
+- Rollback image: `ghcr.io/ghostcar/library:8bc0f60`; откат БД — только restore
+  преддеплойного backup.
