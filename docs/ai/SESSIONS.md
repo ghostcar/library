@@ -426,3 +426,14 @@
   audiobook с одинаковым numeric id не склеивались в циклах/reconciliation.
 - Gate: `scripts/test.sh` 296 passed; Ruff/format/mypy green по 114 source files;
   Chromium desktop/mobile green. Production не менялся: `00e6089`, schema `0013`.
+
+## Сессия 42 — 2026-08-31 — source observability deploy
+
+- Image `d61a484` опубликован с digest `sha256:4116cad…610d2`; backup
+  `20260831-232648` (DB + 15 MiB storage + manifest) проверен до изменения схемы.
+- Migration 0014 применена до rollout; web healthy и worker running на одном digest,
+  storage volume доступен обоим. Local/external и authenticated UI smoke green.
+- Штатный queued backfill Сапфира прочитал 11 страниц: 287 новых observations,
+  309 уникальных publications, 21 series, 0 новых release notifications, status ok.
+- В свежих логах нет ERROR/Traceback/500. Rollback image `00e6089`; DB rollback
+  только restore pre-deploy backup.

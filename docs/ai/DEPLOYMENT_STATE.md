@@ -4,16 +4,13 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:00e6089 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:d61a484 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
 
 ### Pending, не развёрнуто
 
-- Source observability release: Author.Today parser v2 с полной пагинацией,
-  ручное обновление, `/library/service` и migration `0014`. Production остаётся
-  image `00e6089`, schema `0013` до отдельной команды deploy.
 - Generic HTML polling остаётся будущим срезом до выбора конкретного разрешённого
   сайта; Litnet automation disabled по ADR-0020.
 
@@ -156,3 +153,19 @@ scripts/dev.sh
 - Свежие web/worker logs без ERROR/Traceback/500. Authenticated smoke через
   временную регистрацию не выполнялся: registration закрыта (ожидаемый 403),
   пользователь не создан. Rollback image: `1f98181`, схема совместима.
+
+## Деплой 2026-08-31 — source observability and Author.Today parser v2
+
+- Git/SHA: `d61a484`; GHCR digest:
+  `sha256:4116cad0322726f80cbf0902166699723fe74207c5df419bda048ec74f9610d2`.
+- Pre-deploy backup: `backups/pre-deploy/*-20260831-232648.*`; DB gzip и storage
+  tar (15 MiB) проверены, manifest фиксирует исходную schema `0013`.
+- Migration `0013 → 0014` применена из нового образа до переключения. Web/worker
+  работают на `d61a484`, web healthy, worker running, persistent storage доступен.
+- Local/external health и ready = 200; anonymous `/library/service` → login 303;
+  authenticated service/author smoke = 200; CSP, SVG activity icon и schema = OK.
+- Production quiet backfill Сапфира прочитал 11 страниц, добавил 287 наблюдений:
+  309 уникальных публикаций, 21 цикл, parser v2/status ok, notification flood = 0.
+  Свежие web/worker logs без ERROR/Traceback/500.
+- Rollback image: `ghcr.io/ghostcar/library:00e6089`; для отката БД использовать
+  только указанный pre-deploy backup, автоматический downgrade не выполнять.

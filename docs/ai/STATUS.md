@@ -2,8 +2,8 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-31 (source observability/parser v2: 296 tests,
-lint/mypy/browser green; production остаётся `00e6089`, schema 0013)
+Последняя проверка: 2026-08-31 (source observability/parser v2 deployed as
+`d61a484`, schema 0014; production backfill Sapfir=309 publications/21 series)
 
 ## Фазы мастер-промпта (§20)
 
@@ -18,7 +18,7 @@ lint/mypy/browser green; production остаётся `00e6089`, schema 0013)
 | Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, guided source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
-| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:00e6089, schema 0013, https://library.gorbunovr.ru |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:d61a484, schema 0014, https://library.gorbunovr.ru |
 
 ## Компоненты
 
@@ -36,7 +36,7 @@ lint/mypy/browser green; production остаётся `00e6089`, schema 0013)
 | Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
-| Alembic 0001+0014 | `IMPLEMENTED` | Код и Test DB head=0014; VPS пока schema 0013 |
+| Alembic 0001+0014 | `IMPLEMENTED` | Код, Test DB и VPS schema head=0014 |
 | Auth SSR (login, защищённая /library, logout, settings) | `IMPLEMENTED` | src/portal/web (password change, CSRF-защищённый logout) |
 | Auth API (/auth/*) | `IMPLEMENTED` | register/login/refresh/logout/me/tokens |
 | CI (GitHub Actions) | `IMPLEMENTED` | quality (ruff+mypy) + tests (unit+integration+migration) — green |
@@ -58,9 +58,9 @@ lint/mypy/browser green; production остаётся `00e6089`, schema 0013)
 | Dashboard | `IMPLEMENTED` | /library/ (продолжить/далее/недавние) |
 | OPDS source adapter | `IMPLEMENTED` | adapters/opds_adapter.py, conditional GET, XXE-тест |
 | Watch rules + scheduler | `IMPLEMENTED` | worker tick 30s, backoff+jitter, degraded, persistent last outcome/duration/parser version, deduplicated manual refresh |
-| Service console | `IMPLEMENTED` | `/library/service`: owner-scoped jobs/outbox/watch status and manual source refresh; pending deploy |
+| Service console | `IMPLEMENTED` | `/library/service`: owner-scoped jobs/outbox/watch status and manual source refresh; deployed |
 | In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
-| Author.Today metadata | `IMPLEMENTED` | parser v2 обходит bounded pagination и учитывает work+audiobook; live Sapfir=309 публикаций/21 цикл; parser upgrade делает quiet full backfill; pending deploy (ADR-0019/0024) |
+| Author.Today metadata | `IMPLEMENTED` | parser v2 обходит bounded pagination и учитывает work+audiobook; production Sapfir=309 публикаций/21 цикл, quiet backfill verified (ADR-0019/0024) |
 | Litnet | `ABSENT` | намеренно отключён: пользовательское соглашение запрещает automated collection (ADR-0020) |
 | Flibusta OPDS metadata | `IMPLEMENTED` | отдельный профиль поверх OPDS; acquisition=false, фоновые скачивания отсутствуют |
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
