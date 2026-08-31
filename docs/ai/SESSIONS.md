@@ -410,3 +410,19 @@
 - Временная регистрация для authenticated smoke отклонена ожидаемым 403, потому что
   registration закрыта; проверено, что тестовый пользователь не создан.
 - Rollback: image `1f98181`; schema совместима, backup требуется только для DB restore.
+
+## Сессия 41 — 2026-08-31 — source observability and Author.Today parser v2
+
+- Причина неполного каталога найдена: adapter читал только первую страницу и только
+  `/work/`; публичный каталог Олега Сапфира содержит 11 страниц, 185 электронных и
+  124 аудиопубликации, 21 цикл. Bounded parser v2 возвращает все 309 публикаций.
+- Migration 0014 добавляет к watch rule parser version и последний status/new count/
+  not-modified/duration. Parser upgrade игнорирует старый validator и выполняет quiet
+  backfill без flood уведомлений.
+- Карточка автора получила deduplicated queued refresh и last/next/result status.
+  `/library/service` показывает owner-scoped jobs, outbox и watch rules; raw payload
+  и данные других владельцев не выводятся.
+- Идентичность source publication теперь включает `publication_kind`, чтобы work и
+  audiobook с одинаковым numeric id не склеивались в циклах/reconciliation.
+- Gate: `scripts/test.sh` 296 passed; Ruff/format/mypy green по 114 source files;
+  Chromium desktop/mobile green. Production не менялся: `00e6089`, schema `0013`.

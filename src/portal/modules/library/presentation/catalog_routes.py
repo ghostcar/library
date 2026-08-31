@@ -163,6 +163,22 @@ async def accept_series_candidate(
     return RedirectResponse(f"/library/authors/{author_id}", status_code=303)
 
 
+@router.post("/authors/{author_id}/refresh-author-source")
+async def refresh_author_source(
+    request: Request,
+    author_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+) -> RedirectResponse:
+    status = await SourceOnboardingService(session).author_today_status(current.user.id, author_id)
+    if status is None or status["rule_id"] is None:
+        outcome = "not_found"
+    else:
+        watch_service = request.app.state.container["watch_service"]
+        outcome = await watch_service.request_poll(current.user.id, status["rule_id"])
+    return RedirectResponse(f"/library/authors/{author_id}?refresh={outcome}", status_code=303)
+
+
 @router.get("/authors", response_class=HTMLResponse)
 async def authors_page(request: Request, current: CurrentUser, session: SessionDep) -> HTMLResponse:
     from portal.modules.library.application.opds_catalog_service import OpdsCatalogService
@@ -211,6 +227,7 @@ async def author_page(
             "author_today_status": await onboarding.author_today_status(current.user.id, author_id),
             "series_candidates": await onboarding.series_candidates(current.user.id, author_id),
             "source_error": request.query_params.get("source_error"),
+            "refresh_result": request.query_params.get("refresh"),
             "author_source_profiles": AUTHOR_SOURCE_PROFILES,
         },
     )

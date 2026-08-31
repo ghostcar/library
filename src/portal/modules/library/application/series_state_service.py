@@ -232,7 +232,8 @@ class SeriesStateService:
             ]
             seen_source_works: set[str] = set()
             for observation in observations:
-                source_work_key = f"{observation.adapter_id}:" + str(
+                publication_kind = str(observation.raw.get("publication_kind") or "work")
+                source_work_key = f"{observation.adapter_id}:{publication_kind}:" + str(
                     observation.raw.get("work_id")
                     or observation.url
                     or f"{observation.title}\0{observation.author_name or ''}"

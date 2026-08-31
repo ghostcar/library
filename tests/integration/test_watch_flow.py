@@ -18,6 +18,7 @@ from portal.modules.library.adapters.opds_adapter import OPDSAdapter
 from portal.modules.library.adapters.source_orm import (
     SourceEndpointModel,
     SourceObservationModel,
+    WatchRuleModel,
 )
 from portal.modules.library.adapters.watch_service import WatchService
 from portal.modules.library.infrastructure.orm import SeriesModel
@@ -105,9 +106,11 @@ class TestPollFlow:
         client, owner = authed
         fake = FastAPI()
         revision = {"value": "2026-08-28T01:00:00Z"}
+        requests: list[dict[str, str | None]] = []
 
         @fake.get("/u/test/works")
-        async def works() -> Response:
+        async def works(request: Request) -> Response:
+            requests.append({"if_none_match": request.headers.get("if-none-match")})
             return Response(
                 content=(
                     '<html><head><meta charset="utf-8"></head><body>'
@@ -164,8 +167,28 @@ class TestPollFlow:
         assert observation.raw["status"] == "в процессе"
         assert observation.series_id == series_id
         assert await service.notifications(owner) == []  # initial page is a quiet baseline
+        async with container["session_factory"]() as session:
+            rule = await session.get(WatchRuleModel, rule_id)
+            assert rule is not None
+            assert rule.parser_version == AUTHOR_TODAY_PARSER_VERSION
+            assert rule.last_status == "ok"
+            assert rule.last_new_count == 1
+            assert rule.last_duration_ms is not None
 
+        # Parser upgrades force a full, quiet baseline even when the old rule has an ETag.
+        async with container["session_factory"]() as session:
+            rule = await session.get(WatchRuleModel, rule_id)
+            assert rule is not None
+            rule.parser_version = "author-today-public-html-v1"
+            rule.etag = '"legacy"'
+            await session.commit()
         revision["value"] = "2026-08-28T02:00:00Z"
+        outcome = await service.poll_rule(owner, rule_id)
+        assert outcome["new"] == 1
+        assert requests[-1]["if_none_match"] is None
+        assert await service.notifications(owner) == []
+
+        revision["value"] = "2026-08-28T03:00:00Z"
         outcome = await service.poll_rule(owner, rule_id)
         assert outcome["new"] == 1
         notifications = await service.notifications(owner)

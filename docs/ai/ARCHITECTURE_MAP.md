@@ -62,7 +62,7 @@ scripts/                 — dev/test/lint
 |--------|--------|----------|
 | core.auth | IMPLEMENTED | /auth/register, /auth/login, /auth/refresh, /auth/logout, /auth/me, /auth/tokens, /login (SSR), /logout (SSR) |
 | core.health | IMPLEMENTED | GET /healthz, /readyz |
-| library | PARTIAL | dashboard/catalog/authors/series/import/normalization/sources/notifications/settings + OPDS delivery |
+| library | PARTIAL | dashboard/catalog/authors/series/import/normalization/sources/service/notifications/settings + OPDS delivery |
 | FB2 continuation candidates | IMPLEMENTED, pending deploy | local FB2 extractor → `continuation_link_candidates` → manual title resolver → Work match or review candidate |
 
 ## Source monitoring
@@ -70,8 +70,15 @@ scripts/                 — dev/test/lint
 - `WatchService` выбирает реализацию по `watch_rules.adapter_id`, хранит parser version,
   делает dedup/notifications и общий degraded/backoff.
 - `OPDSAdapter`: safe Atom/OPDS parser, conditional GET.
-- `AuthorTodayAdapter`: только публичные `/u/<slug>/works`, HTML parser v1,
-  quiet baseline и revision events; без auth/private API/content/acquisition (ADR-0019).
+- `AuthorTodayAdapter`: только публичные `/u/<slug>/works`, HTML parser v2;
+  bounded traversal страниц (до 50/25 MiB) включает электронные и аудиопубликации,
+  quiet baseline/revision events; без auth/private API/content/acquisition. Для
+  многостраничного каталога validator первой страницы не сохраняется (ADR-0019/0024).
+- `WatchService.request_poll` ставит owner-scoped `poll_watch`, не дублирует
+  queued/running job и применяет минутный cooldown. Смена parser version сбрасывает
+  conditional validators и создаёт тихий full backfill.
+- `/library/service` — owner-scoped read model PostgreSQL jobs, transactional outbox
+  и watch rules; payload целиком не выводится, target UUID сокращаются.
 - `SourceOnboardingService`: catalog-first orchestration с карточки автора: создаёт
   endpoint/link/rule, группирует серии из persisted observations и по подтверждению
   создаёт/reuses series card с source link. Для missing/ambiguous source work

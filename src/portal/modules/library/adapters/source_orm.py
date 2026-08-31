@@ -146,6 +146,11 @@ class WatchRuleModel(Base):
         server_default=text("false"),
     )
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    parser_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_status: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    last_new_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_not_modified: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    last_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,

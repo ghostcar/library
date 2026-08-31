@@ -321,7 +321,7 @@ async def test_author_source_onboarding_creates_series_from_observation(
     page = await client.get(f"/library/authors/{author_id}")
     assert page.status_code == 200
     assert "Найденный цикл" in page.text
-    assert "1 книг" in page.text
+    assert "1 публикаций" in page.text
 
     forged = await client.post(
         f"/library/authors/{author_id}/series-candidates",

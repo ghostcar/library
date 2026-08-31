@@ -251,6 +251,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   color: var(--on-surface-variant);
 }
 .table td { padding: var(--space-2) var(--space-1); border-top: 1px solid var(--outline-variant); }
+.u-overflow-auto { overflow: auto; }
 
 /* mobile-first: single column, larger touch targets */
 @media (max-width: 768px) {

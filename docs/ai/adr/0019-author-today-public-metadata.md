@@ -17,8 +17,9 @@ ADR-0011 запрещал включать Author.Today без исследов�
 2. Хранить work id/title/url, имя автора, публичные status/update time и series label.
 3. Не использовать логин, cookies, private API, guest bearer token, chapter text,
    covers или acquisition/download endpoints.
-4. Минимальный интервал — 30 минут; conditional GET, 5 MiB guard, явный User-Agent.
-5. Parser version `author-today-public-html-v1`; versioned synthetic fixture;
+4. Минимальный интервал — 30 минут; conditional GET для одностраничных каталогов,
+   5 MiB per-page/25 MiB aggregate guard, максимум 50 страниц, явный User-Agent.
+5. Parser version `author-today-public-html-v2`; versioned synthetic fixture;
    отсутствие ожидаемых `.book-row` — fail closed и штатный degraded/backoff.
 6. Первая выборка — quiet baseline. Revision identity включает публичный update time
    или status, поэтому последующие обновления глав/статуса дают новое событие.
@@ -27,5 +28,8 @@ ADR-0011 запрещал включать Author.Today без исследов�
 
 - Новые книги и публичные обновления наблюдаются без копирования литературного текста.
 - Изменение markup приведёт к degraded, а не к молчаливо неверным данным.
-- Вторая страница и query-based sorting намеренно не обходятся; наблюдается первая
-  публичная страница автора.
+- Обходятся все страницы, объявленные публичной пагинацией `/works?page=N`;
+  учитываются `/work/` и `/audiobook/`. Validator первой страницы не считается
+  достаточным для многостраничного каталога.
+- Переход parser version принудительно игнорирует старые ETag/Last-Modified и делает
+  тихий полный baseline, поэтому backfill не создаёт flood уведомлений (ADR-0024).

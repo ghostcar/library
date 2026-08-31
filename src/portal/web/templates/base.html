@@ -17,7 +17,7 @@
   <aside class="sidebar" aria-label="Основная навигация">
     <a class="brand brand--sidebar" href="/library/">Ghostcar<small>LIBRARY ARCHIVE</small></a>
     <nav class="side-nav">
-      {% for href, icon, label in [('/library/', 'dashboard', 'Обзор'), ('/library/catalog', 'library', 'Каталог'), ('/library/authors', 'library', 'Авторы'), ('/library/series', 'series', 'Циклы'), ('/library/queue', 'queue', 'Очередь'), ('/library/import', 'upload', 'Импорт'), ('/library/sources', 'radar', 'Источники'), ('/library/opds-settings', 'opds', 'OPDS')] %}
+      {% for href, icon, label in [('/library/', 'dashboard', 'Обзор'), ('/library/catalog', 'library', 'Каталог'), ('/library/authors', 'library', 'Авторы'), ('/library/series', 'series', 'Циклы'), ('/library/queue', 'queue', 'Очередь'), ('/library/import', 'upload', 'Импорт'), ('/library/sources', 'radar', 'Источники'), ('/library/opds-settings', 'opds', 'OPDS'), ('/library/service', 'activity', 'Сервис')] %}
       <a href="{{ href }}" class="nav-link{% if path == href or (href != '/library/' and path.startswith(href)) %} is-active{% endif %}">
         <svg class="icon" aria-hidden="true"><use href="/static/icons/sprite.svg#{{ icon }}"></use></svg><span>{{ label }}</span>
       </a>
@@ -33,7 +33,7 @@
         <svg class="icon" aria-hidden="true"><use href="/static/icons/sprite.svg#menu"></use></svg>
       </summary>
       <nav class="mobile-menu__panel" aria-label="Дополнительная навигация">
-        {% for href, icon, label in [('/library/sources', 'radar', 'Источники'), ('/library/notifications', 'notifications', 'Уведомления'), ('/library/opds-settings', 'opds', 'OPDS'), ('/library/settings', 'settings', 'Настройки')] %}
+        {% for href, icon, label in [('/library/sources', 'radar', 'Источники'), ('/library/notifications', 'notifications', 'Уведомления'), ('/library/opds-settings', 'opds', 'OPDS'), ('/library/service', 'activity', 'Сервис'), ('/library/settings', 'settings', 'Настройки')] %}
         <a href="{{ href }}" class="nav-link{% if path == href or path.startswith(href + '/') %} is-active{% endif %}"><svg class="icon" aria-hidden="true"><use href="/static/icons/sprite.svg#{{ icon }}"></use></svg><span>{{ label }}</span></a>
         {% endfor %}
       </nav>

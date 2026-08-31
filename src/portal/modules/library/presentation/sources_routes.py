@@ -17,6 +17,7 @@ from portal.core.auth.dependencies import CSRFProtected, CurrentUser
 from portal.modules.library.adapters.source_orm import SourceEndpointModel, WatchRuleModel
 from portal.modules.library.adapters.sources import list_adapters
 from portal.modules.library.adapters.watch_service import WatchService
+from portal.modules.library.application.service_console import ServiceConsoleQueries
 from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.web.deps import SessionDep
 
@@ -352,6 +353,35 @@ async def toggle_rule(
     service = _watch_service(request)
     await service.set_rule_enabled(current.user.id, rule_id, enabled)
     return RedirectResponse("/library/sources", status_code=303)
+
+
+@router.post("/sources/rules/{rule_id}/refresh")
+async def refresh_rule(
+    rule_id: UUID,
+    request: Request,
+    current: CSRFProtected,
+) -> RedirectResponse:
+    outcome = await _watch_service(request).request_poll(current.user.id, rule_id)
+    return RedirectResponse(f"/library/service?refresh={outcome}", status_code=303)
+
+
+@router.get("/service", response_class=HTMLResponse)
+async def service_page(
+    request: Request,
+    current: CurrentUser,
+    session: SessionDep,
+) -> HTMLResponse:
+    snapshot = await ServiceConsoleQueries(session).snapshot(current.user.id)
+    return _templates.TemplateResponse(
+        request,
+        "service.html",
+        {
+            "user": current.user,
+            "title": "Сервис — Библиотека",
+            "refresh_result": request.query_params.get("refresh"),
+            **snapshot,
+        },
+    )
 
 
 @router.get("/notifications", response_class=HTMLResponse)

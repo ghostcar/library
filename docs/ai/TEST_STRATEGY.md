@@ -28,6 +28,12 @@ scripts/test-browser.sh  # responsive shell в локальном Chromium/Playw
 
 ## Последний release gate
 
+- 2026-08-31, source observability/parser v2 candidate: `scripts/test.sh` —
+  **296 passed**, включая fresh migration `0014`; `scripts/lint.sh` — Ruff/format/
+  mypy по 114 source files green; Chromium shell desktop/mobile green.
+  Targeted Author.Today unit — 10 passed, watch/source/service/migration integration —
+  13 passed. Production не менялся.
+
 - 2026-08-31, guided source package + searchable import assignment:
   `scripts/test.sh` — **294 passed**, включая fresh migration до schema `0013`.
 - `scripts/lint.sh` — Ruff check/format и mypy по 113 source-файлам — green.

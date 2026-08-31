@@ -11,6 +11,9 @@
 
 ### Pending, не развёрнуто
 
+- Source observability release: Author.Today parser v2 с полной пагинацией,
+  ручное обновление, `/library/service` и migration `0014`. Production остаётся
+  image `00e6089`, schema `0013` до отдельной команды deploy.
 - Generic HTML polling остаётся будущим срезом до выбора конкретного разрешённого
   сайта; Litnet automation disabled по ADR-0020.
 

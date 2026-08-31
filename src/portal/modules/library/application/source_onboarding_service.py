@@ -10,6 +10,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from portal.core.jobs.orm import JobModel, JobStatus
 from portal.modules.library.adapters.author_today_adapter import normalize_author_works_url
 from portal.modules.library.adapters.source_orm import (
     SourceEndpointModel,
@@ -210,11 +211,33 @@ class SourceOnboardingService:
         if row is None:
             return None
         endpoint, rule = row
+        job_status = None
+        if rule is not None:
+            job_status = (
+                await self._session.execute(
+                    select(JobModel.status)
+                    .where(
+                        JobModel.kind == "poll_watch",
+                        JobModel.status.in_([JobStatus.QUEUED.value, JobStatus.RUNNING.value]),
+                        JobModel.payload["owner_id"].astext == str(owner_id),
+                        JobModel.payload["watch_rule_id"].astext == str(rule.id),
+                    )
+                    .order_by(JobModel.created_at.desc())
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
         return {
             "url": endpoint.url,
             "enabled": endpoint.enabled and bool(rule and rule.enabled),
+            "rule_id": rule.id if rule else None,
             "last_polled_at": rule.last_polled_at if rule else None,
+            "next_poll_at": rule.next_poll_at if rule else None,
             "last_error": rule.last_error if rule else None,
+            "last_status": rule.last_status if rule else None,
+            "last_new_count": rule.last_new_count if rule else None,
+            "last_not_modified": rule.last_not_modified if rule else None,
+            "last_duration_ms": rule.last_duration_ms if rule else None,
+            "job_status": job_status,
         }
 
     async def series_candidates(self, owner_id: UUID, author_id: UUID) -> list[dict[str, object]]:
@@ -265,7 +288,7 @@ class SourceOnboardingService:
                     "connected": False,
                 },
             )
-            work_key = str(observation.raw.get("work_id") or observation.url or observation.title)
+            work_key = self._observation_work_key(observation)
             seen = observed_works.setdefault(key, set())
             if work_key not in seen:
                 seen.add(work_key)
@@ -447,7 +470,7 @@ class SourceOnboardingService:
                 entity_id=work.id,
                 role="metadata",
                 external_url=observation.url,
-                external_id=str(observation.raw.get("work_id") or "") or None,
+                external_id=self._observation_work_key(observation),
                 preferred=True,
             )
         await self._session.flush()
@@ -455,8 +478,10 @@ class SourceOnboardingService:
 
     @staticmethod
     def _observation_work_key(observation: SourceObservationModel) -> str:
-        return str(
+        publication_kind = str(observation.raw.get("publication_kind") or "work")
+        identity = str(
             observation.raw.get("work_id")
             or observation.url
             or f"{observation.title}\0{observation.author_name or ''}"
         )
+        return f"{publication_kind}:{identity}"

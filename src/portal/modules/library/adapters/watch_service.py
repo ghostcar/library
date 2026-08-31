@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import random
 from datetime import UTC, datetime, timedelta
+from time import monotonic
 from typing import Any
 from uuid import UUID
 
@@ -128,6 +129,11 @@ class WatchService:
                     "next_poll_at": r.next_poll_at,
                     "failure_count": r.failure_count,
                     "last_error": r.last_error,
+                    "parser_version": r.parser_version,
+                    "last_status": r.last_status,
+                    "last_new_count": r.last_new_count,
+                    "last_not_modified": r.last_not_modified,
+                    "last_duration_ms": r.last_duration_ms,
                 }
                 for r in rows
             ]
@@ -151,6 +157,57 @@ class WatchService:
             )
             return int(result.rowcount) > 0  # type: ignore[attr-defined]
 
+    async def request_poll(self, owner_id: UUID, rule_id: UUID) -> str:
+        """Queue one immediate owner-scoped poll without duplicating active work."""
+        from portal.core.jobs.orm import JobModel, JobStatus
+        from portal.core.jobs.repository import JobRepository
+
+        now = datetime.now(UTC)
+        async with self._session_factory() as session, session.begin():
+            rule = (
+                await session.execute(
+                    select(WatchRuleModel)
+                    .where(
+                        WatchRuleModel.id == rule_id,
+                        WatchRuleModel.owner_id == owner_id,
+                    )
+                    .with_for_update()
+                )
+            ).scalar_one_or_none()
+            if rule is None:
+                return "not_found"
+            if not rule.enabled:
+                return "disabled"
+            pending = (
+                await session.execute(
+                    select(JobModel.status)
+                    .where(
+                        JobModel.kind == "poll_watch",
+                        JobModel.status.in_([JobStatus.QUEUED.value, JobStatus.RUNNING.value]),
+                        JobModel.payload["owner_id"].astext == str(owner_id),
+                        JobModel.payload["watch_rule_id"].astext == str(rule_id),
+                    )
+                    .order_by(JobModel.created_at.desc())
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if pending is not None:
+                return pending
+            adapter = self._adapters.get(rule.adapter_id)
+            parser_changed = adapter is not None and rule.parser_version != adapter.parser_version
+            if (
+                not parser_changed
+                and rule.last_polled_at is not None
+                and rule.last_polled_at > now - timedelta(seconds=60)
+            ):
+                return "cooldown"
+            await JobRepository(session).enqueue(
+                "poll_watch",
+                {"owner_id": str(owner_id), "watch_rule_id": str(rule_id)},
+            )
+            rule.next_poll_at = now + timedelta(seconds=60)
+            return "queued"
+
     # --- scheduler tick -----------------------------------------------------
 
     async def schedule_due(self) -> int:
@@ -162,11 +219,13 @@ class WatchService:
         async with self._session_factory() as session, session.begin():
             due = (
                 await session.execute(
-                    select(WatchRuleModel.id, WatchRuleModel.owner_id).where(
+                    select(WatchRuleModel.id, WatchRuleModel.owner_id)
+                    .where(
                         WatchRuleModel.enabled.is_(True),
                         WatchRuleModel.next_poll_at.is_not(None),
                         WatchRuleModel.next_poll_at <= now,
-                    ),
+                    )
+                    .with_for_update(skip_locked=True),
                 )
             ).all()
             jobs = JobRepository(session)
@@ -188,6 +247,7 @@ class WatchService:
 
     async def poll_rule(self, owner_id: UUID, rule_id: UUID) -> dict[str, Any]:
         """Execute one poll for a rule: fetch, dedup observations, notify."""
+        started_at = monotonic()
         async with self._session_factory() as session, session.begin():
             rule = await session.get(WatchRuleModel, rule_id)
             if rule is None or rule.owner_id != owner_id:
@@ -196,23 +256,30 @@ class WatchService:
             descriptor = get_adapter_descriptor(rule.adapter_id)
             if descriptor is None or not descriptor.enabled:
                 rule.last_error = "adapter disabled"
+                rule.last_status = "skipped"
+                rule.last_duration_ms = round((monotonic() - started_at) * 1000)
                 rule.next_poll_at = next_poll_after(1, rule.interval_seconds)
                 return {"status": "skipped", "reason": "adapter disabled"}
 
         adapter = self._adapters.get(rule.adapter_id)
         if adapter is None:
             return await self._record_failure(
-                rule_id, rule.owner_id, rule.interval_seconds, "adapter implementation missing"
+                rule_id,
+                rule.owner_id,
+                rule.interval_seconds,
+                "adapter implementation missing",
+                started_at,
             )
+        parser_changed = rule.parser_version != adapter.parser_version
         try:
             result = await adapter.fetch(
                 rule.url,
-                etag=rule.etag,
-                last_modified=rule.last_modified,
+                etag=None if parser_changed else rule.etag,
+                last_modified=None if parser_changed else rule.last_modified,
             )
         except SourceAdapterError as exc:
             return await self._record_failure(
-                rule_id, rule.owner_id, rule.interval_seconds, str(exc)
+                rule_id, rule.owner_id, rule.interval_seconds, str(exc), started_at
             )
 
         async with self._session_factory() as session, session.begin():
@@ -220,8 +287,8 @@ class WatchService:
             if rule is None:
                 return {"status": "error", "reason": "rule deleted"}
             new_count = 0
-            initial_author_today_baseline = (
-                rule.adapter_id == "author_today" and rule.last_polled_at is None
+            initial_author_today_baseline = rule.adapter_id == "author_today" and (
+                rule.last_polled_at is None or rule.parser_version != adapter.parser_version
             )
             if result.not_modified:
                 new_count = 0
@@ -257,6 +324,11 @@ class WatchService:
             rule.failure_count = 0
             rule.degraded = False
             rule.last_error = None
+            rule.parser_version = adapter.parser_version
+            rule.last_status = "ok"
+            rule.last_new_count = new_count
+            rule.last_not_modified = result.not_modified
+            rule.last_duration_ms = round((monotonic() - started_at) * 1000)
             rule.next_poll_at = next_poll_after(0, rule.interval_seconds)
             return {"status": "ok", "not_modified": result.not_modified, "new": new_count}
 
@@ -392,6 +464,7 @@ class WatchService:
         owner_id: UUID,
         interval_seconds: int,
         error: str,
+        started_at: float,
     ) -> dict[str, Any]:
         async with self._session_factory() as session, session.begin():
             rule = await session.get(WatchRuleModel, rule_id)
@@ -399,6 +472,10 @@ class WatchService:
                 return {"status": "error", "reason": "rule deleted"}
             rule.failure_count = (rule.failure_count or 0) + 1
             rule.last_error = error[:1000]
+            rule.last_status = "error"
+            rule.last_new_count = None
+            rule.last_not_modified = None
+            rule.last_duration_ms = round((monotonic() - started_at) * 1000)
             rule.last_polled_at = datetime.now(UTC)
             rule.next_poll_at = next_poll_after(rule.failure_count, interval_seconds)
             was_degraded = rule.degraded

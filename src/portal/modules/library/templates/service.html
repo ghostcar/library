@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="u-display u-weight-normal">Сервис</h1>
+<p class="meta">Фактическое состояние фоновой работы из PostgreSQL. Показаны только задания и события вашего пользователя.</p>
+
+{% if refresh_result == 'queued' %}<div class="card"><p class="u-m-0">Обновление источника поставлено в очередь.</p></div>
+{% elif refresh_result == 'running' %}<div class="card"><p class="u-m-0">Это обновление уже выполняется.</p></div>
+{% elif refresh_result == 'cooldown' %}<div class="card"><p class="u-m-0">Источник проверялся менее минуты назад.</p></div>
+{% elif refresh_result == 'disabled' %}<div class="card u-border-error"><p class="u-m-0">Правило выключено.</p></div>{% endif %}
+
+<div class="card">
+  <p class="meta">ОЧЕРЕДЬ ЗАДАНИЙ</p>
+  <p>{% for status, count in job_counts.items() %}<span class="chip">{{ status }}: {{ count }}</span> {% else %}<span class="meta">Заданий пока нет.</span>{% endfor %}</p>
+  {% if job_kind_counts %}<p class="meta">Наполнение: {% for kind, count in job_kind_counts.items() %}{{ kind }} — {{ count }}{% if not loop.last %}; {% endif %}{% endfor %}</p>{% endif %}
+  {% if jobs %}<div class="u-overflow-auto"><table class="table"><thead><tr><th>Задание</th><th>Объект</th><th>Состояние</th><th>Попытки</th><th>Запуск / обновление</th></tr></thead><tbody>
+  {% for job in jobs %}<tr><td><span class="u-mono u-text-13">{{ job.kind }}</span>{% if job.last_error %}<br><span class="u-secondary">{{ job.last_error | truncate(120) }}</span>{% endif %}</td><td>{{ job.target }}</td><td><span class="chip{% if job.status == 'failed' %} chip--warn{% endif %}">{{ job.status }}</span></td><td>{{ job.attempts }} / {{ job.max_attempts }}</td><td class="meta">{{ job.run_at }}<br>{{ job.updated_at }}</td></tr>{% endfor %}
+  </tbody></table></div>{% endif %}
+</div>
+
+<div class="card">
+  <p class="meta">НАБЛЮДЕНИЕ ЗА ИСТОЧНИКАМИ</p>
+  {% for rule in rules %}<div class="u-flex u-gap-10 u-wrap u-items-center u-my-8">
+    <div class="u-grow u-min-220"><strong>{{ rule.name }}</strong> <span class="chip">{{ rule.adapter_id }}</span><br><span class="meta">{% if rule.last_polled_at %}проверено {{ rule.last_polled_at }}{% else %}ещё не проверялось{% endif %}{% if rule.next_poll_at %} · следующий запуск {{ rule.next_poll_at }}{% endif %}{% if rule.last_duration_ms is not none %} · {{ rule.last_duration_ms }} мс{% endif %}<br>парсер {{ rule.parser_version or 'ещё не зафиксирован' }} · новых: {{ rule.last_new_count if rule.last_new_count is not none else '—' }} · ошибок подряд: {{ rule.failure_count }}</span>{% if rule.last_error %}<br><span class="u-secondary">{{ rule.last_error | truncate(160) }}</span>{% endif %}</div>
+    {% if rule.enabled %}<form method="post" action="/library/sources/rules/{{ rule.id }}/refresh">{% include "_csrf.html" %}<button class="u-m-0 u-w-auto">Обновить</button></form>{% else %}<span class="chip chip--warn">выключено</span>{% endif %}
+  </div>{% else %}<p class="meta">Правил наблюдения пока нет.</p>{% endfor %}
+</div>
+
+<details class="card">
+  <summary class="meta">ТРАНЗАКЦИОННЫЕ СОБЫТИЯ · {% for status, count in outbox_counts.items() %}{{ status }} {{ count }}{% if not loop.last %}, {% endif %}{% else %}нет{% endfor %}</summary>
+  {% if events %}<div class="u-overflow-auto u-mt-12"><table class="table"><thead><tr><th>Событие</th><th>Состояние</th><th>Попытки</th><th>Создано / обработано</th></tr></thead><tbody>{% for event in events %}<tr><td><span class="u-mono u-text-13">{{ event.type }}</span>{% if event.last_error %}<br><span class="u-secondary">{{ event.last_error | truncate(120) }}</span>{% endif %}</td><td>{{ event.status }}</td><td>{{ event.attempts }}</td><td class="meta">{{ event.created_at }}<br>{{ event.processed_at or '—' }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+</details>
+{% endblock %}
