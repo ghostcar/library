@@ -130,8 +130,9 @@ class TestProposalFlow:
         assert response.status_code == 303
         async with container["session_factory"]() as session:
             jobs = list(
-                (await session.execute(select(JobModel).where(JobModel.kind == "propose_import")))
-                .scalars()
+                (
+                    await session.execute(select(JobModel).where(JobModel.kind == "propose_import"))
+                ).scalars()
             )
         assert len(jobs) == 2
 
@@ -146,8 +147,9 @@ class TestProposalFlow:
         container = authed._transport.app.state.container
         async with container["session_factory"]() as session:
             jobs = list(
-                (await session.execute(select(JobModel).where(JobModel.kind == "propose_import")))
-                .scalars()
+                (
+                    await session.execute(select(JobModel).where(JobModel.kind == "propose_import"))
+                ).scalars()
             )
         assert len(jobs) == 1
 

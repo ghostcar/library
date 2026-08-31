@@ -364,3 +364,13 @@
 - Toggle/delete endpoint теперь синхронно управляет связанным watch rule.
 - Проверено: 14 source/frontend unit, 4 source integration, Ruff и mypy — green.
 - Production не менялся: image `1f98181`, schema `0013`.
+
+## Сессия 37 — 2026-08-31 — guided sources release gate
+
+- Fresh migration test приведён к фактическому head `0013` и обязательной таблице
+  `continuation_link_candidates`; первый full run был 293 passed + 1 stale assertion.
+- Исправлены три full-mypy typing issue в `SourceLinkService` без изменения SQL
+  поведения; семь старых файлов механически приведены к текущему Ruff formatter.
+- Финальный единый прогон: 294 passed за 175.54s; Ruff check/format и mypy по 113
+  source-файлам — green; Chromium shell desktop/mobile — green.
+- Production не менялся: image `1f98181`, schema `0013`.

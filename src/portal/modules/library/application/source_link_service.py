@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlparse
 from uuid import UUID
 
 from sqlalchemy import delete, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from portal.modules.library.adapters.source_orm import SourceEndpointModel, SourceLinkModel
@@ -27,12 +28,16 @@ class SourceLinkService:
         self._session = session
 
     async def entity_exists(self, owner_id: UUID, entity_type: str, entity_id: UUID) -> bool:
-        models = {"author": AuthorModel, "series": SeriesModel, "work": WorkModel}
-        model = models.get(entity_type)
-        if model is None:
-            return False
-        row = await self._session.get(model, entity_id)
-        return row is not None and row.owner_id == owner_id
+        if entity_type == "author":
+            author = await self._session.get(AuthorModel, entity_id)
+            return author is not None and author.owner_id == owner_id
+        if entity_type == "series":
+            series = await self._session.get(SeriesModel, entity_id)
+            return series is not None and series.owner_id == owner_id
+        if entity_type == "work":
+            work = await self._session.get(WorkModel, entity_id)
+            return work is not None and work.owner_id == owner_id
+        return False
 
     async def add(
         self,
@@ -103,10 +108,13 @@ class SourceLinkService:
         return True
 
     async def remove(self, owner_id: UUID, link_id: UUID) -> bool:
-        result = await self._session.execute(
-            delete(SourceLinkModel).where(
-                SourceLinkModel.id == link_id,
-                SourceLinkModel.owner_id == owner_id,
+        result = cast(
+            "CursorResult[Any]",
+            await self._session.execute(
+                delete(SourceLinkModel).where(
+                    SourceLinkModel.id == link_id,
+                    SourceLinkModel.owner_id == owner_id,
+                ),
             ),
         )
         return bool(result.rowcount)
@@ -134,29 +142,26 @@ class SourceLinkService:
     ) -> list[tuple[SourceLinkModel, SourceEndpointModel]]:
         if not entity_ids:
             return []
-        return list(
-            (
-                await self._session.execute(
-                    select(SourceLinkModel, SourceEndpointModel)
-                    .join(
-                        SourceEndpointModel,
-                        SourceEndpointModel.id == SourceLinkModel.source_endpoint_id,
-                    )
-                    .where(
-                        SourceLinkModel.owner_id == owner_id,
-                        SourceLinkModel.entity_type == entity_type,
-                        SourceLinkModel.entity_id.in_(entity_ids),
-                        SourceLinkModel.role == role,
-                        SourceEndpointModel.enabled.is_(True),
-                    )
-                    .order_by(
-                        SourceLinkModel.is_preferred.desc(),
-                        SourceLinkModel.priority,
-                        SourceEndpointModel.name,
-                    ),
-                )
-            ).all()
+        result = await self._session.execute(
+            select(SourceLinkModel, SourceEndpointModel)
+            .join(
+                SourceEndpointModel,
+                SourceEndpointModel.id == SourceLinkModel.source_endpoint_id,
+            )
+            .where(
+                SourceLinkModel.owner_id == owner_id,
+                SourceLinkModel.entity_type == entity_type,
+                SourceLinkModel.entity_id.in_(entity_ids),
+                SourceLinkModel.role == role,
+                SourceEndpointModel.enabled.is_(True),
+            )
+            .order_by(
+                SourceLinkModel.is_preferred.desc(),
+                SourceLinkModel.priority,
+                SourceEndpointModel.name,
+            ),
         )
+        return list(result.tuples().all())
 
     async def resolved(
         self, owner_id: UUID, entity_type: str, entity_id: UUID

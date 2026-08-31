@@ -76,6 +76,7 @@ class TestUploadImport:
         assert 'name="work_id"' in page.text
         assert "UUID произведения" not in page.text
         assert "Уже в каталоге" in page.text
+
     async def test_reupload_restores_missing_original_and_applies_metadata(
         self, authed_client: httpx.AsyncClient, app_settings
     ) -> None:
@@ -107,6 +108,7 @@ class TestUploadImport:
         assert "Верное название" in catalog.text
         assert "Иван Авторов" in catalog.text
         assert "Верный цикл" in catalog.text
+
     async def test_well_formed_upload_creates_work_and_asset(
         self,
         authed_client: httpx.AsyncClient,

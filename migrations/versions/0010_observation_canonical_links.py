@@ -24,13 +24,25 @@ def upgrade() -> None:
         sa.Column("match_evidence", JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
     )
     op.create_foreign_key(
-        "fk_source_observations_work", "source_observations", "works", ["work_id"], ["id"], ondelete="SET NULL"
+        "fk_source_observations_work",
+        "source_observations",
+        "works",
+        ["work_id"],
+        ["id"],
+        ondelete="SET NULL",
     )
     op.create_foreign_key(
-        "fk_source_observations_series", "source_observations", "series", ["series_id"], ["id"], ondelete="SET NULL"
+        "fk_source_observations_series",
+        "source_observations",
+        "series",
+        ["series_id"],
+        ["id"],
+        ondelete="SET NULL",
     )
     op.create_index("ix_observations_owner_work", "source_observations", ["owner_id", "work_id"])
-    op.create_index("ix_observations_owner_series", "source_observations", ["owner_id", "series_id"])
+    op.create_index(
+        "ix_observations_owner_series", "source_observations", ["owner_id", "series_id"]
+    )
 
 
 def downgrade() -> None:

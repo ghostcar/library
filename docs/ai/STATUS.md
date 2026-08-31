@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-31 (guided website profiles and split source settings implemented locally; production remains `1f98181`, schema 0013)
+Последняя проверка: 2026-08-31 (guided source release candidate: 294 tests + full lint + Chromium green; production remains `1f98181`, schema 0013)
 
 ## Фазы мастер-промпта (§20)
 

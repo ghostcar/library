@@ -25,3 +25,13 @@ scripts/test.sh          # unit + integration
 scripts/lint.sh          # ruff + mypy
 scripts/test-browser.sh  # responsive shell в локальном Chromium/Playwright
 ```
+
+## Последний release gate
+
+- 2026-08-31, guided source package (`642d658..c76a5a7` + maintenance):
+  `scripts/test.sh` — **294 passed**, включая fresh migration до schema `0013`.
+- `scripts/lint.sh` — Ruff check/format и mypy по 113 source-файлам — green.
+- `scripts/test-browser.sh` — Chromium desktop 1280×800 и mobile 390×844 — green.
+- Устранён drift migration test (`0012` → фактический `0013` +
+  `continuation_link_candidates`); семь ранее закоммиченных файлов механически
+  приведены к текущему Ruff formatter.

@@ -78,3 +78,11 @@ catalog-first workflow.
 - Next automatic HTML profile is blocked on a concrete permitted site and its
   versioned parser fixture (`OPEN_QUESTIONS#12`). Next internal gate is the full
   regression/browser suite and a separate user-authorized deployment.
+
+## Release gate checkpoint
+
+- Full suite: 294 passed, including fresh migration to `0013`.
+- Full Ruff format/check and mypy: green; Chromium desktop/mobile shell: green.
+- Migration test drift and pre-existing formatter/typecheck debt discovered by
+  the gate were corrected. Production remains unchanged pending an explicit
+  deployment command.

@@ -11,7 +11,12 @@
 
 ### Pending, не развёрнуто
 
-- Generic HTML/Litnet polling остаются будущими срезами.
+- Release candidate `642d658..c76a5a7` + следующий maintenance commit: catalog
+  picker импорта, guided Author.Today onboarding, series source comparison,
+  source-work reconciliation, website profiles и раздельные OPDS/site settings.
+  Gate: 294 tests, full Ruff/mypy и Chromium desktop/mobile — green.
+- Generic HTML polling остаётся будущим срезом до выбора конкретного разрешённого
+  сайта; Litnet automation disabled по ADR-0020.
 
 ## Окружение VPS (факты 2026-08-25)
 
@@ -22,7 +27,7 @@
 
 ## library.gorbunovr.ru
 
-- DNS: отсутствует. Добавляет пользователь (Cloudflare, proxy on).
+- DNS: работает через Cloudflare proxy; внешний HTTPS-контур доступен.
 - Nginx-конфиг: подготовлен в `deploy/nginx/library.conf`, применяется пользователем (`sudo`), проксирует на 127.0.0.1:8001.
 
 ## Деплой-артефакты (готовы, Phase 9)
