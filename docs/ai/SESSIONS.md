@@ -340,3 +340,15 @@
   `series_id` observation даже при отсутствии canonical work.
 - Проверено: 28 unit, 11 source/watch integration, Ruff и mypy — green.
 - Production не менялся: image `1f98181`, schema `0013`.
+
+## Сессия 35 — 2026-08-31 — source work reconciliation
+
+- Missing/ambiguous строки на карточке серии получили catalog picker и отдельную
+  явную операцию «Создать карточку»; UUID пользователю не показывается.
+- Reconciliation owner-scoped: выбор проверяется по владельцу; обновляются все
+  revision observations той же внешней книги, создаётся series membership и
+  прямая metadata source link книги.
+- Создание использует `CatalogService`: author/series переиспользуются по
+  каноническим правилам; title-only evidence само по себе ничего не создаёт.
+- Проверено: 19 series unit, 4 source integration, Ruff и mypy — green.
+- Production не менялся: image `1f98181`, schema `0013`.

@@ -368,13 +368,31 @@ async def test_author_source_onboarding_creates_series_from_observation(
             title="Книга уже в каталоге",
             title_normalized="книга уже в каталоге",
         )
-        session.add(present_work)
+        assigned_work = WorkModel(
+            owner_id=owner_id,
+            title="Выбранная существующая книга",
+            title_normalized="выбранная существующая книга",
+        )
+        session.add_all([present_work, assigned_work])
         await session.flush()
         rule_id = (
             await session.execute(
                 select(WatchRuleModel.id).where(WatchRuleModel.owner_id == owner_id)
             )
         ).scalar_one()
+        ambiguous_observation = SourceObservationModel(
+            owner_id=owner_id,
+            watch_rule_id=rule_id,
+            adapter_id="author_today",
+            external_id="author-today:work:999:revision:published",
+            title="Неоднозначная книга",
+            author_name="Автор наблюдения",
+            url="https://author.today/work/999",
+            parser_version="author-today-public-v1",
+            series_id=series.id,
+            match_evidence={"match": "ambiguous"},
+            raw={"work_id": "999", "series": series.title},
+        )
         session.add_all(
             [
                 SourceObservationModel(
@@ -391,28 +409,24 @@ async def test_author_source_onboarding_creates_series_from_observation(
                     match_evidence={"match": "exact_title_author"},
                     raw={"work_id": "888", "series": series.title},
                 ),
-                SourceObservationModel(
-                    owner_id=owner_id,
-                    watch_rule_id=rule_id,
-                    adapter_id="author_today",
-                    external_id="author-today:work:999:revision:published",
-                    title="Неоднозначная книга",
-                    author_name="Автор наблюдения",
-                    url="https://author.today/work/999",
-                    parser_version="author-today-public-v1",
-                    series_id=series.id,
-                    match_evidence={"match": "ambiguous"},
-                    raw={"work_id": "999", "series": series.title},
-                ),
+                ambiguous_observation,
             ]
         )
         await session.commit()
+        series_id = series.id
+        assigned_work_id = assigned_work.id
+        missing_observation_id = next(
+            observation.id
+            for observation in observations
+            if observation.raw.get("work_id") == "777"
+        )
+        ambiguous_observation_id = ambiguous_observation.id
 
     page = await client.get(f"/library/authors/{author_id}")
     assert "отслеживается" in page.text
     assert "Подключить наблюдение" not in page.text
 
-    series_page = await client.get(f"/library/series/{series.id}")
+    series_page = await client.get(f"/library/series/{series_id}")
     assert series_page.status_code == 200
     assert "КНИГИ У ИСТОЧНИКА (3)" in series_page.text
     assert "1 есть в каталоге" in series_page.text
@@ -420,3 +434,55 @@ async def test_author_source_onboarding_creates_series_from_observation(
     assert "1 нужно уточнить" in series_page.text
     assert "Книга уже в каталоге" in series_page.text
     assert "Неоднозначная книга" in series_page.text
+
+    assigned = await client.post(
+        f"/library/series/{series_id}/source-works/{missing_observation_id}/reconcile",
+        data={"decision": "assign", "work_id": str(assigned_work_id)},
+    )
+    assert assigned.status_code == 303
+    after_assign = await client.get(f"/library/series/{series_id}")
+    assert "2 есть в каталоге" in after_assign.text
+    assert "нет в каталоге" not in after_assign.text
+
+    created = await client.post(
+        f"/library/series/{series_id}/source-works/{ambiguous_observation_id}/reconcile",
+        data={"decision": "create", "work_id": ""},
+    )
+    assert created.status_code == 303
+    after_create = await client.get(f"/library/series/{series_id}")
+    assert "3 есть в каталоге" in after_create.text
+    assert "нужно уточнить" not in after_create.text
+
+    async with container["session_factory"]() as session:
+        created_work = (
+            await session.execute(
+                select(WorkModel).where(
+                    WorkModel.owner_id == owner_id,
+                    WorkModel.title_normalized == "неоднозначная книга",
+                )
+            )
+        ).scalar_one()
+        memberships = list(
+            (
+                await session.execute(
+                    select(SeriesMembershipModel).where(
+                        SeriesMembershipModel.owner_id == owner_id,
+                        SeriesMembershipModel.series_id == series_id,
+                        SeriesMembershipModel.work_id.in_([assigned_work_id, created_work.id]),
+                    )
+                )
+            ).scalars()
+        )
+        reconciled_777 = list(
+            (
+                await session.execute(
+                    select(SourceObservationModel).where(
+                        SourceObservationModel.owner_id == owner_id,
+                        SourceObservationModel.raw["work_id"].astext == "777",
+                    )
+                )
+            ).scalars()
+        )
+        assert len(memberships) == 2
+        assert len(reconciled_777) == 2
+        assert all(row.work_id == assigned_work_id for row in reconciled_777)

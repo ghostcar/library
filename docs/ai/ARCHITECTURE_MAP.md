@@ -74,7 +74,10 @@ scripts/                 — dev/test/lint
   quiet baseline и revision events; без auth/private API/content/acquisition (ADR-0019).
 - `SourceOnboardingService`: catalog-first orchestration с карточки автора: создаёт
   endpoint/link/rule, группирует серии из persisted observations и по подтверждению
-  создаёт/reuses series card с source link (ADR-0023).
+  создаёт/reuses series card с source link. Для missing/ambiguous source work
+  выполняет owner-confirmed reconciliation: owner-scoped выбор existing work либо
+  явное создание через `CatalogService`, membership и direct work source link
+  (ADR-0023).
 - `SeriesStateService` дедуплицирует ревизии source observations по внешней книге и
   строит сравнение с локальным каталогом: `present`, `missing`, `ambiguous`.
 - `WatchService._match_canonical` связывает новую отсутствующую локально книгу с

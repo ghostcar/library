@@ -78,7 +78,7 @@
 | Abstract source endpoints | `IMPLEMENTED` | create/list/toggle/delete, OPDS/Flibusta/HTML profiles; выбранный endpoint сохраняется в новых watch rules |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
-| Guided source onboarding | `PARTIAL` | локально: карточка автора → Author.Today endpoint/link/rule → кандидаты циклов → series card/link; карточка серии сравнивает source works с каталогом (`есть`/`нет`/`уточнить`). Следом — review-действия над missing/ambiguous (ADR-0023) |
+| Guided source onboarding | `PARTIAL` | локально: карточка автора → Author.Today endpoint/link/rule → кандидаты циклов → series card/link; карточка серии сравнивает source works (`есть`/`нет`/`уточнить`) и даёт owner-confirmed выбор существующей либо создание новой карточки. Generic sites остаются следующим расширением (ADR-0023) |
 | FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual HTTPS title check with robots/public-host guards → exact catalog match or review candidate; migration 0013 deployed (ADR-0021/runbook) |
 
 ## Инфраструктурные факты

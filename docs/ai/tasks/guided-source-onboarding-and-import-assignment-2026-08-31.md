@@ -47,6 +47,12 @@ catalog-first workflow.
   `ambiguous`.
 - Exact owner-scoped source series titles now set `series_id` even when no local
   work matches, so future releases appear on the accepted series card.
-- Next: add owner-confirmed reconciliation for a missing/ambiguous source work:
-  choose an existing catalog work or explicitly create a new candidate/card. Do
-  not auto-create from title-only evidence.
+## Source work reconciliation checkpoint
+
+- Implemented owner-scoped catalog picker for missing/ambiguous source works and
+  a separate explicit `Создать карточку` action. No UUID input is exposed.
+- Both actions link every stored revision of the same external work, ensure the
+  work belongs to the accepted series, and add its direct metadata source link.
+- Title-only evidence never creates a work without the owner's explicit action.
+- Next product extension: replace the Author.Today-specific entry form with the
+  same guided adapter/profile selection for supported configurable websites.

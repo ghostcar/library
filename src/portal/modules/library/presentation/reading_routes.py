@@ -17,6 +17,7 @@ from portal.modules.library.adapters.watch_service import WatchService
 from portal.modules.library.application.reading_service import ReadingStateService
 from portal.modules.library.application.series_state_service import SeriesStateService
 from portal.modules.library.application.source_link_service import SourceLinkService
+from portal.modules.library.application.source_onboarding_service import SourceOnboardingService
 from portal.modules.library.domain.enums import ReadingChangeSource, ReadingStatus
 from portal.web.deps import SessionDep
 
@@ -90,6 +91,8 @@ async def series_page(
             {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
             status_code=404,
         )
+    from portal.modules.library.infrastructure.import_repositories import CatalogQueries
+
     return _templates.TemplateResponse(
         request,
         "series.html",
@@ -112,8 +115,36 @@ async def series_page(
                     )
                 ).scalars()
             ),
+            "assignable_works": (
+                await CatalogQueries(session).works_with_authors(current.user.id, limit=250)
+                if any(entry.catalog_status != "present" for entry in state.source_entries)
+                else []
+            ),
         },
     )
+
+
+@router.post("/series/{series_id}/source-works/{observation_id}/reconcile")
+async def reconcile_series_source_work(
+    series_id: UUID,
+    observation_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+    decision: Annotated[str, Form()],
+    work_id: Annotated[str, Form()] = "",
+) -> RedirectResponse:
+    try:
+        selected_work_id = UUID(work_id) if work_id else None
+    except ValueError:
+        selected_work_id = None
+    await SourceOnboardingService(session).reconcile_source_work(
+        current.user.id,
+        series_id,
+        observation_id,
+        decision=decision,
+        work_id=selected_work_id,
+    )
+    return RedirectResponse(f"/library/series/{series_id}", status_code=303)
 
 
 @router.get("/series", response_class=HTMLResponse)

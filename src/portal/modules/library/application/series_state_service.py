@@ -45,6 +45,7 @@ class SeriesEntry:
 
 @dataclass(slots=True)
 class SeriesSourceEntry:
+    observation_id: UUID
     title: str
     author_name: str | None
     url: str | None
@@ -249,6 +250,7 @@ class SeriesStateService:
                 )
                 state.source_entries.append(
                     SeriesSourceEntry(
+                        observation_id=observation.id,
                         title=observation.title,
                         author_name=observation.author_name,
                         url=(

@@ -16,10 +16,19 @@ from portal.modules.library.adapters.source_orm import (
     SourceObservationModel,
     WatchRuleModel,
 )
+from portal.modules.library.application.services import CatalogService, RegisterWorkInput
 from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.modules.library.domain import entities as de
-from portal.modules.library.infrastructure.orm import AuthorModel
-from portal.modules.library.infrastructure.repositories import SeriesRepository
+from portal.modules.library.infrastructure.orm import (
+    AuthorModel,
+    SeriesMembershipModel,
+    SeriesModel,
+)
+from portal.modules.library.infrastructure.repositories import (
+    AuthorRepository,
+    SeriesRepository,
+    WorkRepository,
+)
 
 
 class SourceOnboardingService:
@@ -265,3 +274,118 @@ class SourceOnboardingService:
         for observation in matching:
             observation.series_id = series.id
         return series.id
+
+    async def reconcile_source_work(
+        self,
+        owner_id: UUID,
+        series_id: UUID,
+        observation_id: UUID,
+        *,
+        decision: str,
+        work_id: UUID | None = None,
+    ) -> UUID | None:
+        series = await self._session.get(SeriesModel, series_id)
+        observation = await self._session.get(SourceObservationModel, observation_id)
+        if (
+            series is None
+            or series.owner_id != owner_id
+            or observation is None
+            or observation.owner_id != owner_id
+            or observation.series_id != series_id
+        ):
+            return None
+
+        works = WorkRepository(self._session)
+        if decision == "assign" and work_id is not None:
+            work = await works.get(owner_id, work_id)
+            if work is None:
+                return None
+        elif decision == "create":
+            work = await CatalogService(
+                works,
+                AuthorRepository(self._session),
+                SeriesRepository(self._session),
+            ).register_work(
+                RegisterWorkInput(
+                    owner_id=owner_id,
+                    title=observation.title,
+                    author_names=[observation.author_name] if observation.author_name else [],
+                    series_title=series.title,
+                )
+            )
+        else:
+            return None
+
+        membership_exists = (
+            await self._session.execute(
+                select(SeriesMembershipModel.id).where(
+                    SeriesMembershipModel.owner_id == owner_id,
+                    SeriesMembershipModel.series_id == series_id,
+                    SeriesMembershipModel.work_id == work.id,
+                )
+            )
+        ).scalar_one_or_none()
+        if membership_exists is None:
+            self._session.add(
+                SeriesMembershipModel(
+                    owner_id=owner_id,
+                    series_id=series_id,
+                    work_id=work.id,
+                    index_raw="unknown",
+                    index_sort=None,
+                    membership_type="unknown",
+                )
+            )
+
+        source_key = self._observation_work_key(observation)
+        revisions = list(
+            (
+                await self._session.execute(
+                    select(SourceObservationModel).where(
+                        SourceObservationModel.owner_id == owner_id,
+                        SourceObservationModel.watch_rule_id == observation.watch_rule_id,
+                        SourceObservationModel.adapter_id == observation.adapter_id,
+                    )
+                )
+            ).scalars()
+        )
+        for revision in revisions:
+            if self._observation_work_key(revision) != source_key:
+                continue
+            revision.work_id = work.id
+            revision.series_id = series_id
+            revision.match_evidence = {
+                **revision.match_evidence,
+                "match": "manual",
+                "decision": f"source_review_{decision}",
+            }
+
+        endpoint_id = (
+            await self._session.execute(
+                select(WatchRuleModel.source_endpoint_id).where(
+                    WatchRuleModel.id == observation.watch_rule_id,
+                    WatchRuleModel.owner_id == owner_id,
+                )
+            )
+        ).scalar_one_or_none()
+        if endpoint_id is not None:
+            await SourceLinkService(self._session).add(
+                owner_id,
+                endpoint_id=endpoint_id,
+                entity_type="work",
+                entity_id=work.id,
+                role="metadata",
+                external_url=observation.url,
+                external_id=str(observation.raw.get("work_id") or "") or None,
+                preferred=True,
+            )
+        await self._session.flush()
+        return work.id
+
+    @staticmethod
+    def _observation_work_key(observation: SourceObservationModel) -> str:
+        return str(
+            observation.raw.get("work_id")
+            or observation.url
+            or f"{observation.title}\0{observation.author_name or ''}"
+        )

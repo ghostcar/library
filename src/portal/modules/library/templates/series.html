@@ -37,6 +37,18 @@
     {% if entry.catalog_status == 'present' %}<a href="/library/works/{{ entry.work_id }}" class="chip chip--ok">есть в каталоге</a>
     {% elif entry.catalog_status == 'ambiguous' %}<span class="chip">нужно уточнить</span>
     {% else %}<span class="chip chip--warn">нет в каталоге</span>{% endif %}
+    {% if entry.catalog_status != 'present' %}
+    <form method="post" action="/library/series/{{ state.series_id }}/source-works/{{ entry.observation_id }}/reconcile" class="u-flex u-gap-8 u-wrap u-items-center">
+      {% include "_csrf.html" %}
+      <label class="u-sr-only" for="source-work-{{ entry.observation_id }}">Выбрать книгу</label>
+      <select id="source-work-{{ entry.observation_id }}" name="work_id" required class="u-w-220 u-p-4-8 u-text-11">
+        <option value="">Выберите книгу…</option>
+        {% for work in assignable_works %}<option value="{{ work.id }}">{{ work.title }} · {{ work.authors | join(', ') }}</option>{% endfor %}
+      </select>
+      <button type="submit" name="decision" value="assign" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Привязать</button>
+      <button type="submit" name="decision" value="create" formnovalidate class="u-m-0 u-w-auto u-p-4-10 u-text-11">Создать карточку по данным источника</button>
+    </form>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
