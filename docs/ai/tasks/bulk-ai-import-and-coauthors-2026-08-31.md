@@ -2,6 +2,7 @@
 
 **Date:** 2026-08-31  
 **Status:** `completed_not_deployed`  
+**Commit:** `6bc75f8` (`fix(import): queue bulk AI analysis and coauthors`)  
 **Goal:** repair failed repeated AI proposals, enqueue analysis for every newly
 unmatched imported asset, and preserve multiple authors in proposal/apply flow.
 
