@@ -486,3 +486,113 @@ async def test_author_source_onboarding_creates_series_from_observation(
         assert len(memberships) == 2
         assert len(reconciled_777) == 2
         assert all(row.work_id == assigned_work_id for row in reconciled_777)
+
+    blocked = await client.post(
+        f"/library/authors/{author_id}/sources",
+        data={"profile_id": "litnet", "url": "https://litnet.com/ru/example"},
+    )
+    assert blocked.status_code == 303
+    assert blocked.headers["location"].endswith("?source_error=profile")
+    blocked_page = await client.get(blocked.headers["location"])
+    assert "Этот профиль или URL нельзя подключить" in blocked_page.text
+
+    linked = await client.post(
+        f"/library/authors/{author_id}/sources",
+        data={"profile_id": "website_link", "url": "https://writer.example/books"},
+    )
+    assert linked.status_code == 303
+    linked_page = await client.get(f"/library/authors/{author_id}")
+    assert "writer.example/books" in linked_page.text
+    assert "без фонового опроса" in linked_page.text
+
+    async with container["session_factory"]() as session:
+        website_endpoint = (
+            await session.execute(
+                select(SourceEndpointModel).where(
+                    SourceEndpointModel.owner_id == owner_id,
+                    SourceEndpointModel.adapter_id == "html",
+                )
+            )
+        ).scalar_one()
+        website_link = (
+            await session.execute(
+                select(SourceLinkModel).where(
+                    SourceLinkModel.owner_id == owner_id,
+                    SourceLinkModel.source_endpoint_id == website_endpoint.id,
+                    SourceLinkModel.entity_type == "author",
+                )
+            )
+        ).scalar_one()
+        rules = list(
+            (
+                await session.execute(
+                    select(WatchRuleModel).where(WatchRuleModel.owner_id == owner_id)
+                )
+            ).scalars()
+        )
+        assert website_link.external_url == "https://writer.example/books"
+        assert len(rules) == 1
+
+    for _ in range(2):
+        opds_connected = await client.post(
+            "/library/sources/opds",
+            data={
+                "name": "Семейный OPDS",
+                "adapter_id": "opds",
+                "url": "https://books.example/opds",
+                "interval_minutes": "15",
+            },
+        )
+        assert opds_connected.status_code == 303
+
+    sources_page = await client.get("/library/sources")
+    assert sources_page.status_code == 200
+    assert "НАБЛЮДАЕМЫЕ OPDS" in sources_page.text
+    assert "НАБЛЮДАЕМЫЕ САЙТЫ" in sources_page.text
+    assert "Семейный OPDS" in sources_page.text
+
+    async with container["session_factory"]() as session:
+        opds_endpoint = (
+            await session.execute(
+                select(SourceEndpointModel).where(
+                    SourceEndpointModel.owner_id == owner_id,
+                    SourceEndpointModel.adapter_id == "opds",
+                )
+            )
+        ).scalar_one()
+        opds_rule = (
+            await session.execute(
+                select(WatchRuleModel).where(
+                    WatchRuleModel.owner_id == owner_id,
+                    WatchRuleModel.source_endpoint_id == opds_endpoint.id,
+                )
+            )
+        ).scalar_one()
+        assert opds_endpoint.role == "metadata+acquisition"
+        assert opds_rule.interval_seconds == 900
+        opds_endpoint_id = opds_endpoint.id
+
+    disabled = await client.post(
+        f"/library/sources/endpoints/{opds_endpoint_id}/toggle",
+        data={"enabled": "false"},
+    )
+    assert disabled.status_code == 303
+    async with container["session_factory"]() as session:
+        assert not (await session.get(SourceEndpointModel, opds_endpoint_id)).enabled
+        disabled_rule = (
+            await session.execute(
+                select(WatchRuleModel).where(WatchRuleModel.source_endpoint_id == opds_endpoint_id)
+            )
+        ).scalar_one()
+        assert not disabled_rule.enabled
+        assert disabled_rule.next_poll_at is None
+
+    deleted = await client.post(f"/library/sources/endpoints/{opds_endpoint_id}/delete")
+    assert deleted.status_code == 303
+    async with container["session_factory"]() as session:
+        assert await session.get(SourceEndpointModel, opds_endpoint_id) is None
+        assert (
+            await session.execute(
+                select(WatchRuleModel).where(WatchRuleModel.source_endpoint_id == opds_endpoint_id)
+            )
+        ).scalar_one_or_none() is None

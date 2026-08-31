@@ -128,7 +128,10 @@ register_adapter(
         id=SourceKind.LITNET.value,
         title="Litnet",
         enabled=False,
-        reason="публичного API нет; HTML-адаптер требует исследования и fixtures (ADR-0011)",
+        reason=(
+            "автоматический сбор запрещён условиями; "  # noqa: RUF001
+            "нужен официальный API или разрешение (ADR-0020)"
+        ),
         capabilities=SourceCapabilities(),
     ),
 )

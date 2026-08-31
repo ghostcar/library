@@ -15,3 +15,4 @@
 | 7 | SSO между поддоменами *.gorbunovr.ru и миграция tracker'а на общую auth: общий домен cookie или RS256/JWKS? Решить при появлении второго web-сервиса. | ADR-0006 | low | 2026-08-25 |
 | 8 | ЗАКРЫТО 2026-08-26: LIBRARY_AUDIT_RETENTION_DAYS (0 = хранить всегда) + очистка processed outbox (30 дней) в worker'е каждые 6ч. | core/retention.py | — | 2026-08-26 |
 | 6 | ЗАКРЫТО 2026-08-26: обе темы реализованы (tokens.css), переключатель «Тема» в шапке (localStorage). Default — Astral (тёмная); сменить default — одна строка в tokens.css/base. | ADR-0004/0013 | — | 2026-08-26 |
+| 12 | Какой конкретный сайт станет вторым автоматическим HTML-профилем после Author.Today? Нужны домен/тип страницы, access review и versioned fixtures; до этого generic website хранится только как ссылка. | ADR-0017/0023, TECH_DEBT#13 | medium | 2026-08-31 |

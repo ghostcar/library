@@ -2,7 +2,7 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-31 (guided author source onboarding implemented locally; production remains `1f98181`, schema 0013)
+Последняя проверка: 2026-08-31 (guided website profiles and split source settings implemented locally; production remains `1f98181`, schema 0013)
 
 ## Фазы мастер-промпта (§20)
 
@@ -75,10 +75,10 @@
 | LLM live (auto/best-free) | `IMPLEMENTED` | propose работает в проде; ретрай на cold-start |
 | Browser error UX + CSRF forms | `IMPLEMENTED` | 401 → login; portal HTML errors; unsafe library forms CSRF-protected |
 | Formal adapter contracts | `IMPLEMENTED` | `application/contracts.py`: capabilities, source/import/notification Protocols, registration validation |
-| Abstract source endpoints | `IMPLEMENTED` | create/list/toggle/delete, OPDS/Flibusta/HTML profiles; выбранный endpoint сохраняется в новых watch rules |
+| Abstract source endpoints | `IMPLEMENTED` | product UI разделён на OPDS/сайты; OPDS one-step создаёт endpoint+rule; toggle/delete синхронно управляют правилом; технический CRUD сохранён для диагностики |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
-| Guided source onboarding | `PARTIAL` | локально: карточка автора → Author.Today endpoint/link/rule → кандидаты циклов → series card/link; карточка серии сравнивает source works (`есть`/`нет`/`уточнить`) и даёт owner-confirmed выбор существующей либо создание новой карточки. Generic sites остаются следующим расширением (ADR-0023) |
+| Guided source onboarding | `PARTIAL` | локально: реестр профилей на карточке автора; Author.Today автонаблюдается, другой сайт сохраняется как ссылка, Litnet disabled; далее кандидаты циклов, сравнение и reconciliation книг. Второй разрешённый HTML auto-adapter пока отсутствует (ADR-0023) |
 | FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual HTTPS title check with robots/public-host guards → exact catalog match or review candidate; migration 0013 deployed (ADR-0021/runbook) |
 
 ## Инфраструктурные факты

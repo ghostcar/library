@@ -352,3 +352,15 @@
   каноническим правилам; title-only evidence само по себе ничего не создаёт.
 - Проверено: 19 series unit, 4 source integration, Ruff и mypy — green.
 - Production не менялся: image `1f98181`, schema `0013`.
+
+## Сессия 36 — 2026-08-31 — guided website profiles and source settings
+
+- Добавлен product-level registry профилей автора: Author.Today=`watch`, другой
+  сайт=`link`, Litnet=`disabled` с актуальной причиной ADR-0020.
+- Карточка автора подключает профиль одной формой. Manual website link создаёт
+  owner+author-scoped endpoint/link и никогда не создаёт фоновое правило.
+- Экран источников разделён на OPDS и сайты; OPDS one-step идемпотентно создаёт
+  endpoint+watch rule, а adapter/rule details убраны в технический disclosure.
+- Toggle/delete endpoint теперь синхронно управляет связанным watch rule.
+- Проверено: 14 source/frontend unit, 4 source integration, Ruff и mypy — green.
+- Production не менялся: image `1f98181`, schema `0013`.

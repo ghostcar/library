@@ -2,103 +2,66 @@
 {% block content %}
 <h1 class="u-display u-weight-normal">Источники</h1>
 
-<div class="card">
-  <p class="meta">НАСТРОЙКИ ИСТОЧНИКОВ</p>
-  <div class="u-grid u-card-grid u-gap-12">
-    <div><p class="u-m-0 u-display u-text-17">Наблюдаемые OPDS</p><p class="meta">Каталоги и feeds для metadata/acquisition.</p></div>
-    <div><p class="u-m-0 u-display u-text-17">Наблюдаемые сайты</p><p class="meta">HTML-страницы авторов, серий и книг.</p></div>
-  </div>
-</div>
-
-<div class="card">
-  <p class="meta">ДОБАВИТЬ ENDPOINT</p>
-  <form method="post" action="/library/sources/endpoints" class="u-flex u-gap-8 u-wrap u-items-end">
-    {% include "_csrf.html" %}
-    <div><label for="endpoint-name">Название</label><input id="endpoint-name" name="name" required placeholder="Flibusta OPDS"></div>
-    <div><label for="source-type">Тип</label><select id="source-type" name="source_type"><option value="opds">OPDS</option><option value="html">Сайт</option></select></div>
-    <div><label for="role">Роль</label><select id="role" name="role"><option value="metadata">Metadata</option><option value="acquisition">Acquisition</option><option value="metadata+acquisition">Обе</option></select></div>
-    <div><label for="endpoint-adapter">Профиль</label><select id="endpoint-adapter" name="adapter_id"><option value="opds">Общий OPDS</option><option value="flibusta">Flibusta</option><option value="author_today">Author.Today (metadata)</option><option value="html">HTML (только ссылка)</option></select></div>
-    <div class="u-grow u-min-220"><label for="endpoint-url">URL</label><input id="endpoint-url" name="url" type="url" required></div>
-    <button type="submit" class="u-m-0 u-w-auto">Сохранить</button>
-  </form>
-</div>
-{% if endpoints %}<div class="card"><p class="meta">СОХРАНЁННЫЕ ENDPOINTS</p>{% for e in endpoints %}<div class="u-flex u-gap-10 u-wrap u-items-center u-my-6"><span class="u-mono u-text-13">{{ e.name }}</span><span class="chip">{{ e.source_type }}</span><span class="chip">{{ e.role }}</span><a class="meta u-grow" href="{{ e.url }}" rel="noreferrer noopener">{{ e.url }}</a><form method="post" action="/library/sources/endpoints/{{ e.id }}/toggle">{% include "_csrf.html" %}<input type="hidden" name="enabled" value="{{ 'false' if e.enabled else 'true' }}"><button class="u-m-0 u-w-auto u-p-4-10 u-text-11">{{ 'Выключить' if e.enabled else 'Включить' }}</button></form><form method="post" action="/library/sources/endpoints/{{ e.id }}/delete">{% include "_csrf.html" %}<button class="u-m-0 u-w-auto u-p-4-10 u-text-11">Удалить</button></form></div>{% endfor %}</div>{% endif %}
-
-<div class="card">
-  <p class="meta">АДАПТЕРЫ</p>
-  {% for a in adapters %}
-  <div class="u-flex u-gap-10 u-items-baseline u-my-6 u-wrap">
-    <span class="u-mono u-text-13 u-min-140">{{ a.title }}</span>
-    {% if a.enabled %}
-    <span class="meta u-primary">включён</span>
-    <span class="meta">acquisition: {{ "да" if a.capabilities.acquisition else "нет (только наблюдение)" }}</span>
-    {% else %}
-    <span class="meta u-secondary">отключён — {{ a.reason }}</span>
-    {% endif %}
-  </div>
-  {% endfor %}
-</div>
-
 {% if error %}
 <div class="card u-border-error">
-  <p class="meta">Не удалось добавить правило: проверьте адаптер и URL (http/https).</p>
+  <p class="meta">Не удалось сохранить источник. Проверьте профиль, публичный URL и заполненные поля.</p>
 </div>
 {% endif %}
 
 <div class="card">
-  <p class="meta">ДОБАВИТЬ НАБЛЮДЕНИЕ (OPDS-лента)</p>
-  <form method="post" action="/library/sources/rules" class="u-flex u-gap-8 u-wrap u-items-end">
+  <p class="meta">НАБЛЮДАЕМЫЕ OPDS</p>
+  <p>Добавьте каталог один раз — источник и фоновая проверка создадутся автоматически.</p>
+  <form method="post" action="/library/sources/opds" class="u-flex u-gap-8 u-wrap u-items-end">
     {% include "_csrf.html" %}
-    <div class="u-min-180">
-      {% if watch_endpoints %}<label for="endpoint-id">Endpoint (необязательно)</label><select id="endpoint-id" name="endpoint_id"><option value="">Новый URL</option>{% for e in watch_endpoints %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select>{% endif %}
-      <label for="adapter_id">Профиль источника</label>
-      <select id="adapter_id" name="adapter_id">
-        <option value="opds">Общий OPDS</option>
-        <option value="flibusta">Flibusta (metadata-only)</option>
-        <option value="author_today">Author.Today (публичная страница автора)</option>
-      </select>
-    </div>
-    <div class="u-grow u-min-160">
-      <label for="name">Название</label>
-      <input id="name" name="name" required placeholder="Моя полка FB">
-    </div>
-    <div class="u-grow-2 u-min-220">
-      <label for="url">URL OPDS-ленты</label>
-      <input id="url" name="url" type="url" placeholder="https://example.com/opds/feed">
-    </div>
-    <div>
-      <label for="interval_minutes">Интервал, мин</label>
-      <input id="interval_minutes" name="interval_minutes" type="number" min="5" max="1440" value="60" class="u-w-90">
-      <span class="meta">Author.Today: минимум 30 мин.</span>
-    </div>
-    <button type="submit" class="u-m-0 u-w-auto">Добавить</button>
+    <div class="u-grow u-min-160"><label for="opds-name">Название</label><input id="opds-name" name="name" required placeholder="Моя книжная полка"></div>
+    <div><label for="opds-profile">Профиль</label><select id="opds-profile" name="adapter_id"><option value="opds">Обычный OPDS</option><option value="flibusta">Flibusta · только метаданные</option></select></div>
+    <div class="u-grow-2 u-min-220"><label for="opds-url">Адрес каталога</label><input id="opds-url" name="url" type="url" required placeholder="https://example.com/opds"></div>
+    <div><label for="opds-interval">Проверять, мин</label><input id="opds-interval" name="interval_minutes" type="number" min="5" max="1440" value="60" class="u-w-90"></div>
+    <button type="submit" class="u-m-0 u-w-auto">Добавить и наблюдать</button>
   </form>
+  {% for endpoint in opds_endpoints %}
+  <div class="u-flex u-gap-10 u-wrap u-items-center u-my-8">
+    <strong class="u-grow u-min-160">{{ endpoint.name }}</strong>
+    <span class="chip">{{ 'Flibusta' if endpoint.adapter_id == 'flibusta' else 'OPDS' }}</span>
+    <a class="meta" href="{{ endpoint.url }}" target="_blank" rel="noopener noreferrer">открыть</a>
+    <form method="post" action="/library/sources/endpoints/{{ endpoint.id }}/toggle">{% include "_csrf.html" %}<input type="hidden" name="enabled" value="{{ 'false' if endpoint.enabled else 'true' }}"><button class="u-m-0 u-w-auto u-p-4-10 u-text-11">{{ 'Выключить' if endpoint.enabled else 'Включить' }}</button></form>
+    <form method="post" action="/library/sources/endpoints/{{ endpoint.id }}/delete">{% include "_csrf.html" %}<button class="u-m-0 u-w-auto u-p-4-10 u-text-11">Удалить</button></form>
+  </div>
+  {% else %}<p class="meta u-mt-8">OPDS-каталоги пока не подключены.</p>{% endfor %}
 </div>
 
 <div class="card">
-  <p class="meta">ПРАВИЛА НАБЛЮДЕНИЯ ({{ rules | length }})</p>
-  {% for r in rules %}
-  <div class="u-flex u-gap-10 u-items-center u-my-8 u-wrap">
-    <span class="u-grow u-min-200 u-mono u-text-13">
-      {{ r.name }}
-      <span class="meta">· {{ r.adapter_id }} · каждые {{ r.interval_seconds // 60 }} мин</span>
-      {% if r.degraded %}<span class="meta u-error"> · DEGRADED</span>{% endif %}
-      {% if r.last_error %}<span class="meta"> · {{ r.last_error | truncate(60) }}</span>{% endif %}
-    </span>
-    <form method="post" action="/library/sources/rules/{{ r.id }}/toggle">
-      {% include "_csrf.html" %}
-      <input type="hidden" name="enabled" value="{{ 'false' if r.enabled else 'true' }}">
-      <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">{{ "Выключить" if r.enabled else "Включить" }}</button>
-    </form>
-    <form method="post" action="/library/sources/rules/{{ r.id }}/delete">
-      {% include "_csrf.html" %}
-      <button type="submit" class="u-m-0 u-w-auto u-p-4-10 u-text-11">Удалить</button>
-    </form>
+  <p class="meta">НАБЛЮДАЕМЫЕ САЙТЫ</p>
+  <p>Страницы подключаются из карточки автора: Author.Today проверяется автоматически, остальные сайты сохраняются как ссылки без фонового опроса.</p>
+  <p><a href="/library/authors" class="u-primary">Выбрать автора и подключить страницу →</a></p>
+  {% for endpoint in website_endpoints %}
+  <div class="u-flex u-gap-10 u-wrap u-items-center u-my-8">
+    <strong class="u-grow u-min-160">{{ endpoint.name }}</strong>
+    <span class="chip">{{ 'автонаблюдение' if endpoint.adapter_id == 'author_today' else 'ссылка' }}</span>
+    <a class="meta" href="{{ endpoint.url }}" target="_blank" rel="noopener noreferrer">открыть</a>
+    <form method="post" action="/library/sources/endpoints/{{ endpoint.id }}/toggle">{% include "_csrf.html" %}<input type="hidden" name="enabled" value="{{ 'false' if endpoint.enabled else 'true' }}"><button class="u-m-0 u-w-auto u-p-4-10 u-text-11">{{ 'Выключить' if endpoint.enabled else 'Включить' }}</button></form>
+    <form method="post" action="/library/sources/endpoints/{{ endpoint.id }}/delete">{% include "_csrf.html" %}<button class="u-m-0 u-w-auto u-p-4-10 u-text-11">Удалить</button></form>
   </div>
-  {% else %}
-  <p class="meta">Правил пока нет.</p>
-  {% endfor %}
+  {% else %}<p class="meta u-mt-8">Страницы сайтов пока не подключены.</p>{% endfor %}
 </div>
+
+<details class="card">
+  <summary class="meta">ТЕХНИЧЕСКОЕ СОСТОЯНИЕ И ПРАВИЛА ({{ rules | length }})</summary>
+  <div class="u-mt-12">
+    {% for adapter in adapters %}
+    <p class="u-my-6"><span class="u-mono u-text-13">{{ adapter.title }}</span> · {% if adapter.enabled %}<span class="u-primary">доступен</span>{% else %}<span class="u-secondary">отключён — {{ adapter.reason }}</span>{% endif %}</p>
+    {% endfor %}
+  </div>
+  <div class="u-mt-12">
+    {% for rule in rules %}
+    <div class="u-flex u-gap-10 u-items-center u-my-8 u-wrap">
+      <span class="u-grow u-min-200 u-mono u-text-13">{{ rule.name }} <span class="meta">· {{ rule.adapter_id }} · каждые {{ rule.interval_seconds // 60 }} мин{% if rule.degraded %} · DEGRADED{% endif %}{% if rule.last_error %} · {{ rule.last_error | truncate(60) }}{% endif %}</span></span>
+      <form method="post" action="/library/sources/rules/{{ rule.id }}/toggle">{% include "_csrf.html" %}<input type="hidden" name="enabled" value="{{ 'false' if rule.enabled else 'true' }}"><button class="u-m-0 u-w-auto u-p-4-10 u-text-11">{{ 'Выключить' if rule.enabled else 'Включить' }}</button></form>
+      <form method="post" action="/library/sources/rules/{{ rule.id }}/delete">{% include "_csrf.html" %}<button class="u-m-0 u-w-auto u-p-4-10 u-text-11">Удалить правило</button></form>
+    </div>
+    {% else %}<p class="meta">Активных правил нет.</p>{% endfor %}
+  </div>
+</details>
 
 <p class="u-mt-24"><a href="/library/" class="u-primary u-mono u-text-13">← Библиотека</a></p>
 {% endblock %}

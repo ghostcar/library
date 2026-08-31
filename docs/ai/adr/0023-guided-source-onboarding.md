@@ -40,5 +40,7 @@
   книгу из каталога либо отдельно подтверждает создание карточки. Reconciliation
   связывает все ревизии, series membership и direct work source link; title-only
   evidence не создаёт книгу автоматически.
-- Этот guided UX пока реализован для профиля Author.Today; остальные разрешённые
-  website adapters должны подключаться через тот же продуктовый контракт.
+- Guided UX использует реестр профилей: Author.Today=`watch`, generic website=`link`
+  без фонового запроса, запрещённый профиль=`disabled` с причиной. Остальные
+  разрешённые website adapters должны подключаться через тот же контракт только
+  после появления конкретного сайта, access review и versioned fixtures.

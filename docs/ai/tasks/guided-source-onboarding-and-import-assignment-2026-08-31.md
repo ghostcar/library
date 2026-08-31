@@ -56,3 +56,25 @@ catalog-first workflow.
 - Title-only evidence never creates a work without the owner's explicit action.
 - Next product extension: replace the Author.Today-specific entry form with the
   same guided adapter/profile selection for supported configurable websites.
+
+## Current slice: guided website profiles
+
+- Introduce one product-level profile registry instead of hardcoding a site in
+  the author template/route.
+- Supported behavior must stay explicit: Author.Today is polled; a generic
+  website may be stored as a metadata link without polling; disabled adapters
+  retain their documented reason.
+- Split the source settings presentation into OPDS and website sections after
+  the author-card flow is covered by owner-scope integration tests.
+
+## Guided website profiles checkpoint
+
+- Implemented a single product profile registry: Author.Today=`watch`, generic
+  website=`link`, Litnet=`disabled`. Generic links create no poll rule.
+- Author links are owner+author scoped, so identical URLs on separate cards do
+  not share a misleading endpoint identity.
+- Source settings are now separate OPDS/site sections. OPDS one-step creates or
+  reuses endpoint+rule; toggle/delete consistently controls both.
+- Next automatic HTML profile is blocked on a concrete permitted site and its
+  versioned parser fixture (`OPEN_QUESTIONS#12`). Next internal gate is the full
+  regression/browser suite and a separate user-authorized deployment.

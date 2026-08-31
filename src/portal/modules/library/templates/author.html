@@ -3,12 +3,16 @@
 <div class="card">
   <p class="meta">НАБЛЮДЕНИЕ ЗА АВТОРОМ</p>
   {% if source_error == 'url' %}<p class="chip chip--warn">Нужна публичная страница автора вида https://author.today/u/имя.</p>{% endif %}
-  <form method="post" action="/library/authors/{{ author.id }}/observe-author-today" class="u-flex u-gap-8 u-wrap u-items-end">
+  <form method="post" action="/library/authors/{{ author.id }}/sources" class="u-flex u-gap-8 u-wrap u-items-end">
     {% include "_csrf.html" %}
-    <div class="u-grow u-min-220"><label>Страница автора на Author.Today</label><input type="url" name="url" value="{{ author_today_status.url if author_today_status else '' }}" placeholder="https://author.today/u/…" required></div>
-    <button class="u-m-0 u-w-auto">{{ 'Обновить и проверить сейчас' if author_today_status else 'Добавить и отслеживать' }}</button>
+    <div class="u-min-220"><label for="author-source-profile">Тип источника</label><select id="author-source-profile" name="profile_id">{% for profile in author_source_profiles if profile.enabled %}<option value="{{ profile.id }}">{{ profile.title }}</option>{% endfor %}</select></div>
+    <div class="u-grow u-min-220"><label for="author-source-url">Страница автора</label><input id="author-source-url" type="url" name="url" placeholder="https://…" required></div>
+    <button class="u-m-0 u-w-auto">Подключить</button>
   </form>
-  {% if author_today_status %}<p class="meta">{% if author_today_status.last_error %}Последняя проверка завершилась ошибкой: {{ author_today_status.last_error }}{% elif author_today_status.last_polled_at %}Источник подключён · последняя проверка {{ author_today_status.last_polled_at }}{% else %}Источник подключён · первая проверка поставлена в очередь.{% endif %}</p>{% else %}<p class="meta">После первого опроса найденные циклы появятся кандидатами ниже.</p>{% endif %}
+  {% if source_error == 'profile' %}<p class="chip chip--warn">Этот профиль или URL нельзя подключить. Для автонаблюдения выберите поддерживаемый профиль; любой другой публичный URL можно сохранить как ссылку.</p>{% endif %}
+  {% if author_today_status %}<p class="meta">Author.Today: <a href="{{ author_today_status.url }}" target="_blank" rel="noopener noreferrer">{{ author_today_status.url }}</a> · {% if author_today_status.last_error %}последняя проверка завершилась ошибкой: {{ author_today_status.last_error }}{% elif author_today_status.last_polled_at %}последняя проверка {{ author_today_status.last_polled_at }}{% else %}первая проверка поставлена в очередь.{% endif %}</p>{% else %}<p class="meta">Author.Today проверяется автоматически.</p>{% endif %}
+  <p class="meta">Для остальных сайтов сохраняется ссылка без фонового опроса.</p>
+  {% for profile in author_source_profiles if not profile.enabled %}<p class="meta">{{ profile.title }}: {{ profile.reason }}.</p>{% endfor %}
 </div>
 {% if series_candidates %}<div class="card"><p class="meta">НАЙДЕННЫЕ ЦИКЛЫ</p>
 {% for candidate in series_candidates %}<div class="u-flex u-gap-8 u-wrap u-items-center u-my-8"><span class="u-grow"><strong>{{ candidate.name }}</strong> · {{ candidate.work_count }} книг</span>

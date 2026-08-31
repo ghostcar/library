@@ -78,6 +78,12 @@ scripts/                 — dev/test/lint
   выполняет owner-confirmed reconciliation: owner-scoped выбор existing work либо
   явное создание через `CatalogService`, membership и direct work source link
   (ADR-0023).
+- `source_profiles.py` — продуктовый реестр guided-профилей автора. Он явно
+  различает `watch`, manual `link` и `disabled`; generic link никогда не создаёт
+  watch rule. Author endpoints изолированы по owner+author, даже при одинаковом URL.
+- `/library/sources/opds` атомарно создаёт/reuses OPDS endpoint и watch rule.
+  Toggle/delete endpoint синхронно выключает/удаляет связанное правило; основной UI
+  разделён на OPDS и сайты, низкоуровневые статусы скрыты в diagnostics disclosure.
 - `SeriesStateService` дедуплицирует ревизии source observations по внешней книге и
   строит сравнение с локальным каталогом: `present`, `missing`, `ambiguous`.
 - `WatchService._match_canonical` связывает новую отсутствующую локально книгу с

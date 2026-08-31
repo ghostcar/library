@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import cast
+from urllib.parse import urlparse
 from uuid import UUID
 
 from sqlalchemy import select
@@ -18,6 +19,7 @@ from portal.modules.library.adapters.source_orm import (
 )
 from portal.modules.library.application.services import CatalogService, RegisterWorkInput
 from portal.modules.library.application.source_link_service import SourceLinkService
+from portal.modules.library.application.source_profiles import get_author_source_profile
 from portal.modules.library.domain import entities as de
 from portal.modules.library.infrastructure.orm import (
     AuthorModel,
@@ -34,6 +36,75 @@ from portal.modules.library.infrastructure.repositories import (
 class SourceOnboardingService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def connect_author_source(
+        self,
+        owner_id: UUID,
+        author_id: UUID,
+        profile_id: str,
+        url: str,
+    ) -> bool:
+        profile = get_author_source_profile(profile_id)
+        if profile is None or not profile.enabled:
+            return False
+        if profile.id == "author_today":
+            return await self.connect_author_today(owner_id, author_id, url)
+        if profile.id == "website_link":
+            return await self.connect_author_website_link(owner_id, author_id, url)
+        return False
+
+    async def connect_author_website_link(self, owner_id: UUID, author_id: UUID, url: str) -> bool:
+        author = await self._session.get(AuthorModel, author_id)
+        target = url.strip()
+        parsed = urlparse(target)
+        if (
+            author is None
+            or author.owner_id != owner_id
+            or parsed.scheme not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+        ):
+            return False
+        endpoint = (
+            await self._session.execute(
+                select(SourceEndpointModel)
+                .join(
+                    SourceLinkModel,
+                    SourceLinkModel.source_endpoint_id == SourceEndpointModel.id,
+                )
+                .where(
+                    SourceEndpointModel.owner_id == owner_id,
+                    SourceEndpointModel.adapter_id == "html",
+                    SourceEndpointModel.url == target,
+                    SourceLinkModel.entity_type == "author",
+                    SourceLinkModel.entity_id == author_id,
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if endpoint is None:
+            endpoint = SourceEndpointModel(
+                owner_id=owner_id,
+                name=f"{parsed.hostname} · {author.name}",
+                source_type="html",
+                role="metadata",
+                adapter_id="html",
+                url=target,
+            )
+            self._session.add(endpoint)
+            await self._session.flush()
+        else:
+            endpoint.enabled = True
+        return await SourceLinkService(self._session).add(
+            owner_id,
+            endpoint_id=endpoint.id,
+            entity_type="author",
+            entity_id=author_id,
+            role="metadata",
+            external_url=target,
+            preferred=False,
+        )
 
     async def connect_author_today(self, owner_id: UUID, author_id: UUID, url: str) -> bool:
         author = await self._session.get(AuthorModel, author_id)

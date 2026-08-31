@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 from urllib.parse import urlparse
@@ -10,10 +11,10 @@ from uuid import UUID
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 
 from portal.core.auth.dependencies import CSRFProtected, CurrentUser
-from portal.modules.library.adapters.source_orm import SourceEndpointModel
+from portal.modules.library.adapters.source_orm import SourceEndpointModel, WatchRuleModel
 from portal.modules.library.adapters.sources import list_adapters
 from portal.modules.library.adapters.watch_service import WatchService
 from portal.modules.library.application.source_link_service import SourceLinkService
@@ -61,6 +62,12 @@ async def sources_page(
             "adapters": list_adapters(),
             "rules": rules,
             "endpoints": endpoints,
+            "opds_endpoints": [
+                endpoint for endpoint in endpoints if endpoint.source_type == "opds"
+            ],
+            "website_endpoints": [
+                endpoint for endpoint in endpoints if endpoint.source_type == "html"
+            ],
             "watch_endpoints": [
                 endpoint
                 for endpoint in endpoints
@@ -101,6 +108,86 @@ async def create_rule(
     return RedirectResponse("/library/sources", status_code=303)
 
 
+@router.post("/sources/opds")
+async def connect_opds_source(
+    current: CSRFProtected,
+    session: SessionDep,
+    name: Annotated[str, Form()],
+    adapter_id: Annotated[str, Form()],
+    url: Annotated[str, Form()],
+    interval_minutes: Annotated[int, Form()] = 60,
+) -> RedirectResponse:
+    clean_name = name.strip()
+    clean_url = url.strip()
+    parsed = urlparse(clean_url)
+    if (
+        not clean_name
+        or adapter_id not in {"opds", "flibusta"}
+        or parsed.scheme not in {"http", "https"}
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
+        return RedirectResponse("/library/sources?error=opds", status_code=303)
+    endpoint = (
+        await session.execute(
+            select(SourceEndpointModel)
+            .where(
+                SourceEndpointModel.owner_id == current.user.id,
+                SourceEndpointModel.adapter_id == adapter_id,
+                SourceEndpointModel.url == clean_url,
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if endpoint is None:
+        endpoint = SourceEndpointModel(
+            owner_id=current.user.id,
+            name=clean_name,
+            source_type="opds",
+            role="metadata" if adapter_id == "flibusta" else "metadata+acquisition",
+            adapter_id=adapter_id,
+            url=clean_url,
+        )
+        session.add(endpoint)
+        await session.flush()
+    else:
+        endpoint.name = clean_name
+        endpoint.role = "metadata" if adapter_id == "flibusta" else "metadata+acquisition"
+        endpoint.enabled = True
+    rule = (
+        await session.execute(
+            select(WatchRuleModel)
+            .where(
+                WatchRuleModel.owner_id == current.user.id,
+                WatchRuleModel.source_endpoint_id == endpoint.id,
+                WatchRuleModel.adapter_id == adapter_id,
+            )
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    interval_seconds = max(5, min(interval_minutes, 1440)) * 60
+    if rule is None:
+        session.add(
+            WatchRuleModel(
+                owner_id=current.user.id,
+                adapter_id=adapter_id,
+                source_endpoint_id=endpoint.id,
+                name=clean_name,
+                url=clean_url,
+                interval_seconds=interval_seconds,
+                next_poll_at=datetime.now(UTC),
+            )
+        )
+    else:
+        rule.name = clean_name
+        rule.url = clean_url
+        rule.interval_seconds = interval_seconds
+        rule.enabled = True
+        rule.next_poll_at = datetime.now(UTC)
+    return RedirectResponse("/library/sources", status_code=303)
+
+
 @router.post("/sources/endpoints/{endpoint_id}/toggle")
 async def toggle_endpoint(
     endpoint_id: UUID,
@@ -111,6 +198,14 @@ async def toggle_endpoint(
     endpoint = await session.get(SourceEndpointModel, endpoint_id)
     if endpoint is not None and endpoint.owner_id == current.user.id:
         endpoint.enabled = enabled
+        await session.execute(
+            update(WatchRuleModel)
+            .where(
+                WatchRuleModel.owner_id == current.user.id,
+                WatchRuleModel.source_endpoint_id == endpoint_id,
+            )
+            .values(enabled=enabled, next_poll_at=datetime.now(UTC) if enabled else None)
+        )
         await session.commit()
     return RedirectResponse("/library/sources", status_code=303)
 
@@ -121,6 +216,12 @@ async def delete_endpoint(
     current: CSRFProtected,
     session: SessionDep,
 ) -> RedirectResponse:
+    await session.execute(
+        delete(WatchRuleModel).where(
+            WatchRuleModel.owner_id == current.user.id,
+            WatchRuleModel.source_endpoint_id == endpoint_id,
+        )
+    )
     await session.execute(
         delete(SourceEndpointModel).where(
             SourceEndpointModel.id == endpoint_id,

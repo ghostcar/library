@@ -12,6 +12,10 @@ from portal.modules.library.adapters.opds_adapter import (
 )
 from portal.modules.library.adapters.sources import get_adapter_descriptor, list_adapters
 from portal.modules.library.adapters.watch_service import next_poll_after
+from portal.modules.library.application.source_profiles import (
+    AUTHOR_SOURCE_PROFILES,
+    get_author_source_profile,
+)
 
 FEED = """<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xmlns:opds="http://opds-spec.org/2010/catalog">
@@ -112,3 +116,13 @@ class TestRegistry:
         assert opds is not None
         assert opds.capabilities.metadata
         assert not opds.capabilities.acquisition  # observation != acquisition
+
+    def test_guided_author_profiles_distinguish_watch_link_and_disabled(self) -> None:
+        profiles = {profile.id: profile for profile in AUTHOR_SOURCE_PROFILES}
+        assert profiles["author_today"].mode == "watch"
+        assert profiles["author_today"].enabled
+        assert profiles["website_link"].mode == "link"
+        assert profiles["website_link"].enabled
+        assert not profiles["litnet"].enabled
+        assert profiles["litnet"].reason
+        assert get_author_source_profile("missing") is None

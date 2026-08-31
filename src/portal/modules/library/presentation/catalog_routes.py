@@ -16,6 +16,7 @@ from portal.modules.library.adapters.author_today_adapter import AuthorTodayPars
 from portal.modules.library.adapters.source_orm import SourceEndpointModel
 from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.modules.library.application.source_onboarding_service import SourceOnboardingService
+from portal.modules.library.application.source_profiles import AUTHOR_SOURCE_PROFILES
 from portal.modules.library.infrastructure.orm import AuthorModel
 from portal.web.deps import SessionDep
 
@@ -127,6 +128,27 @@ async def observe_author_today(
     return RedirectResponse(f"/library/authors/{author_id}", status_code=303)
 
 
+@router.post("/authors/{author_id}/sources")
+async def connect_author_source(
+    author_id: UUID,
+    current: CSRFProtected,
+    session: SessionDep,
+    profile_id: Annotated[str, Form()],
+    url: Annotated[str, Form()],
+) -> RedirectResponse:
+    try:
+        connected = await SourceOnboardingService(session).connect_author_source(
+            current.user.id, author_id, profile_id, url
+        )
+    except AuthorTodayParseError:
+        connected = False
+    if not connected:
+        return RedirectResponse(
+            f"/library/authors/{author_id}?source_error=profile", status_code=303
+        )
+    return RedirectResponse(f"/library/authors/{author_id}", status_code=303)
+
+
 @router.post("/authors/{author_id}/series-candidates")
 async def accept_series_candidate(
     author_id: UUID,
@@ -189,5 +211,6 @@ async def author_page(
             "author_today_status": await onboarding.author_today_status(current.user.id, author_id),
             "series_candidates": await onboarding.series_candidates(current.user.id, author_id),
             "source_error": request.query_params.get("source_error"),
+            "author_source_profiles": AUTHOR_SOURCE_PROFILES,
         },
     )
