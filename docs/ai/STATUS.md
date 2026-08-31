@@ -48,6 +48,7 @@
 | Нормализатор FB2/EPUB | `IMPLEMENTED` | normalizer/, NormalizationService (ADR-0008) |
 | Очередь нормализации + отчёты | `IMPLEMENTED` | /library/normalization, /library/normalization/{id} |
 | Download с Content-Disposition | `IMPLEMENTED` | /library/assets/{id}/download |
+| Book covers in portal/OPDS | `ABSENT` | originals preserve embedded covers; manual normalization can optimize one inside derivative, but extraction/storage/rendering/OPDS links are not implemented |
 | Review UI (unmatched, duplicates) | `IMPLEMENTED` | inbox → owner-scoped поиск существующей книги по title/author/series либо явное создание; UUID не показывается |
 | AI matching (digest→proposal→apply) | `IMPLEMENTED` | ai/, queued bulk proposal for unmatched imports, idempotent cache and ordered co-authors; ADR-0009/0022; live — нужен валидный ключ |
 | Кэш proposals + corrections dataset | `IMPLEMENTED` | ai_proposals, ai_corrections |
