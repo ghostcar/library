@@ -271,7 +271,45 @@ class AuthService:
             await tokens.revoke_all_for_user(user.id, AuthTokenType.REFRESH)
             await audit.log("password_changed", user_id=user.id, actor_ip=actor_ip)
 
-    # --- refresh rotation ---------------------------------------------
+    # --- browser continuation / refresh rotation ---------------------
+
+    async def resume(self, raw_refresh_token: str, *, actor_ip: str | None = None) -> LoginResult:
+        """Resume an SSR session without rotating its persisted refresh token.
+
+        Page navigation can race across browser tabs. Keeping the same refresh
+        token makes continuation idempotent; explicit ``/auth/refresh`` retains
+        one-time rotation semantics for API clients.
+        """
+        async with self._transaction() as (users, tokens, audit):
+            token = await tokens.get_active_by_raw(raw_refresh_token, AuthTokenType.REFRESH)
+            if token is None:
+                await audit.log("session_resume_rejected", actor_ip=actor_ip)
+                raise TokenRevokedError
+
+            user = await users.get(token.user_id)
+            if user is None or not user.is_active:
+                await audit.log("session_resume_rejected", actor_ip=actor_ip)
+                raise TokenRevokedError
+
+            await tokens.touch(token.id)
+            access, access_exp = self._jwt.issue_access_token(
+                str(user.id),
+                [SCOPE_PORTAL_FULL],
+                token_type=AuthTokenType.API,
+            )
+            await audit.log(
+                "session_resume",
+                user_id=user.id,
+                actor_ip=actor_ip,
+                entity_id=str(token.id),
+            )
+            return LoginResult(
+                user=user,
+                access_token=access,
+                access_expires_at=access_exp,
+                refresh_token=raw_refresh_token,
+                refresh_expires_at=token.expires_at or utcnow() + self._refresh_ttl(),
+            )
 
     async def refresh(self, raw_refresh_token: str, *, actor_ip: str | None = None) -> LoginResult:
         async with self._transaction() as (users, tokens, audit):

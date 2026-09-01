@@ -171,7 +171,21 @@ def set_auth_cookies(
     refresh_token: str,
     refresh_expires_at: object,
 ) -> None:
+    set_access_cookie(response, settings, access_token=access_token)
+    secure = settings.cookie_secure or settings.is_production
+    response.set_cookie(
+        REFRESH_COOKIE,
+        refresh_token,
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+        max_age=_seconds_until(refresh_expires_at, settings.refresh_token_ttl_days * 86400),
+        path="/auth",
+    )
 
+
+def set_access_cookie(response: Response, settings: Settings, *, access_token: str) -> None:
+    """Set the short-lived browser credential without replacing its refresh session."""
     secure = settings.cookie_secure or settings.is_production
     response.set_cookie(
         ACCESS_COOKIE,
@@ -181,15 +195,6 @@ def set_auth_cookies(
         samesite="lax",
         max_age=settings.access_token_ttl_minutes * 60,
         path="/",
-    )
-    response.set_cookie(
-        REFRESH_COOKIE,
-        refresh_token,
-        httponly=True,
-        secure=secure,
-        samesite="lax",
-        max_age=_seconds_until(refresh_expires_at, settings.refresh_token_ttl_days * 86400),
-        path="/auth",
     )
 
 
@@ -232,5 +237,6 @@ __all__ = [
     "get_token_service",
     "issue_csrf_cookie",
     "require_scope",
+    "set_access_cookie",
     "set_auth_cookies",
 ]

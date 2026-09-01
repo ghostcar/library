@@ -437,3 +437,16 @@
   309 уникальных publications, 21 series, 0 новых release notifications, status ok.
 - В свежих логах нет ERROR/Traceback/500. Rollback image `00e6089`; DB rollback
   только restore pre-deploy backup.
+
+## Сессия 43 — 2026-09-01 — persistent browser session diagnosis
+
+- Production JWT-secret fingerprint совпадает между host `.env` и container;
+  PostgreSQL сохраняет 8 активных refresh rows. Restart не удаляет credentials.
+- Причина UX: access cookie истекает через 15 минут, а refresh cookie с `Path=/auth`
+  не отправляется на `/library`; SSR раньше сразу отправлял пользователя на login.
+- Локально добавлен allowlisted `/auth/session`: persisted refresh выдаёт новый
+  access без rotation race, обновляет CSRF и возвращает исходный path. API Bearer,
+  explicit refresh rotation, logout и CSRF boundaries сохранены.
+- Gate: 298 passed (первый full run 297 + один stale redirect assertion),
+  auth integration 31 passed, Ruff/format/mypy и Chromium desktop/mobile green.
+  Production пока остаётся на image `d61a484`; deploy требует отдельной команды.

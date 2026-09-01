@@ -28,6 +28,12 @@ scripts/test-browser.sh  # responsive shell в локальном Chromium/Playw
 
 ## Последний release gate
 
+- 2026-09-01, persistent SSR session candidate: `scripts/test.sh` — **298 passed**
+  после одного исправленного stale redirect assertion; auth integration **31 passed**.
+  Regression пересоздаёт application container при истёкшем access JWT и подтверждает
+  восстановление через прежний refresh. `scripts/lint.sh` и Chromium desktop/mobile
+  — green. Production deploy ещё не выполнен.
+
 - 2026-08-31, source observability/parser v2 candidate: `scripts/test.sh` —
   **296 passed**, включая fresh migration `0014`; `scripts/lint.sh` — Ruff/format/
   mypy по 114 source files green; Chromium shell desktop/mobile green.

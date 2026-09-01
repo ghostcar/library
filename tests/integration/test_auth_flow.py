@@ -7,6 +7,8 @@ import uuid
 import httpx
 import pytest
 
+from portal.core.auth.jwt_service import TokenService
+from portal.web.app import build_container
 from tests.unit.test_jwt_and_passwords import make_settings as jwt_settings
 
 pytestmark = pytest.mark.integration
@@ -312,6 +314,54 @@ class TestSSR:
         library = await client.get("/library/")
         assert library.status_code == 200
         assert "Каталог" in library.text  # dashboard renders for authenticated user
+
+    async def test_expired_ssr_session_resumes_after_container_rebuild(
+        self,
+        client: httpx.AsyncClient,
+        app_settings,
+    ) -> None:
+        registered = await _register(client)
+        user_id = registered.json()["user"]["id"]
+        refresh_before = client.cookies["library_refresh"]
+        expired_settings = app_settings.model_copy(update={"access_token_ttl_minutes": -1})
+        expired_access, _ = TokenService(expired_settings).issue_access_token(
+            user_id, ["portal:full"]
+        )
+        client.cookies.delete("library_access", domain="testserver.local", path="/")
+        client.cookies.set("library_access", expired_access, domain="testserver.local", path="/")
+
+        app = client._transport.app
+        previous_container = app.state.container
+        replacement = build_container(app_settings)
+        app.state.container = replacement
+        try:
+            protected = await client.get("/library/catalog", follow_redirects=False)
+            assert protected.status_code == 303
+            assert protected.headers["location"] == "/auth/session?next=/library/catalog"
+
+            resumed = await client.get(protected.headers["location"], follow_redirects=False)
+            assert resumed.status_code == 303
+            assert resumed.headers["location"] == "/library/catalog"
+            assert resumed.headers["cache-control"] == "no-store"
+            assert resumed.cookies["library_access"] != expired_access
+            assert client.cookies["library_refresh"] == refresh_before
+
+            catalog = await client.get(resumed.headers["location"])
+            assert catalog.status_code == 200
+            assert "Каталог" in catalog.text
+        finally:
+            await replacement["engine"].dispose()
+            app.state.container = previous_container
+
+    async def test_session_continuation_rejects_open_redirect(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        response = await client.get(
+            "/auth/session?next=https://attacker.example/",
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"] == "/login?next=/library/"
 
     async def test_logout_via_ssr(self, client: httpx.AsyncClient) -> None:
         await _register(client)

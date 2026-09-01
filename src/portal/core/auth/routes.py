@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import uuid as uuid_module
 from typing import Annotated
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field
 
@@ -19,6 +21,7 @@ from portal.core.auth.dependencies import (
     SettingsDep,
     clear_auth_cookies,
     issue_csrf_cookie,
+    set_access_cookie,
     set_auth_cookies,
 )
 from portal.core.auth.rate_limit import RateLimiter
@@ -84,6 +87,43 @@ def _check_rate_limit(request: Request, limiter_name: str, key: str) -> None:
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many attempts, try later",
         )
+
+
+def _safe_portal_next(value: str) -> str:
+    return value if value.startswith("/library") and not value.startswith("//") else "/library/"
+
+
+def _login_redirect(next_path: str) -> RedirectResponse:
+    response = RedirectResponse(
+        f"/login?next={quote(next_path, safe='/')}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+    clear_auth_cookies(response)
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@router.get("/session", include_in_schema=False)
+async def resume_browser_session(
+    request: Request,
+    auth: AuthServiceDep,
+    settings: SettingsDep,
+    next_path: Annotated[str, Query(alias="next")] = "/library/",
+) -> RedirectResponse:
+    """Renew an expired SSR access cookie from the persisted refresh session."""
+    target = _safe_portal_next(next_path)
+    raw = request.cookies.get(REFRESH_COOKIE)
+    if raw is None:
+        return _login_redirect(target)
+    try:
+        result = await auth.resume(raw, actor_ip=_ip(request))
+    except TokenRevokedError:
+        return _login_redirect(target)
+    response = RedirectResponse(target, status_code=status.HTTP_303_SEE_OTHER)
+    set_access_cookie(response, settings, access_token=result.access_token)
+    issue_csrf_cookie(request, response)
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)

@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from pathlib import Path as _Path
 from typing import Any
+from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
@@ -140,7 +141,8 @@ def create_app(
         is_portal_page = request.url.path.startswith("/library") or request.url.path == "/login"
         accepts_html = "text/html" in request.headers.get("accept", "")
         if exc.status_code == 401 and is_portal_page:
-            return RedirectResponse(f"/login?next={request.url.path}", status_code=303)
+            target = quote(request.url.path, safe="/")
+            return RedirectResponse(f"/auth/session?next={target}", status_code=303)
         if is_portal_page or accepts_html:
             messages = {
                 403: "У вас нет доступа к этому действию или проверка безопасности устарела.",  # noqa: RUF001

@@ -27,12 +27,17 @@ _templates = Jinja2Templates(
 )
 
 
+def _safe_next(value: str) -> str:
+    return value if value.startswith("/library") and not value.startswith("//") else "/library/"
+
+
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request) -> HTMLResponse:
+    next_path = _safe_next(request.query_params.get("next", "/library/"))
     response = _templates.TemplateResponse(
         request,
         "login.html",
-        {"error": None, "title": "Вход — Библиотека"},
+        {"error": None, "title": "Вход — Библиотека", "next_path": next_path},
     )
     issue_csrf_cookie(request, response)
     return response
@@ -44,16 +49,22 @@ async def login_submit(
     response: Response,
     username: str = Form(),
     password: str = Form(),
+    next_path: str = Form("/library/", alias="next"),
     auth: AuthServiceDep = None,  # type: ignore[assignment]
     settings: SettingsDep = None,  # type: ignore[assignment]
 ) -> Response:
+    target = _safe_next(next_path)
     limiters: dict[str, RateLimiter] = request.app.state.container["rate_limiters"]
     ip = request.client.host if request.client else "unknown"
     if not limiters["login"].check(f"login:{ip}:{username}"):
         return _templates.TemplateResponse(
             request,
             "login.html",
-            {"error": "Слишком много попыток, подождите", "title": "Вход"},
+            {
+                "error": "Слишком много попыток, подождите",
+                "title": "Вход",
+                "next_path": target,
+            },
         )
     try:
         result = await auth.login(username, password, actor_ip=ip)
@@ -61,9 +72,9 @@ async def login_submit(
         return _templates.TemplateResponse(
             request,
             "login.html",
-            {"error": "Неверный email или пароль", "title": "Вход"},
+            {"error": "Неверный email или пароль", "title": "Вход", "next_path": target},
         )
-    redirect = RedirectResponse("/library/", status_code=303)
+    redirect = RedirectResponse(target, status_code=303)
     set_auth_cookies(
         redirect,
         settings,

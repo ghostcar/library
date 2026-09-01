@@ -32,7 +32,7 @@ async def test_unauthenticated_library_redirects_to_login(app) -> None:
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/library/", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == "/login"
+    assert response.headers["location"] == "/auth/session?next=/library/"
 
 
 async def test_unauthenticated_nested_page_redirects_instead_of_json(app) -> None:
@@ -44,7 +44,7 @@ async def test_unauthenticated_nested_page_redirects_instead_of_json(app) -> Non
             follow_redirects=False,
         )
     assert response.status_code == 303
-    assert response.headers["location"] == "/login?next=/library/catalog"
+    assert response.headers["location"] == "/auth/session?next=/library/catalog"
 
 
 async def test_local_icon_sprite_is_served(app) -> None:

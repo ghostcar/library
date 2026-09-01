@@ -2,8 +2,8 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-08-31 (source observability/parser v2 deployed as
-`d61a484`, schema 0014; production backfill Sapfir=309 publications/21 series)
+Последняя проверка: 2026-09-01 (persistent SSR session renewal: 298 tests,
+lint/mypy/browser green; production remains `d61a484`, schema 0014)
 
 ## Фазы мастер-промпта (§20)
 
@@ -28,7 +28,7 @@
 | Core: config (typed, jwt_secret required) | `IMPLEMENTED` | src/portal/core/config |
 | Core: database (async engine, session) | `IMPLEMENTED` | src/portal/core/database |
 | Core: module registry | `IMPLEMENTED` | src/portal/core/module_registry |
-| Core: auth (users, JWT, refresh/device, CSRF+forms, rate limit) | `IMPLEMENTED` | src/portal/core/auth (ADR-0006, CSRF accepts form field) |
+| Core: auth (users, JWT, refresh/device, CSRF+forms, rate limit) | `IMPLEMENTED` | persisted refresh survives container rebuild; expired SSR access resumes through `/auth/session`; pending deploy (ADR-0006) |
 | Core: audit log | `IMPLEMENTED` | src/portal/core/audit |
 | Core: outbox (transactional) | `IMPLEMENTED` | transactional events, typed registry, exponential retry до 5 попыток, terminal failed |
 | Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | claim до handler; stale running jobs requeue через 15 мин |

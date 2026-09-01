@@ -27,6 +27,14 @@
 
 5. **Web-сессии**: access+refresh в HttpOnly SameSite=Lax cookies (Secure в prod); CSRF double-submit (`library_csrf` cookie + `x-csrf-token` header **или** `csrf_token` form field для SSR форм) для cookie-аутентифицированных unsafe-запросов; Bearer-запросы CSRF не требуют. Logout также защищён CSRF (session 13).
 
+   Access JWT остаётся коротким (15 минут). Если он истёк или исчез, защищённая SSR
+   страница делает 303 через allowlisted `/auth/session`, где доступна cookie
+   `Path=/auth`: persisted refresh token проверяется в PostgreSQL, выдаётся новый
+   access JWT и пользователь возвращается на исходный `/library/...`. Resume не
+   ротирует refresh token, поэтому параллельные вкладки не отзывают сессию друг у
+   друга; явный API `/auth/refresh` сохраняет one-time rotation. Ответ continuation
+   помечен `Cache-Control: no-store`, open redirect запрещён.
+
 6. **Аудит**: register/login/login_failed/refresh/logout/device_token_* пишутся в `audit_log`; failure-события — отдельной транзакцией (не откатываются вместе с основной операцией).
 
 7. **Rate limiting**: in-memory sliding window (login 5/мин на IP+email, register 3/мин на IP). Однопроцессный — при масштабировании вынести в общее хранилище (TECH_DEBT).
@@ -35,4 +43,6 @@
 
 - Новый модуль макропортала = новый router + `owner_id` в своих таблицах + зависимости из core.auth. Ноль дублирования логина.
 - Смена секрета инвалидирует все access-токены (refresh живут в БД и переживают ротацию секрета).
+- Пересоздание web/worker не требует нового входа: стабильный секрет сохраняет ещё
+  действующий access JWT, а persisted refresh восстанавливает истёкший.
 - tracker.gorbunovr.ru (существующий сервис со своей auth) НЕ мигрируется автоматически — вопрос отдельный (OPEN_QUESTIONS).

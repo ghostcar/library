@@ -29,7 +29,7 @@ async def test_settings_page_requires_auth(app: Any) -> None:
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
         resp = await c.get("/library/settings", follow_redirects=False)
     assert resp.status_code == 303
-    assert resp.headers["location"].startswith("/login?next=")
+    assert resp.headers["location"] == "/auth/session?next=/library/settings"
 
 
 @pytest.mark.anyio

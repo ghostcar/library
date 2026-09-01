@@ -43,7 +43,7 @@ def _safe_back(back: str, fallback: str) -> str:
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, current: OptionalUser) -> Response:
     if current is None:
-        return RedirectResponse("/login", status_code=303)
+        return RedirectResponse("/auth/session?next=/library/", status_code=303)
     service = _reading_service(request)
     continue_reading = await service.continue_reading(current.user.id)
     recently_added = await service.recently_added(current.user.id)

@@ -56,6 +56,17 @@ scripts/                 — dev/test/lint
 - Web: `src/portal/web/app.py:create_app()` → uvicorn 127.0.0.1:8001 (dev)
 - Worker: `python -m portal.core.jobs.worker` (graceful shutdown, poll 2s)
 
+## Browser session continuity
+
+- Access JWT remains short-lived (15 minutes); the opaque 30-day refresh token is
+  persisted in PostgreSQL and scoped to cookie path `/auth`.
+- A portal 401 redirects to allowlisted `GET /auth/session?next=/library/...`.
+  `AuthService.resume` validates the active refresh row, issues a fresh access JWT
+  without rotating the refresh token, refreshes CSRF and redirects back. This is
+  idempotent across concurrent tabs and survives web-container recreation.
+- API Bearer failures still return 401. Explicit `/auth/refresh` still rotates the
+  refresh token; logout/password change still revoke it.
+
 ## Модули
 
 | Модуль | Статус | Маршруты |
