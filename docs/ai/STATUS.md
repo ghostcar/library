@@ -2,8 +2,8 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-09-01 (canonical series/coauthor source propagation:
-299 tests, lint/mypy green; production remains `d61a484`, schema 0014)
+Последняя проверка: 2026-09-01 (deployed `98ae0ef`, schema 0014; health/ready,
+auth continuation and 19/19 Author.Today parser-v3 rules green)
 
 ## Фазы мастер-промпта (§20)
 
@@ -18,7 +18,7 @@
 | Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, guided source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
-| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:d61a484, schema 0014, https://library.gorbunovr.ru |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:98ae0ef, schema 0014, https://library.gorbunovr.ru |
 
 ## Компоненты
 
@@ -28,7 +28,7 @@
 | Core: config (typed, jwt_secret required) | `IMPLEMENTED` | src/portal/core/config |
 | Core: database (async engine, session) | `IMPLEMENTED` | src/portal/core/database |
 | Core: module registry | `IMPLEMENTED` | src/portal/core/module_registry |
-| Core: auth (users, JWT, refresh/device, CSRF+forms, rate limit) | `IMPLEMENTED` | persisted refresh survives container rebuild; expired SSR access resumes through `/auth/session`; pending deploy (ADR-0006) |
+| Core: auth (users, JWT, refresh/device, CSRF+forms, rate limit) | `IMPLEMENTED` | deployed: persisted refresh survives container rebuild; expired SSR access resumes through `/auth/session` (ADR-0006) |
 | Core: audit log | `IMPLEMENTED` | src/portal/core/audit |
 | Core: outbox (transactional) | `IMPLEMENTED` | transactional events, typed registry, exponential retry до 5 попыток, terminal failed |
 | Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | claim до handler; stale running jobs requeue через 15 мин |
@@ -60,7 +60,7 @@
 | Watch rules + scheduler | `IMPLEMENTED` | worker tick 30s, backoff+jitter, degraded, persistent last outcome/duration/parser version, deduplicated manual refresh |
 | Service console | `IMPLEMENTED` | `/library/service`: owner-scoped jobs/outbox/watch status and manual source refresh; deployed |
 | In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
-| Author.Today metadata | `IMPLEMENTED` | parser v3 обходит bounded pagination, учитывает work+audiobook и stable coauthor profiles; production пока v2: Sapfir=309 публикаций/21 цикл (ADR-0019/0024/0025) |
+| Author.Today metadata | `IMPLEMENTED` | deployed parser v3: bounded pagination, work+audiobook и stable coauthor profiles; 19/19 production rules ok after quiet baseline (ADR-0019/0024/0025) |
 | Litnet | `ABSENT` | намеренно отключён: пользовательское соглашение запрещает automated collection (ADR-0020) |
 | Flibusta OPDS metadata | `IMPLEMENTED` | отдельный профиль поверх OPDS; acquisition=false, фоновые скачивания отсутствуют |
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
@@ -81,7 +81,7 @@
 | Abstract source endpoints | `IMPLEMENTED` | product UI разделён на OPDS/сайты; OPDS one-step создаёт endpoint+rule; toggle/delete синхронно управляют правилом; технический CRUD сохранён для диагностики |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
-| Guided source onboarding | `PARTIAL` | локально: канонический tracked-state серии общий для соавторов, подтверждённые AT profiles создаются/связываются одним bounded шагом и добавляют второй series source; production пока без этого среза. Второй разрешённый HTML auto-adapter отсутствует (ADR-0023/0025) |
+| Guided source onboarding | `PARTIAL` | deployed: canonical tracked-state серии общий для соавторов, подтверждённые AT profiles создаются/связываются одним bounded шагом и добавляют второй series source. Второй разрешённый HTML auto-adapter отсутствует (ADR-0023/0025) |
 | FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual HTTPS title check with robots/public-host guards → exact catalog match or review candidate; migration 0013 deployed (ADR-0021/runbook) |
 
 ## Инфраструктурные факты

@@ -2,6 +2,19 @@
 
 Краткие факты завершённых сессий. Без chain-of-thought.
 
+## Сессия 45 — 2026-09-01 — deploy auth continuity and coauthor sources
+
+- Собран и опубликован `ghcr.io/ghostcar/library:98ae0ef`, digest
+  `sha256:6281a53fb27e8495df9750a8afe92e1743d88054014622d1b60e33bd6fdb9e44`.
+- Backup `*-20260901-072728.*` проверен; схема остаётся `0014`, миграций нет.
+- Web/worker healthy на новом image; local/external health+ready, authenticated
+  service/authors, session continuation/no-store/open-redirect guard и storage OK.
+- Все 9 active refresh rows пережили recreate. Parser-v3 quiet baseline: 19/19
+  rules ok, очередь пуста, unread notifications 4→4; authors 5→20, AT endpoints
+  4→19, series links 7→13, observations 607→1789, multi-source series=6.
+- Свежие логи без ERROR/Traceback/500. Rollback image `d61a484`, data rollback —
+  только из нового pre-deploy backup.
+
 ## Сессия 44 — 2026-09-01 — канонические серии и источники соавторов
 
 - Устранена endpoint-local семантика кандидатов: enabled watch-backed source у

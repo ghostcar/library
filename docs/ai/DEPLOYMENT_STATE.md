@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:d61a484 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-08-31** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:98ae0ef | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-09-01** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -169,3 +169,22 @@ scripts/dev.sh
   Свежие web/worker logs без ERROR/Traceback/500.
 - Rollback image: `ghcr.io/ghostcar/library:00e6089`; для отката БД использовать
   только указанный pre-deploy backup, автоматический downgrade не выполнять.
+
+## Деплой 2026-09-01 — persistent browser auth + coauthor source graph
+
+- Git/SHA: `98ae0ef` (включает auth fix `ccd1a91`); GHCR digest:
+  `sha256:6281a53fb27e8495df9750a8afe92e1743d88054014622d1b60e33bd6fdb9e44`.
+- Pre-deploy backup: `backups/pre-deploy/*-20260901-072728.*`; DB gzip и storage
+  tar (15 MiB) проверены, manifest фиксирует schema `0014`.
+- Миграций нет: новый образ подтвердил Alembic head `0014`; web/worker
+  переключены с `d61a484` на `98ae0ef`, persistent storage виден обоим.
+- Local/external health+ready, anonymous session continuation, open-redirect guard,
+  `Cache-Control: no-store`, SVG, authenticated service/authors pages — OK.
+  Девять active refresh rows сохранились после пересоздания контейнеров.
+- Принудительный quiet parser-v3 baseline завершил 19/19 Author.Today rules со
+  status `ok`; active poll jobs=0, source errors=0. Authors 5→20, AT endpoints
+  4→19, series links 7→13, observations 607→1789; шесть серий имеют несколько
+  source endpoints. Unread notifications остались 4 — flood отсутствует.
+- Свежие web/worker logs без ERROR/Traceback/500. Rollback image:
+  `ghcr.io/ghostcar/library:d61a484`; схема совместима, DB не откатывать
+  автоматически. При data rollback использовать только указанный backup.
