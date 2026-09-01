@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:98ae0ef | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-09-01** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:f404df8 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-09-01** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -188,3 +188,19 @@ scripts/dev.sh
 - Свежие web/worker logs без ERROR/Traceback/500. Rollback image:
   `ghcr.io/ghostcar/library:d61a484`; схема совместима, DB не откатывать
   автоматически. При data rollback использовать только указанный backup.
+
+## Деплой 2026-09-01 — canonical entity-name navigation
+
+- Git/SHA: `f404df8`; GHCR digest:
+  `sha256:3292445c1810a598bbb84f3bc72e7a9c8a586021ff66ff3932060335afce73ef`.
+- Pre-deploy backup: `backups/pre-deploy/*-20260901-084428.*`; DB gzip
+  156674 bytes и storage tar 15701004 bytes проверены, manifest schema `0014`.
+- Миграций нет; packaged image Alembic head и все Jinja templates проверены до
+  rollout. Web/worker переключены с `98ae0ef` на `f404df8`, storage mount сохранён.
+- Local/external health+ready, anonymous auth continuation, CSP/static CSS и
+  authenticated catalog/authors/series/notifications — OK. Production markup
+  содержит independent work/author/series links; tracked chips не являются links.
+- Все 9 active refresh sessions пережили recreate; jobs 0, unread notifications
+  4→4, watch errors 0. Свежие логи без ERROR/Traceback/500.
+- Rollback image: `ghcr.io/ghostcar/library:98ae0ef`; schema `0014` совместима,
+  DB автоматически не откатывать. Data rollback — только из указанного backup.

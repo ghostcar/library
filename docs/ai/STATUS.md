@@ -2,11 +2,8 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-09-01 (deployed `98ae0ef`, schema 0014; health/ready,
-auth continuation and 19/19 Author.Today parser-v3 rules green)
-
-Локальный release candidate после production: canonical entity-name navigation
-во всех SSR flows; 299 tests + lint/mypy + Chromium desktop/mobile green. Не deployed.
+Последняя проверка: 2026-09-01 (deployed `f404df8`, schema 0014; health/ready,
+authenticated entity-link smoke, auth-session persistence and logs green)
 
 ## Фазы мастер-промпта (§20)
 
@@ -21,7 +18,7 @@ auth continuation and 19/19 Author.Today parser-v3 rules green)
 | Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, guided source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
-| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:98ae0ef, schema 0014, https://library.gorbunovr.ru |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:f404df8, schema 0014, https://library.gorbunovr.ru |
 
 ## Компоненты
 
@@ -37,7 +34,7 @@ auth continuation and 19/19 Author.Today parser-v3 rules green)
 | Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | claim до handler; stale running jobs requeue через 15 мин |
 | Core: storage port + local adapter | `IMPLEMENTED` | src/portal/core/storage |
 | Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
-| Entity-name navigation | `IMPLEMENTED` | title/name автора, книги и цикла ведут на canonical card; status chips не используются как навигация |
+| Entity-name navigation | `IMPLEMENTED` | deployed: title/name автора, книги и цикла ведут на canonical card; status chips не используются как навигация |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
 | Alembic 0001+0014 | `IMPLEMENTED` | Код, Test DB и VPS schema head=0014 |

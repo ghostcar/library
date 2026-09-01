@@ -2,6 +2,22 @@
 
 Краткие факты завершённых сессий. Без chain-of-thought.
 
+## Сессия 47 — 2026-09-01 — deploy canonical entity navigation
+
+- Опубликован и развёрнут `ghcr.io/ghostcar/library:f404df8`, digest
+  `sha256:3292445c1810a598bbb84f3bc72e7a9c8a586021ff66ff3932060335afce73ef`.
+- Backup `*-20260901-084428.*` проверен: DB gzip 156674 bytes, storage tar
+  15701004 bytes, manifest schema `0014`; миграций нет.
+- Web healthy и worker running на одном digest; persistent storage подключён обоим.
+  Local/external health+ready, anonymous auth continuation, CSP/static CSS и
+  authenticated catalog/authors/series/notifications smoke — green.
+- На production data подтверждены независимые entity links (7 work, 13 author,
+  7 series в каталоге); четыре tracked author pages имеют non-link status chips.
+  Девять refresh sessions сохранились, jobs 0, unread notifications 4→4,
+  watch errors 0; свежие web/worker logs без ошибок.
+- Rollback image `98ae0ef`; schema совместима. Data rollback — только из нового
+  pre-deploy backup.
+
 ## Сессия 46 — 2026-09-01 — canonical entity-name navigation
 
 - Во всех SSR catalog/author/work/series/dashboard/queue/picker flows каноническое

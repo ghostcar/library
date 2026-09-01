@@ -28,12 +28,12 @@ scripts/test-browser.sh  # responsive shell в локальном Chromium/Playw
 
 ## Последний release gate
 
-- 2026-09-01, canonical entity-name navigation candidate: `scripts/test.sh` —
+- 2026-09-01, canonical entity-name navigation release: `scripts/test.sh` —
   **299 passed**; `scripts/lint.sh` — Ruff/format/mypy green по 114 source files;
   Chromium shell desktop/mobile green. Integration assertions закрепляют переходы
   catalog→work/author/series, work→author/series, author→series, series→work и
-  queue→work/series, а также non-link semantics статусных chips. Production остаётся
-  на `98ae0ef`; candidate не deployed.
+  queue→work/series, а также non-link semantics статусных chips. Развёрнуто image
+  `f404df8`; authenticated production markup smoke green.
 
 - 2026-09-01, canonical series/coauthor propagation candidate:
   `scripts/test.sh` — **299 passed**; `scripts/lint.sh` — Ruff/format/mypy green.

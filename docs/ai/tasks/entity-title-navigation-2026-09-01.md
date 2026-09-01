@@ -47,5 +47,5 @@ author and series cards throughout the SSR portal.
 
 ## Boundary
 
-- Production remains `98ae0ef`; this completed candidate is not deployed. Deploy
-  requires a separate explicit request.
+- Deployed 2026-09-01 as image `ghcr.io/ghostcar/library:f404df8`; schema remains
+  `0014`. Rollback image is `98ae0ef`.
