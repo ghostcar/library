@@ -21,10 +21,10 @@
     {% for work in works %}
     <div class="u-flex u-gap-12 u-items-center u-between u-wrap u-my-12 u-border-bottom u-pb-8">
       <div class="u-grow u-min-220">
-        <p class="u-my-2"><strong>{{ work.title }}</strong></p>
+        <p class="u-my-2"><strong><a href="/library/works/{{ work.id }}" class="entity-link">{{ work.title }}</a></strong></p>
         <p class="meta u-my-2">
-          {% if work.authors %}{{ work.authors | join(', ') }}{% else %}автор не указан{% endif %}
-          {% if work.series %} · {{ work.series | map(attribute='title') | join(', ') }}{% endif %}
+          {% if work.author_refs %}{% for author in work.author_refs %}<a href="/library/authors/{{ author.id }}" class="entity-link">{{ author.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}автор не указан{% endif %}
+          {% if work.series %} · {% for series in work.series %}<a href="/library/series/{{ series.id }}" class="entity-link">{{ series.title }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
         </p>
       </div>
       <form method="post" action="/library/series/{{ state.series_id }}/source-works/{{ entry.observation_id }}/reconcile">

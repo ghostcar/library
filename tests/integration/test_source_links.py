@@ -415,6 +415,7 @@ async def test_author_source_onboarding_creates_series_from_observation(
         )
         await session.commit()
         series_id = series.id
+        present_work_id = present_work.id
         assigned_work_id = assigned_work.id
         derived = await SeriesStateService(session).for_series(owner_id, series_id)
         assert derived is not None
@@ -428,6 +429,8 @@ async def test_author_source_onboarding_creates_series_from_observation(
     page = await client.get(f"/library/authors/{author_id}")
     assert "отслеживается" in page.text
     assert "Подключить наблюдение" not in page.text
+    assert f'href="/library/series/{series_id}" class="entity-link">Найденный цикл</a>' in page.text
+    assert f'href="/library/series/{series_id}" class="chip"' not in page.text
 
     series_page = await client.get(f"/library/series/{series_id}")
     assert series_page.status_code == 200
@@ -436,6 +439,11 @@ async def test_author_source_onboarding_creates_series_from_observation(
     assert "1 нет в каталоге" in series_page.text
     assert "1 нужно уточнить" in series_page.text
     assert "Книга уже в каталоге" in series_page.text
+    present_work_link = (
+        f'href="/library/works/{present_work_id}" class="entity-link">Книга уже в каталоге</a>'
+    )
+    assert present_work_link in series_page.text
+    assert f'href="/library/works/{present_work_id}" class="chip' not in series_page.text
     assert "Неоднозначная книга" in series_page.text
     assert "Найти в каталоге" in series_page.text
     assert 'id="source-work-' not in series_page.text

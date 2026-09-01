@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from portal.modules.library.application.watched_inbox import WatchedInboxService
 from portal.modules.library.infrastructure.import_orm import ImportBatchModel, ImportItemModel
-from portal.modules.library.infrastructure.orm import WorkModel
+from portal.modules.library.infrastructure.orm import AuthorModel, SeriesModel, WorkModel
 
 pytestmark = pytest.mark.integration
 
@@ -150,6 +150,20 @@ class TestUploadImport:
         assert "Верное название" in catalog.text
         assert "Иван Авторов" in catalog.text
         assert "Верный цикл" in catalog.text
+
+        container = authed_client._transport.app.state.container
+        async with container["session_factory"]() as session:
+            work = (await session.execute(select(WorkModel))).scalar_one()
+            author = (await session.execute(select(AuthorModel))).scalar_one()
+            series = (await session.execute(select(SeriesModel))).scalar_one()
+
+        assert f'href="/library/works/{work.id}"' in catalog.text
+        assert f'href="/library/authors/{author.id}"' in catalog.text
+        assert f'href="/library/series/{series.id}"' in catalog.text
+
+        work_page = await authed_client.get(f"/library/works/{work.id}")
+        assert f'href="/library/authors/{author.id}"' in work_page.text
+        assert f'href="/library/series/{series.id}"' in work_page.text
 
     async def test_well_formed_upload_creates_work_and_asset(
         self,

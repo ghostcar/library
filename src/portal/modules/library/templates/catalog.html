@@ -21,13 +21,15 @@
 {% if works %}
 <div class="u-grid u-card-grid u-gap-16 u-mt-24">
   {% for w in works %}
-  <a href="/library/works/{{ w.id }}" class="card u-block u-no-decoration u-color-inherit">
-    <p class="meta u-mb-4">{{ w.authors | join(", ") if w.authors else "Автор не указан" }}</p>
-    <p class="u-m-0 u-display u-text-18">{{ w.title }}</p>
+  <article class="card">
+    <p class="meta u-mb-4">
+      {% if w.author_refs %}{% for author in w.author_refs %}<a href="/library/authors/{{ author.id }}" class="entity-link">{{ author.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Автор не указан{% endif %}
+    </p>
+    <p class="u-m-0 u-display u-text-18"><a href="/library/works/{{ w.id }}" class="entity-link">{{ w.title }}</a></p>
     {% for s in w.series %}
-    <p class="meta u-mt-8 u-secondary">{{ s.title }}{% if s.index_raw %} · {{ s.index_raw }}{% endif %}</p>
+    <p class="meta u-mt-8 u-secondary"><a href="/library/series/{{ s.id }}" class="entity-link">{{ s.title }}</a>{% if s.index_raw %} · {{ s.index_raw }}{% endif %}</p>
     {% endfor %}
-  </a>
+  </article>
   {% endfor %}
 </div>
 {% else %}

@@ -6,9 +6,9 @@
 <div class="card u-mt-12">
   <div class="u-flex u-gap-12 u-items-center u-wrap">
     <div class="u-grow u-min-200">
-      <a href="/library/works/{{ item.work_id }}" class="u-on-surface u-no-decoration">{{ item.title }}</a>
+      <a href="/library/works/{{ item.work_id }}" class="entity-link">{{ item.title }}</a>
       {% if item.series_title %}
-      <p class="meta u-mt-2">{{ item.series_title }}{% if item.index_raw %} · №{{ item.index_raw }}{% endif %}</p>
+      <p class="meta u-mt-2"><a href="/library/series/{{ item.series_id }}" class="entity-link">{{ item.series_title }}</a>{% if item.index_raw %} · №{{ item.index_raw }}{% endif %}</p>
       {% endif %}
     </div>
     <form method="post" action="/library/works/{{ item.work_id }}/status" class="u-flex u-gap-8 u-wrap">

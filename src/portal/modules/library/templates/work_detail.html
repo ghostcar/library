@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 <h1 class="u-display u-weight-normal">{{ work.title }}</h1>
-<p class="meta">{{ work.authors | map(attribute='name') | join(", ") if work.authors else "Автор не указан" }}</p>
+<p class="meta">{% if work.authors %}{% for author in work.authors %}<a href="/library/authors/{{ author.id }}" class="entity-link">{{ author.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Автор не указан{% endif %}</p>
 {% set sources = work.sources %}{% set source_entity_type = 'work' %}{% set source_entity_id = work.id %}{% set source_back = '/library/works/' ~ work.id %}{% include "_source_links.html" %}
 
 {% if work.series %}
 <div class="card">
   <p class="meta">ЦИКЛЫ</p>
   {% for membership, series in work.series %}
-  <p class="u-my-4">{{ series.title }}
+  <p class="u-my-4"><a href="/library/series/{{ series.id }}" class="entity-link">{{ series.title }}</a>
     {% if membership.index_raw %}<span class="meta">· №{{ membership.index_raw }} ({{ membership.membership_type }})</span>{% endif %}
   </p>
   {% endfor %}

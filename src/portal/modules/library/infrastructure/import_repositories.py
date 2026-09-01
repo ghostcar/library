@@ -323,8 +323,12 @@ class CatalogQueries:
             )
         ).all()
         authors_by_work: dict[UUID, list[str]] = {}
+        author_refs_by_work: dict[UUID, list[dict[str, object]]] = {}
         for link, author in author_rows:
             authors_by_work.setdefault(link.work_id, []).append(author.name)
+            author_refs_by_work.setdefault(link.work_id, []).append(
+                {"id": author.id, "name": author.name},
+            )
 
         series_rows = (
             await self._session.execute(
@@ -336,10 +340,14 @@ class CatalogQueries:
                 ),
             )
         ).all()
-        series_by_work: dict[UUID, list[dict[str, str]]] = {}
+        series_by_work: dict[UUID, list[dict[str, object]]] = {}
         for membership, series in series_rows:
             series_by_work.setdefault(membership.work_id, []).append(
-                {"title": series.title, "index_raw": membership.index_raw},
+                {
+                    "id": series.id,
+                    "title": series.title,
+                    "index_raw": membership.index_raw,
+                },
             )
 
         return [
@@ -348,6 +356,7 @@ class CatalogQueries:
                 "title": work.title,
                 "language": work.language,
                 "authors": authors_by_work.get(work.id, []),
+                "author_refs": author_refs_by_work.get(work.id, []),
                 "series": series_by_work.get(work.id, []),
                 "created_at": work.created_at,
             }

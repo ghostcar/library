@@ -31,10 +31,11 @@
   {% for entry in state.source_entries %}
   <div class="u-flex u-gap-8 u-wrap u-items-center u-my-8">
     <span class="u-grow u-min-160">
-      {% if entry.url %}<a href="{{ entry.url }}" target="_blank" rel="noopener noreferrer" class="u-on-surface">{{ entry.title }}</a>{% else %}<strong>{{ entry.title }}</strong>{% endif %}
+      {% if entry.catalog_status == 'present' %}<a href="/library/works/{{ entry.work_id }}" class="entity-link">{{ entry.title }}</a>{% else %}<strong>{{ entry.title }}</strong>{% endif %}
       {% if entry.publication_status %}<span class="meta">· {{ entry.publication_status }}</span>{% endif %}
+      {% if entry.url %}<span class="meta">· <a href="{{ entry.url }}" target="_blank" rel="noopener noreferrer">страница источника ↗</a></span>{% endif %}
     </span>
-    {% if entry.catalog_status == 'present' %}<a href="/library/works/{{ entry.work_id }}" class="chip chip--ok">есть в каталоге</a>
+    {% if entry.catalog_status == 'present' %}<span class="chip chip--ok">есть в каталоге</span>
     {% elif entry.catalog_status == 'ambiguous' %}<span class="chip">нужно уточнить</span>
     {% else %}<span class="chip chip--warn">нет в каталоге</span>{% endif %}
     {% if entry.catalog_status != 'present' %}
@@ -56,7 +57,7 @@
 <div class="card u-border-secondary">
   <p class="meta">СЛЕДУЮЩАЯ КНИГА ЦИКЛА</p>
   <p class="u-display u-text-18 u-my-4">
-    {{ next_up.title }}{% if next_up.index_raw %} <span class="meta">· №{{ next_up.index_raw }}</span>{% endif %}
+    <a href="/library/works/{{ next_up.work_id }}" class="entity-link">{{ next_up.title }}</a>{% if next_up.index_raw %} <span class="meta">· №{{ next_up.index_raw }}</span>{% endif %}
   </p>
   <form method="post" action="/library/works/{{ next_up.work_id }}/status">
     {% include "_csrf.html" %}
@@ -78,7 +79,7 @@
       <input type="checkbox" name="work_ids" value="{{ e.work_id }}" class="u-w-auto">
       <span class="u-grow u-min-160">
         {% if e.index_raw %}<span class="meta">№{{ e.index_raw }}</span> {% endif %}
-        <a href="/library/works/{{ e.work_id }}" class="u-on-surface u-no-decoration">{{ e.title }}</a>
+        <a href="/library/works/{{ e.work_id }}" class="entity-link">{{ e.title }}</a>
         {% if e.membership_type.value not in ('main', 'unknown') %}<span class="meta">({{ e.membership_type.value }})</span>{% endif %}
       </span>
       <span class="meta {{ 'u-primary' if e.is_read else 'u-muted' }}">

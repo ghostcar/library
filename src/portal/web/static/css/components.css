@@ -26,6 +26,19 @@ body {
 
 a { color: var(--primary); }
 
+/* Canonical entity names are the primary navigation affordance. */
+.entity-link {
+  color: inherit;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .2em;
+}
+.entity-link:hover,
+.entity-link:focus-visible {
+  color: var(--primary);
+  text-decoration-color: currentColor;
+}
+
 /* skip link (a11y) */
 .skip-link {
   position: absolute;

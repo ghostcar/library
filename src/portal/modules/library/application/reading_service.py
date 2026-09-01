@@ -176,6 +176,7 @@ class ReadingStateService:
                         {
                             "work_id": nxt.work_id,
                             "title": nxt.title,
+                            "series_id": state.series_id,
                             "series_title": state.title,
                             "index_raw": nxt.index_raw,
                             "reason": reason,
@@ -212,6 +213,7 @@ class ReadingStateService:
                         {
                             "work_id": work.id,
                             "title": work.title,
+                            "series_id": None,
                             "series_title": None,
                             "index_raw": None,
                             "reason": "unread",

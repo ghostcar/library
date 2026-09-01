@@ -5,6 +5,9 @@
 Последняя проверка: 2026-09-01 (deployed `98ae0ef`, schema 0014; health/ready,
 auth continuation and 19/19 Author.Today parser-v3 rules green)
 
+Локальный release candidate после production: canonical entity-name navigation
+во всех SSR flows; 299 tests + lint/mypy + Chromium desktop/mobile green. Не deployed.
+
 ## Фазы мастер-промпта (§20)
 
 | Фаза | Статус | Примечание |
@@ -34,6 +37,7 @@ auth continuation and 19/19 Author.Today parser-v3 rules green)
 | Core: jobs (FOR UPDATE SKIP LOCKED + worker) | `IMPLEMENTED` | claim до handler; stale running jobs requeue через 15 мин |
 | Core: storage port + local adapter | `IMPLEMENTED` | src/portal/core/storage |
 | Frontend CSP / responsive shell | `IMPLEMENTED` | без inline CSS/JS; local SVG sprite; Chromium smoke desktop/mobile |
+| Entity-name navigation | `IMPLEMENTED` | title/name автора, книги и цикла ведут на canonical card; status chips не используются как навигация |
 | Library domain entities | `IMPLEMENTED` | 12 сущностей, VO, события |
 | Library ORM + repositories | `IMPLEMENTED` | 13 таблиц + FK owner_id→users |
 | Alembic 0001+0014 | `IMPLEMENTED` | Код, Test DB и VPS schema head=0014 |

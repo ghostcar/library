@@ -110,7 +110,7 @@
     <p class="u-my-4 u-mono u-text-13">Из книги: {% if c.source_work_id %}<a href="/library/works/{{ c.source_work_id }}">{{ c.source_work_id|string|truncate(8, true, '') }}</a>{% else %}не привязана{% endif %}</p>
     <p class="u-my-4"><a class="u-primary" href="{{ c.url }}" rel="noreferrer noopener">{{ c.url }}</a></p>
     <p class="meta u-my-4">{{ c.context }}</p>
-    {% if c.page_title %}<p class="u-my-4">Заголовок: <strong>{{ c.page_title }}</strong>{% if c.matched_work_id %} · <a href="/library/works/{{ c.matched_work_id }}">есть в библиотеке</a>{% else %} · кандидат на новую книгу{% endif %}</p>{% endif %}
+    {% if c.page_title %}<p class="u-my-4">Заголовок: <strong>{% if c.matched_work_id %}<a href="/library/works/{{ c.matched_work_id }}" class="entity-link">{{ c.page_title }}</a>{% else %}{{ c.page_title }}{% endif %}</strong>{% if c.matched_work_id %} · <span class="chip chip--ok">есть в библиотеке</span>{% else %} · кандидат на новую книгу{% endif %}</p>{% endif %}
     {% if c.error %}<p class="chip chip--warn">{{ c.error }}</p>{% endif %}
     <div class="u-flex u-gap-8 u-wrap">
       {% if c.status in ['pending', 'blocked'] %}<form method="post" action="/library/continuation-links/{{ c.id }}/resolve">{% include "_csrf.html" %}<button class="u-m-0 u-w-auto u-p-4-10 u-text-11">Проверить заголовок</button></form>{% endif %}

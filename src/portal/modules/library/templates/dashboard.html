@@ -17,7 +17,7 @@
   <p class="meta">ПРОДОЛЖИТЬ ЧТЕНИЕ</p>
   {% for item in continue_reading %}
   <div class="u-flex u-gap-12 u-items-center u-my-8 u-wrap">
-    <a href="/library/works/{{ item.work_id }}" class="u-grow u-min-180 u-on-surface u-no-decoration">{{ item.title }}</a>
+    <a href="/library/works/{{ item.work_id }}" class="u-grow u-min-180 entity-link">{{ item.title }}</a>
     <form method="post" action="/library/works/{{ item.work_id }}/status">
       {% include "_csrf.html" %}
       <input type="hidden" name="status" value="read">
@@ -34,10 +34,10 @@
   <p class="meta">ДАЛЬШЕ В ЦИКЛАХ</p>
   {% for item in queue %}
   <div class="u-flex u-gap-12 u-items-center u-my-8 u-wrap">
-    <a href="/library/works/{{ item.work_id }}" class="u-grow u-min-180 u-on-surface u-no-decoration">
-      {{ item.title }}
-      {% if item.series_title %}<span class="meta">· {{ item.series_title }}{% if item.index_raw %} #{{ item.index_raw }}{% endif %}</span>{% endif %}
-    </a>
+    <div class="u-grow u-min-180">
+      <a href="/library/works/{{ item.work_id }}" class="entity-link">{{ item.title }}</a>
+      {% if item.series_title %}<span class="meta">· <a href="/library/series/{{ item.series_id }}" class="entity-link">{{ item.series_title }}</a>{% if item.index_raw %} #{{ item.index_raw }}{% endif %}</span>{% endif %}
+    </div>
     <form method="post" action="/library/works/{{ item.work_id }}/status">
       {% include "_csrf.html" %}
       <input type="hidden" name="status" value="reading">
@@ -54,7 +54,7 @@
 <div class="card">
   <p class="meta">НЕДАВНО ДОБАВЛЕННЫЕ</p>
   {% for item in recently_added %}
-  <p class="u-my-4"><a href="/library/works/{{ item.work_id }}" class="u-on-surface u-no-decoration">{{ item.title }}</a></p>
+  <p class="u-my-4"><a href="/library/works/{{ item.work_id }}" class="entity-link">{{ item.title }}</a></p>
   {% endfor %}
 </div>
 {% endif %}

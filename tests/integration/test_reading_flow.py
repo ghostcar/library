@@ -210,8 +210,13 @@ class TestQueue:
         assert "next_in_series" in reasons  # active series first
         assert queue[0]["reason"] == "next_in_series"
         assert queue[0]["work_id"] == series_works[1]
+        assert queue[0]["series_id"] is not None
         # the planned series' first book is queued too
         assert any(q["work_id"] == standalone[0] for q in queue)
+
+        queue_page = await client.get("/library/queue")
+        assert f'href="/library/works/{series_works[1]}"' in queue_page.text
+        assert f'href="/library/series/{queue[0]["series_id"]}"' in queue_page.text
 
     async def test_queue_empty_when_all_read(self, authed) -> None:
         client, owner = authed
@@ -244,7 +249,7 @@ class TestHTTPActions:
     async def test_series_page_renders_timeline(self, authed) -> None:
         client, owner = authed
         _reading_service, factory = _services(client)
-        _f, _work_ids = await _create_series_with_books(factory, owner, "Таймлайн", ["1", "2", "5"])
+        _f, work_ids = await _create_series_with_books(factory, owner, "Таймлайн", ["1", "2", "5"])
 
         series_id = await _series_id_for(factory, owner)
 
@@ -253,6 +258,7 @@ class TestHTTPActions:
         assert "СЛЕДУЮЩАЯ КНИГА ЦИКЛА" in page.text
         assert "пропущены: №3, №4" in page.text
         assert "статус: planned" in page.text
+        assert f'href="/library/works/{work_ids[0]}"' in page.text
 
     async def test_series_user_override_via_http(self, authed) -> None:
         client, owner = authed

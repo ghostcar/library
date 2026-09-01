@@ -2,6 +2,18 @@
 
 Краткие факты завершённых сессий. Без chain-of-thought.
 
+## Сессия 46 — 2026-09-01 — canonical entity-name navigation
+
+- Во всех SSR catalog/author/work/series/dashboard/queue/picker flows каноническое
+  имя книги, автора или цикла стало прямой ссылкой на соответствующую карточку.
+- Статусные chips больше не служат навигацией. На source comparison название
+  canonical work открывает карточку, а внешняя страница источника вынесена отдельно.
+- Read side дополнен author refs, series IDs и queue series ID без миграции. Для
+  единообразного hover/focus добавлен общий `entity-link` component.
+- Общая компиляция выявила старый дефект `notifications.html` (`endif` вместо
+  `endfor`); исправлен. Gate: 299 tests, Ruff/format/mypy и Chromium desktop/mobile
+  green. Production не менялся: image `98ae0ef`, schema `0014`.
+
 ## Сессия 45 — 2026-09-01 — deploy auth continuity and coauthor sources
 
 - Собран и опубликован `ghcr.io/ghostcar/library:98ae0ef`, digest
