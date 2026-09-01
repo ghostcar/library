@@ -318,6 +318,27 @@ class WatchService:
                                 },
                             ),
                         )
+                if rule.adapter_id == "author_today" and rule.source_endpoint_id is not None:
+                    from portal.modules.library.application.source_onboarding_service import (
+                        SourceOnboardingService,
+                    )
+
+                    reconciliation = await SourceOnboardingService(
+                        session
+                    ).reconcile_author_today_poll(
+                        owner_id,
+                        rule.source_endpoint_id,
+                        list(result.entries),
+                    )
+                    if any(reconciliation.values()):
+                        logger.info(
+                            "Author.Today source graph reconciled",
+                            extra={
+                                "owner_id": str(owner_id),
+                                "watch_rule_id": str(rule_id),
+                                **reconciliation,
+                            },
+                        )
             rule.etag = result.etag
             rule.last_modified = result.last_modified
             rule.last_polled_at = datetime.now(UTC)

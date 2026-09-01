@@ -96,6 +96,12 @@ scripts/                 — dev/test/lint
   выполняет owner-confirmed reconciliation: owner-scoped выбор existing work либо
   явное создание через `CatalogService`, membership и direct work source link
   (ADR-0023).
+- Author.Today parser v3 сохраняет stable profile identities соавторов. Poll
+  reconciliation считает tracking свойством canonical Series, автоматически
+  добавляет второй endpoint к уже отслеживаемому циклу и выполняет только one-hop
+  discovery от manually preferred author source. Auto-discovered sources не
+  расширяют граф рекурсивно; name-only/conflicting identity не merge-ится
+  (ADR-0025).
 - Для missing/ambiguous source entry карточка серии ведёт на отдельный
   `/series/{series_id}/source-works/{observation_id}/assign`: начальный запрос равен
   source title, дальнейший поиск использует общий normalized title/author/series

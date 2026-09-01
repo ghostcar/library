@@ -11,7 +11,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from portal.core.jobs.orm import JobModel, JobStatus
-from portal.modules.library.adapters.author_today_adapter import normalize_author_works_url
+from portal.modules.library.adapters.author_today_adapter import (
+    AuthorTodayParseError,
+    normalize_author_works_url,
+)
 from portal.modules.library.adapters.source_orm import (
     SourceEndpointModel,
     SourceLinkModel,
@@ -26,6 +29,7 @@ from portal.modules.library.infrastructure.orm import (
     AuthorModel,
     SeriesMembershipModel,
     SeriesModel,
+    WorkAuthorModel,
 )
 from portal.modules.library.infrastructure.repositories import (
     AuthorRepository,
@@ -270,6 +274,7 @@ class SourceOnboardingService:
         grouped: dict[tuple[UUID, str], dict[str, object]] = {}
         observed_works: dict[tuple[UUID, str], set[str]] = {}
         repository = SeriesRepository(self._session)
+        tracked_series_ids = await self._tracked_series_ids(owner_id)
         for observation, endpoint_id in observations:
             if endpoint_id is None:
                 continue
@@ -277,37 +282,384 @@ class SourceOnboardingService:
             if not name:
                 continue
             key = (endpoint_id, name.casefold())
-            candidate = grouped.setdefault(
-                key,
-                {
+            candidate = grouped.get(key)
+            if candidate is None:
+                existing = await repository.find_by_title(owner_id, name)
+                candidate = {
                     "endpoint_id": key[0],
                     "name": name,
                     "url": observation.raw.get("series_url"),
                     "work_count": 0,
-                    "existing_series_id": None,
-                    "connected": False,
-                },
-            )
+                    "existing_series_id": existing.id if existing else None,
+                    "connected": bool(existing and existing.id in tracked_series_ids),
+                }
+                grouped[key] = candidate
             work_key = self._observation_work_key(observation)
             seen = observed_works.setdefault(key, set())
             if work_key not in seen:
                 seen.add(work_key)
                 candidate["work_count"] = cast("int", candidate["work_count"]) + 1
-            existing = await repository.find_by_title(owner_id, name)
-            candidate["existing_series_id"] = existing.id if existing else None
-            if existing is not None:
-                candidate["connected"] = (
+        return sorted(grouped.values(), key=lambda item: str(item["name"]).casefold())
+
+    async def reconcile_author_today_poll(
+        self,
+        owner_id: UUID,
+        endpoint_id: UUID,
+        entries: list[object],
+    ) -> dict[str, int]:
+        """Propagate canonical tracking and stable coauthor identities after a poll.
+
+        Only a manually preferred author endpoint may create one-hop coauthor
+        cards/rules. Auto-discovered endpoints still contribute a second series
+        source, but cannot recursively expand the owner's catalog.
+        """
+        endpoint = await self._session.get(SourceEndpointModel, endpoint_id)
+        if (
+            endpoint is None
+            or endpoint.owner_id != owner_id
+            or endpoint.adapter_id != "author_today"
+        ):
+            return {"authors": 0, "series_links": 0, "work_authors": 0}
+        may_discover = (
+            await self._session.execute(
+                select(SourceLinkModel.id).where(
+                    SourceLinkModel.owner_id == owner_id,
+                    SourceLinkModel.source_endpoint_id == endpoint_id,
+                    SourceLinkModel.entity_type == "author",
+                    SourceLinkModel.role == "metadata",
+                    SourceLinkModel.is_preferred.is_(True),
+                )
+            )
+        ).scalar_one_or_none() is not None
+
+        author_ids_by_url: dict[str, UUID] = {}
+        authors_created = 0
+        discovered_identities: dict[str, str] = {}
+        entry_authors_by_work_key: dict[str, list[tuple[str, str]]] = {}
+        for entry in entries:
+            raw = getattr(entry, "raw", {})
+            identities = self._raw_author_identities(raw)
+            work_key = self._raw_work_key(
+                raw,
+                url=getattr(entry, "url", None),
+                title=str(getattr(entry, "title", "")),
+                author_name=getattr(entry, "author_name", None),
+            )
+            entry_authors_by_work_key[work_key] = identities
+            for name, url in identities:
+                discovered_identities.setdefault(url, name)
+        for url, name in discovered_identities.items():
+            author_id, created = await self._resolve_author_today_author(
+                owner_id,
+                name,
+                url,
+                allow_create=may_discover,
+            )
+            if author_id is not None:
+                author_ids_by_url[url] = author_id
+            authors_created += int(created)
+
+        observations = list(
+            (
+                await self._session.execute(
+                    select(SourceObservationModel)
+                    .join(WatchRuleModel, WatchRuleModel.id == SourceObservationModel.watch_rule_id)
+                    .where(
+                        SourceObservationModel.owner_id == owner_id,
+                        WatchRuleModel.source_endpoint_id == endpoint_id,
+                    )
+                )
+            ).scalars()
+        )
+        tracked_series_ids = await self._tracked_series_ids(owner_id)
+        series_by_name = {
+            series.title_normalized: series
+            for series in (
+                await self._session.execute(
+                    select(SeriesModel).where(
+                        SeriesModel.owner_id == owner_id,
+                        SeriesModel.id.in_(tracked_series_ids),
+                    )
+                )
+            ).scalars()
+        }
+        link_service = SourceLinkService(self._session)
+        processed_series_ids: set[UUID] = set()
+        series_links_added = 0
+        work_authors_added = 0
+        observed_work_ids = {
+            observation.work_id for observation in observations if observation.work_id is not None
+        }
+        work_author_rows = (
+            list(
+                (
                     await self._session.execute(
-                        select(SourceLinkModel.id).where(
-                            SourceLinkModel.owner_id == owner_id,
-                            SourceLinkModel.source_endpoint_id == endpoint_id,
-                            SourceLinkModel.entity_type == "series",
-                            SourceLinkModel.entity_id == existing.id,
-                            SourceLinkModel.role == "metadata",
+                        select(WorkAuthorModel).where(
+                            WorkAuthorModel.owner_id == owner_id,
+                            WorkAuthorModel.work_id.in_(observed_work_ids),
                         )
                     )
-                ).scalar_one_or_none() is not None
-        return sorted(grouped.values(), key=lambda item: str(item["name"]).casefold())
+                ).scalars()
+            )
+            if observed_work_ids
+            else []
+        )
+        author_ids_by_work: dict[UUID, set[UUID]] = {}
+        next_position_by_work: dict[UUID, int] = {}
+        for row in work_author_rows:
+            author_ids_by_work.setdefault(row.work_id, set()).add(row.author_id)
+            next_position_by_work[row.work_id] = max(
+                next_position_by_work.get(row.work_id, 0), row.position + 1
+            )
+        for observation in observations:
+            raw_series = str(observation.raw.get("series") or "").strip()
+            series = series_by_name.get(de.normalize_title(raw_series)) if raw_series else None
+            if series is not None:
+                observation.series_id = series.id
+                if series.id not in processed_series_ids:
+                    link_exists = (
+                        await self._session.execute(
+                            select(SourceLinkModel.id).where(
+                                SourceLinkModel.owner_id == owner_id,
+                                SourceLinkModel.source_endpoint_id == endpoint_id,
+                                SourceLinkModel.entity_type == "series",
+                                SourceLinkModel.entity_id == series.id,
+                                SourceLinkModel.role == "metadata",
+                            )
+                        )
+                    ).scalar_one_or_none()
+                    if link_exists is None:
+                        await link_service.add(
+                            owner_id,
+                            endpoint_id=endpoint_id,
+                            entity_type="series",
+                            entity_id=series.id,
+                            role="metadata",
+                            external_url=(
+                                str(observation.raw.get("series_url"))
+                                if observation.raw.get("series_url")
+                                else None
+                            ),
+                            preferred=False,
+                        )
+                        series_links_added += 1
+                    processed_series_ids.add(series.id)
+
+            if observation.work_id is None:
+                continue
+            existing_author_ids = author_ids_by_work.setdefault(observation.work_id, set())
+            position = next_position_by_work.get(observation.work_id, 0)
+            identities = entry_authors_by_work_key.get(
+                self._observation_work_key(observation),
+                self._raw_author_identities(observation.raw),
+            )
+            for _name, url in identities:
+                author_id = author_ids_by_url.get(url)
+                if author_id is None or author_id in existing_author_ids:
+                    continue
+                self._session.add(
+                    WorkAuthorModel(
+                        owner_id=owner_id,
+                        work_id=observation.work_id,
+                        author_id=author_id,
+                        role="author",
+                        position=position,
+                    )
+                )
+                existing_author_ids.add(author_id)
+                position += 1
+                next_position_by_work[observation.work_id] = position
+                work_authors_added += 1
+        await self._session.flush()
+        return {
+            "authors": authors_created,
+            "series_links": series_links_added,
+            "work_authors": work_authors_added,
+        }
+
+    async def _tracked_series_ids(self, owner_id: UUID) -> set[UUID]:
+        return set(
+            (
+                await self._session.execute(
+                    select(SourceLinkModel.entity_id)
+                    .join(
+                        SourceEndpointModel,
+                        SourceEndpointModel.id == SourceLinkModel.source_endpoint_id,
+                    )
+                    .join(
+                        WatchRuleModel,
+                        WatchRuleModel.source_endpoint_id == SourceEndpointModel.id,
+                    )
+                    .where(
+                        SourceLinkModel.owner_id == owner_id,
+                        SourceLinkModel.entity_type == "series",
+                        SourceLinkModel.role == "metadata",
+                        SourceEndpointModel.enabled.is_(True),
+                        WatchRuleModel.enabled.is_(True),
+                    )
+                    .distinct()
+                )
+            ).scalars()
+        )
+
+    async def _resolve_author_today_author(
+        self,
+        owner_id: UUID,
+        name: str,
+        url: str,
+        *,
+        allow_create: bool,
+    ) -> tuple[UUID | None, bool]:
+        existing_identity = (
+            await self._session.execute(
+                select(AuthorModel)
+                .join(
+                    SourceLinkModel,
+                    (SourceLinkModel.entity_type == "author")
+                    & (SourceLinkModel.entity_id == AuthorModel.id),
+                )
+                .join(
+                    SourceEndpointModel,
+                    SourceEndpointModel.id == SourceLinkModel.source_endpoint_id,
+                )
+                .where(
+                    AuthorModel.owner_id == owner_id,
+                    SourceEndpointModel.owner_id == owner_id,
+                    SourceEndpointModel.adapter_id == "author_today",
+                    SourceEndpointModel.url == url,
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if existing_identity is not None:
+            return existing_identity.id, False
+        if not allow_create:
+            return None, False
+
+        author = (
+            await self._session.execute(
+                select(AuthorModel).where(
+                    AuthorModel.owner_id == owner_id,
+                    AuthorModel.name_normalized == de.normalize_title(name),
+                )
+            )
+        ).scalar_one_or_none()
+        if author is not None:
+            conflicting_url = (
+                await self._session.execute(
+                    select(SourceEndpointModel.url)
+                    .join(
+                        SourceLinkModel,
+                        SourceLinkModel.source_endpoint_id == SourceEndpointModel.id,
+                    )
+                    .where(
+                        SourceEndpointModel.owner_id == owner_id,
+                        SourceEndpointModel.adapter_id == "author_today",
+                        SourceLinkModel.entity_type == "author",
+                        SourceLinkModel.entity_id == author.id,
+                        SourceEndpointModel.url != url,
+                    )
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if conflicting_url is not None:
+                return None, False
+        else:
+            author = AuthorModel(
+                owner_id=owner_id,
+                name=name,
+                name_normalized=de.normalize_title(name),
+            )
+            self._session.add(author)
+            await self._session.flush()
+
+        endpoint = (
+            await self._session.execute(
+                select(SourceEndpointModel)
+                .where(
+                    SourceEndpointModel.owner_id == owner_id,
+                    SourceEndpointModel.adapter_id == "author_today",
+                    SourceEndpointModel.url == url,
+                )
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if endpoint is None:
+            endpoint = SourceEndpointModel(
+                owner_id=owner_id,
+                name=f"{author.name} · Author.Today",
+                source_type="html",
+                role="metadata",
+                adapter_id="author_today",
+                url=url,
+            )
+            self._session.add(endpoint)
+            await self._session.flush()
+        await SourceLinkService(self._session).add(
+            owner_id,
+            endpoint_id=endpoint.id,
+            entity_type="author",
+            entity_id=author.id,
+            role="metadata",
+            external_url=url,
+            external_id=url.removeprefix("https://author.today/u/").removesuffix("/works"),
+            preferred=False,
+        )
+        rule = (
+            await self._session.execute(
+                select(WatchRuleModel).where(
+                    WatchRuleModel.owner_id == owner_id,
+                    WatchRuleModel.source_endpoint_id == endpoint.id,
+                    WatchRuleModel.adapter_id == "author_today",
+                )
+            )
+        ).scalar_one_or_none()
+        if rule is None:
+            self._session.add(
+                WatchRuleModel(
+                    owner_id=owner_id,
+                    adapter_id="author_today",
+                    source_endpoint_id=endpoint.id,
+                    name=author.name,
+                    url=url,
+                    interval_seconds=1800,
+                    next_poll_at=datetime.now(UTC),
+                )
+            )
+        return author.id, True
+
+    @staticmethod
+    def _raw_author_identities(raw: object) -> list[tuple[str, str]]:
+        if not isinstance(raw, dict):
+            return []
+        values = raw.get("authors")
+        if not isinstance(values, list):
+            return []
+        result: list[tuple[str, str]] = []
+        for value in values:
+            if not isinstance(value, dict):
+                continue
+            name = str(value.get("name") or "").strip()
+            try:
+                url = normalize_author_works_url(str(value.get("url") or ""))
+            except AuthorTodayParseError:
+                continue
+            if name and (name, url) not in result:
+                result.append((name, url))
+        return result
+
+    @staticmethod
+    def _raw_work_key(
+        raw: object,
+        *,
+        url: object,
+        title: str,
+        author_name: object,
+    ) -> str:
+        values = raw if isinstance(raw, dict) else {}
+        publication_kind = str(values.get("publication_kind") or "work")
+        identity = str(values.get("work_id") or url or f"{title}\0{author_name or ''}")
+        return f"{publication_kind}:{identity}"
 
     async def accept_series(
         self, owner_id: UUID, author_id: UUID, endpoint_id: UUID, name: str

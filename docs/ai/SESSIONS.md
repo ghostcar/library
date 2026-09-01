@@ -2,6 +2,21 @@
 
 Краткие факты завершённых сессий. Без chain-of-thought.
 
+## Сессия 44 — 2026-09-01 — канонические серии и источники соавторов
+
+- Устранена endpoint-local семантика кандидатов: enabled watch-backed source у
+  canonical Series означает «отслеживается» на карточке любого автора.
+- Author.Today parser v3 извлекает stable author profile URL из `.book-author`.
+  Вручную preferred страница выполняет one-hop discovery карточек/endpoint/rules;
+  автоматически найденные страницы не расширяют граф рекурсивно.
+- Poll reconciliation добавляет второй series source, backfill series observation
+  и подтверждённых `WorkAuthor`, включая неизменившиеся v2 observations после
+  parser upgrade. Name-only и conflicting identity не объединяются.
+- Проверено на публичной первой странице Сапфира: 30 entries, 11 pages declared,
+  6 stable author profiles. Release gate: 299 tests; Ruff/format/mypy green.
+- Production не менялся: `d61a484`, schema `0014`; auth fix `ccd1a91` и этот срез
+  ожидают отдельного deploy.
+
 ## Сессия 33 — 2026-08-31 — массовый AI-разбор и соавторы
 
 - По production-логам установлена причина 500 при повторном ручном разборе:

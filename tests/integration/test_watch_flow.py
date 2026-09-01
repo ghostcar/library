@@ -17,11 +17,20 @@ from portal.modules.library.adapters.author_today_adapter import AuthorTodayAdap
 from portal.modules.library.adapters.opds_adapter import OPDSAdapter
 from portal.modules.library.adapters.source_orm import (
     SourceEndpointModel,
+    SourceLinkModel,
     SourceObservationModel,
     WatchRuleModel,
 )
 from portal.modules.library.adapters.watch_service import WatchService
-from portal.modules.library.infrastructure.orm import SeriesModel
+from portal.modules.library.application.source_link_service import SourceLinkService
+from portal.modules.library.application.source_onboarding_service import SourceOnboardingService
+from portal.modules.library.infrastructure.orm import (
+    AuthorModel,
+    SeriesMembershipModel,
+    SeriesModel,
+    WorkAuthorModel,
+    WorkModel,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -194,6 +203,193 @@ class TestPollFlow:
         notifications = await service.notifications(owner)
         assert len(notifications) == 1
         assert "Новая книга AT" in notifications[0]["title"]
+        await at_client.aclose()
+
+    async def test_author_today_propagates_tracked_series_to_discovered_coauthor(
+        self, authed
+    ) -> None:
+        client, owner = authed
+        container = client._transport.app.state.container
+        async with container["session_factory"]() as session, session.begin():
+            root_author = AuthorModel(
+                owner_id=owner,
+                name="Корневой Автор",
+                name_normalized="корневой автор",
+            )
+            series = SeriesModel(
+                owner_id=owner,
+                title="Общий цикл",
+                title_normalized="общий цикл",
+            )
+            work = WorkModel(
+                owner_id=owner,
+                title="Совместная книга",
+                title_normalized="совместная книга",
+            )
+            session.add_all([root_author, series, work])
+            await session.flush()
+            session.add_all(
+                [
+                    WorkAuthorModel(
+                        owner_id=owner,
+                        work_id=work.id,
+                        author_id=root_author.id,
+                        role="author",
+                        position=0,
+                    ),
+                    SeriesMembershipModel(
+                        owner_id=owner,
+                        series_id=series.id,
+                        work_id=work.id,
+                        index_raw="1",
+                        index_sort=1,
+                        membership_type="main",
+                    ),
+                ]
+            )
+            assert await SourceOnboardingService(session).connect_author_today(
+                owner,
+                root_author.id,
+                "https://author.today/u/root",
+            )
+            root_endpoint = (
+                await session.execute(
+                    select(SourceEndpointModel).where(
+                        SourceEndpointModel.owner_id == owner,
+                        SourceEndpointModel.url == "https://author.today/u/root/works",
+                    )
+                )
+            ).scalar_one()
+            await SourceLinkService(session).add(
+                owner,
+                endpoint_id=root_endpoint.id,
+                entity_type="series",
+                entity_id=series.id,
+                role="metadata",
+                external_url="https://author.today/work/series/55",
+                preferred=True,
+            )
+            root_rule_id = (
+                await session.execute(
+                    select(WatchRuleModel.id).where(
+                        WatchRuleModel.source_endpoint_id == root_endpoint.id
+                    )
+                )
+            ).scalar_one()
+            session.add(
+                SourceObservationModel(
+                    owner_id=owner,
+                    watch_rule_id=root_rule_id,
+                    adapter_id="author_today",
+                    external_id="author-today:work:777:revision:published",
+                    title=work.title,
+                    author_name=root_author.name,
+                    url="https://author.today/work/777",
+                    parser_version="author-today-public-html-v2",
+                    work_id=work.id,
+                    series_id=series.id,
+                    match_evidence={"match": "exact_title_author"},
+                    raw={
+                        "work_id": "777",
+                        "publication_kind": "work",
+                        "series": series.title,
+                        "series_url": "https://author.today/work/series/55",
+                    },
+                )
+            )
+            series_id = series.id
+            work_id = work.id
+
+        fake = FastAPI()
+
+        @fake.get("/u/{slug}/works")
+        async def coauthor_works(slug: str) -> Response:
+            profile_name = "Корневой Автор" if slug == "root" else "Соавтор"
+            third = '<a href="/u/third/works">Третий Автор</a>, ' if slug == "coauthor" else ""
+            return Response(
+                content=(
+                    '<html><head><meta charset="utf-8"></head><body>'
+                    '<script type="application/ld+json">'
+                    f'{{"@type":"Person","name":"{profile_name}"}}</script>'
+                    '<div class="book-row"><div class="book-title">'
+                    '<a href="/work/777">Совместная книга</a></div>'
+                    '<div class="book-author">'
+                    f'{third}<a href="/u/root/works">Корневой Автор</a>, '
+                    '<a href="/u/coauthor/works">Соавтор</a></div>'
+                    '<a href="/work/series/55">Общий цикл</a></div></body></html>'
+                ),
+                media_type="text/html",
+            )
+
+        at_client = httpx.AsyncClient(transport=httpx.ASGITransport(app=fake))
+        service = WatchService(
+            session_factory=container["session_factory"],
+            adapters={"author_today": AuthorTodayAdapter(client=at_client)},
+        )
+        assert (await service.poll_rule(owner, root_rule_id))["status"] == "ok"
+
+        async with container["session_factory"]() as session:
+            coauthor = (
+                await session.execute(
+                    select(AuthorModel).where(
+                        AuthorModel.owner_id == owner,
+                        AuthorModel.name_normalized == "соавтор",
+                    )
+                )
+            ).scalar_one()
+            coauthor_endpoint = (
+                await session.execute(
+                    select(SourceEndpointModel).where(
+                        SourceEndpointModel.owner_id == owner,
+                        SourceEndpointModel.url == "https://author.today/u/coauthor/works",
+                    )
+                )
+            ).scalar_one()
+            coauthor_rule_id = (
+                await session.execute(
+                    select(WatchRuleModel.id).where(
+                        WatchRuleModel.source_endpoint_id == coauthor_endpoint.id
+                    )
+                )
+            ).scalar_one()
+            work_author_ids = set(
+                (
+                    await session.execute(
+                        select(WorkAuthorModel.author_id).where(WorkAuthorModel.work_id == work_id)
+                    )
+                ).scalars()
+            )
+            assert coauthor.id in work_author_ids
+
+        assert (await service.poll_rule(owner, coauthor_rule_id))["status"] == "ok"
+        async with container["session_factory"]() as session:
+            series_links = list(
+                (
+                    await session.execute(
+                        select(SourceLinkModel).where(
+                            SourceLinkModel.owner_id == owner,
+                            SourceLinkModel.entity_type == "series",
+                            SourceLinkModel.entity_id == series_id,
+                        )
+                    )
+                ).scalars()
+            )
+            assert {link.source_endpoint_id for link in series_links} == {
+                root_endpoint.id,
+                coauthor_endpoint.id,
+            }
+            candidates = await SourceOnboardingService(session).series_candidates(
+                owner, coauthor.id
+            )
+            assert candidates[0]["connected"] is True
+            assert (
+                await session.execute(
+                    select(AuthorModel.id).where(
+                        AuthorModel.owner_id == owner,
+                        AuthorModel.name_normalized == "третий автор",
+                    )
+                )
+            ).scalar_one_or_none() is None
         await at_client.aclose()
 
     async def test_rule_keeps_selected_endpoint(self, authed) -> None:

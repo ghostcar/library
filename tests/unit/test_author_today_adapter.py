@@ -33,6 +33,10 @@ def test_parse_public_author_work_metadata() -> None:
         "status": "в процессе",
         "series": "Тестовый цикл",
         "series_url": "https://author.today/work/series/55",
+        "authors": [
+            {"name": "Соавтор", "url": "https://author.today/u/coauthor/works"},
+            {"name": "Тестовый Автор", "url": "https://author.today/u/test/works"},
+        ],
     }
 
 

@@ -28,6 +28,12 @@ scripts/test-browser.sh  # responsive shell в локальном Chromium/Playw
 
 ## Последний release gate
 
+- 2026-09-01, canonical series/coauthor propagation candidate:
+  `scripts/test.sh` — **299 passed**; `scripts/lint.sh` — Ruff/format/mypy green.
+  Интеграционная регрессия покрывает parser v2→v3 dedup, создание подтверждённого
+  coauthor profile/rule, добавление `WorkAuthor`, второй series `SourceLink`, общий
+  tracked-state и запрет рекурсивного discovery. Production deploy не выполнен.
+
 - 2026-09-01, persistent SSR session candidate: `scripts/test.sh` — **298 passed**
   после одного исправленного stale redirect assertion; auth integration **31 passed**.
   Regression пересоздаёт application container при истёкшем access JWT и подтверждает

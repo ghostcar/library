@@ -2,8 +2,8 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-09-01 (persistent SSR session renewal: 298 tests,
-lint/mypy/browser green; production remains `d61a484`, schema 0014)
+Последняя проверка: 2026-09-01 (canonical series/coauthor source propagation:
+299 tests, lint/mypy green; production remains `d61a484`, schema 0014)
 
 ## Фазы мастер-промпта (§20)
 
@@ -60,7 +60,7 @@ lint/mypy/browser green; production remains `d61a484`, schema 0014)
 | Watch rules + scheduler | `IMPLEMENTED` | worker tick 30s, backoff+jitter, degraded, persistent last outcome/duration/parser version, deduplicated manual refresh |
 | Service console | `IMPLEMENTED` | `/library/service`: owner-scoped jobs/outbox/watch status and manual source refresh; deployed |
 | In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
-| Author.Today metadata | `IMPLEMENTED` | parser v2 обходит bounded pagination и учитывает work+audiobook; production Sapfir=309 публикаций/21 цикл, quiet backfill verified (ADR-0019/0024) |
+| Author.Today metadata | `IMPLEMENTED` | parser v3 обходит bounded pagination, учитывает work+audiobook и stable coauthor profiles; production пока v2: Sapfir=309 публикаций/21 цикл (ADR-0019/0024/0025) |
 | Litnet | `ABSENT` | намеренно отключён: пользовательское соглашение запрещает automated collection (ADR-0020) |
 | Flibusta OPDS metadata | `IMPLEMENTED` | отдельный профиль поверх OPDS; acquisition=false, фоновые скачивания отсутствуют |
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |
@@ -81,7 +81,7 @@ lint/mypy/browser green; production remains `d61a484`, schema 0014)
 | Abstract source endpoints | `IMPLEMENTED` | product UI разделён на OPDS/сайты; OPDS one-step создаёт endpoint+rule; toggle/delete синхронно управляют правилом; технический CRUD сохранён для диагностики |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
-| Guided source onboarding | `PARTIAL` | развёрнуто: реестр профилей на карточке автора; Author.Today автонаблюдается, другой сайт сохраняется как ссылка, Litnet disabled; далее кандидаты циклов, сравнение и searchable reconciliation книг без UUID. Второй разрешённый HTML auto-adapter пока отсутствует (ADR-0023) |
+| Guided source onboarding | `PARTIAL` | локально: канонический tracked-state серии общий для соавторов, подтверждённые AT profiles создаются/связываются одним bounded шагом и добавляют второй series source; production пока без этого среза. Второй разрешённый HTML auto-adapter отсутствует (ADR-0023/0025) |
 | FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual HTTPS title check with robots/public-host guards → exact catalog match or review candidate; migration 0013 deployed (ADR-0021/runbook) |
 
 ## Инфраструктурные факты

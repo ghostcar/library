@@ -21,7 +21,7 @@ from portal.modules.library.adapters.sources import (
     SourceEntry,
 )
 
-PARSER_VERSION = "author-today-public-html-v2"
+PARSER_VERSION = "author-today-public-html-v3"
 _MAX_PAGE_BYTES = 5 * 1024 * 1024
 _MAX_TOTAL_BYTES = 25 * 1024 * 1024
 _MAX_PAGES = 50
@@ -82,6 +82,30 @@ def _page_count(root: html.HtmlElement) -> int:
     return count
 
 
+def _work_authors(row: html.HtmlElement) -> list[dict[str, str]]:
+    authors: list[dict[str, str]] = []
+    seen: set[str] = set()
+    links = _elements(
+        row,
+        ".//*[contains(concat(' ', normalize-space(@class), ' '), ' book-author ')]"
+        "//a[starts-with(@href, '/u/') or starts-with(@href, 'https://author.today/u/')"
+        " or starts-with(@href, 'https://www.author.today/u/')]",
+    )
+    for link in links:
+        name = " ".join(link.text_content().split())
+        try:
+            url = normalize_author_works_url(
+                urljoin("https://author.today", str(link.get("href") or ""))
+            )
+        except AuthorTodayParseError:
+            continue
+        if not name or url in seen:
+            continue
+        seen.add(url)
+        authors.append({"name": name, "url": url})
+    return authors
+
+
 def parse_author_today_page(content: bytes) -> tuple[list[SourceEntry], int]:
     try:
         root = html.fromstring(content)
@@ -127,6 +151,7 @@ def parse_author_today_page(content: bytes) -> tuple[list[SourceEntry], int]:
             if isinstance(parent, html.HtmlElement):
                 status = " ".join(parent.text_content().split())
         series_nodes = _elements(row, ".//a[starts-with(@href, '/work/series/')]")
+        authors = _work_authors(row)
         updated_at = update_nodes[0].get("data-time") if update_nodes else None
         revision = updated_at or status or "published"
         entries.append(
@@ -148,6 +173,7 @@ def parse_author_today_page(content: bytes) -> tuple[list[SourceEntry], int]:
                         if series_nodes
                         else None
                     ),
+                    "authors": authors,
                 },
             )
         )
