@@ -4,7 +4,7 @@
 
 | Контур | Версия | Где | Статус |
 |--------|--------|-----|--------|
-| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:f404df8 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-09-01** |
+| **Test VPS (prod-стек)** | ghcr.io/ghostcar/library:e03dfa9 | этот VPS, compose.prod.yaml, 127.0.0.1:8001 → https://library.gorbunovr.ru | **РАЗВЁРНУТ 2026-09-04** |
 | Dev (venv) | — | не используется постоянно | .env теперь prod-конфиг |
 | Dev DB (55440) | postgres:15-alpine | данные перенесены в prod-БД, контейнер остался | резерв |
 | Production | — | — | не планируется |
@@ -204,3 +204,39 @@ scripts/dev.sh
   4→4, watch errors 0. Свежие логи без ERROR/Traceback/500.
 - Rollback image: `ghcr.io/ghostcar/library:98ae0ef`; schema `0014` совместима,
   DB автоматически не откатывать. Data rollback — только из указанного backup.
+
+## Data maintenance 2026-09-01 — missing test asset cleanup
+
+- По явному подтверждению владельца удалены две unattached/non-preferred тестовые
+  asset-записи с уже отсутствующими storage objects и две соответствующие
+  `stored_unmatched` import rows. Другие сущности и физические файлы не затронуты.
+- Pre-cleanup backup: `backups/pre-cleanup/*-20260901-170016.*`; DB gzip 171422
+  bytes, storage tar 15701004 bytes, manifest schema `0014`, все проверки green.
+- После операции: 6/6 original asset objects присутствуют, все шесть FB2 имеют
+  embedded cover; web healthy, worker running, health/ready green.
+- Код, image и schema не менялись: production остаётся на `f404df8`, `0014`.
+
+## Деплой 2026-09-04 — author candidates, provenance and notification filtering
+
+- Git/SHA: `e03dfa9`; GHCR digest:
+  `sha256:051f3f0b7d6f132c3cca769389203963a04fe2717077eedba446a95605305e83`.
+- Pre-deploy backup: `backups/pre-deploy/*-20260904-085831.*`; DB gzip 290272
+  bytes, storage tar 15701004 bytes, manifest schema `0014`; gzip/tar проверены.
+- Миграций нет; web/worker переключены с `f404df8` на `e03dfa9`. Local/external
+  health и ready green, authenticated authors/graph/candidate smoke = 200,
+  свежие логи без ERROR/Traceback/500.
+- Перед data cleanup создан и проверен отдельный backup
+  `backups/pre-cleanup/*-20260904-090220.*`: DB gzip 290271 bytes, storage tar
+  15701004 bytes, schema `0014`.
+- Guarded-транзакция удалила 15 автоматически созданных source-only авторов,
+  15 non-preferred Author.Today endpoints/rules и их производные observations.
+  Ни у одного target не было work/alias/source-author-record или preferred link.
+- Защищённые fingerprints до/после совпали: 6 assets, 7 works, 9 series,
+  13 work-author links, 7 series memberships, 5 catalog/preferred authors и всё
+  storage tree. Файлы не изменялись.
+- Quiet parser-v3 reanalysis завершил 4/4 preferred roots со status `ok`, new=0.
+  В результате те же 15 профилей появились как derived candidates с root/book
+  evidence; authors=5, endpoints=5 (4 AT + 1 прочий), watch rules=4,
+  observations=630. Notifications остались 56.
+- Rollback image: `ghcr.io/ghostcar/library:f404df8`; schema совместима. Для data
+  rollback использовать `pre-cleanup` backup, автоматически БД не откатывать.

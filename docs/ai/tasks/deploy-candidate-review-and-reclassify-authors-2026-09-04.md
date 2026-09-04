@@ -1,7 +1,7 @@
 # TaskContext: deploy candidate review and reclassify discovered authors
 
 **Date:** 2026-09-04
-**Status:** `in_progress`
+**Status:** `completed`
 **Goal:** deploy the release-notification filter, author provenance graph and
 review-first coauthor candidate flow, then safely rebuild derived Author.Today
 candidate state from the six existing books.
@@ -19,18 +19,18 @@ candidate state from the six existing books.
 ## Safety plan
 
 - [x] Re-read project memory and deployment runbook.
-- [ ] Make parser refreshes enrich deduplicated observations without generating
+- [x] Make parser refreshes enrich deduplicated observations without generating
   duplicate release notifications.
-- [ ] Run the full test/lint gate and commit the release.
-- [ ] Create and validate a PostgreSQL + storage backup before rollout.
-- [ ] Build/push an immutable image and deploy web/worker; verify schema and smoke.
-- [ ] Audit exact production author/source relationships and resolve a guarded
+- [x] Run the full test/lint gate and commit the release.
+- [x] Create and validate a PostgreSQL + storage backup before rollout.
+- [x] Build/push an immutable image and deploy web/worker; verify schema and smoke.
+- [x] Audit exact production author/source relationships and resolve a guarded
   cleanup set containing only non-preferred, source-only auto-discovered authors.
-- [ ] Create a second validated backup, apply the guarded cleanup, and verify all
+- [x] Create a second validated backup, apply the guarded cleanup, and verify all
   protected entity/file counts and IDs are unchanged.
-- [ ] Force a quiet refresh of preferred root sources, wait for completion, and
+- [x] Force a quiet refresh of preferred root sources, wait for completion, and
   verify candidates/provenance and notification counts.
-- [ ] Update deployment memory and commit the operational record.
+- [x] Update deployment memory and commit the operational record.
 
 ## Protected invariants
 
@@ -47,3 +47,20 @@ candidate state from the six existing books.
   evidence; they do not require candidate rows in the database.
 - Cleanup will stop before mutation unless its exact target set can be proven to
   exclude every protected invariant.
+
+## Result
+
+- Release `e03dfa9` passed 300 tests plus Ruff/format/mypy, was published as
+  `ghcr.io/ghostcar/library:e03dfa9` and deployed without a schema change.
+- Valid backups: `pre-deploy/*-20260904-085831.*` and
+  `pre-cleanup/*-20260904-090220.*`; both contain DB, full storage and schema-0014
+  manifests and passed gzip/tar validation.
+- A guarded transaction removed exactly 15 non-preferred source-only authors and
+  their generated endpoints/rules. Protected entity hashes and the complete
+  storage-tree hash were identical before and after cleanup.
+- Quiet reanalysis refreshed all four preferred Author.Today roots with parser v3,
+  `status=ok`, `new=0`; no author or notification was created. All 15 removed
+  profiles now appear as candidates with parent-author and book evidence.
+- Authenticated smoke returned 200 for `/library/authors`, the whole provenance
+  graph and a focused candidate graph. Web is healthy, worker is running, and the
+  notification total remains 56.

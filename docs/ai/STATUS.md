@@ -2,8 +2,8 @@
 
 Обновляется по факту кода, а не намерений. Маркировка: `IMPLEMENTED` / `PARTIAL` / `PLANNED_ONLY` / `ABSENT` / `AMBIGUOUS`.
 
-Последняя проверка: 2026-09-01 (deployed `f404df8`, schema 0014; health/ready,
-authenticated entity-link smoke, auth-session persistence and logs green)
+Последняя проверка: 2026-09-04 (deployed `e03dfa9`, schema 0014; health/ready,
+authenticated author/candidate/provenance smoke, quiet root reanalysis and logs green)
 
 ## Фазы мастер-промпта (§20)
 
@@ -18,7 +18,7 @@ authenticated entity-link smoke, auth-session persistence and logs green)
 | Phase 6. Source monitoring | `PARTIAL` | OPDS/Flibusta, guided source management и Author.Today public HTML metadata adapter развёрнуты; Litnet намеренно не реализуется (ADR-0020) |
 | Phase 7. Delivery (OPDS) | `IMPLEMENTED` | OPDS 1.2 каталог, device-token Basic auth, acquisition+download, search; FBReader smoke — ручной шаг |
 | Phase 8. Design convergence | `IMPLEMENTED` | responsive shell, full desktop sidebar, mobile bottom-nav + overflow menu, local SVG icons, themed errors, strict CSP; Chromium smoke desktop/mobile |
-| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:f404df8, schema 0014, https://library.gorbunovr.ru |
+| Phase 9. Test VPS | `IMPLEMENTED` | РАЗВЁРНУТО: ghcr.io/ghostcar/library:e03dfa9, schema 0014, https://library.gorbunovr.ru |
 
 ## Компоненты
 
@@ -61,7 +61,7 @@ authenticated entity-link smoke, auth-session persistence and logs green)
 | Watch rules + scheduler | `IMPLEMENTED` | worker tick 30s, backoff+jitter, degraded, persistent last outcome/duration/parser version, deduplicated manual refresh |
 | Service console | `IMPLEMENTED` | `/library/service`: owner-scoped jobs/outbox/watch status and manual source refresh; deployed |
 | In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar; Author.Today `new_release` только для включённых канонических циклов, OPDS — для всей явно подключённой ленты |
-| Author.Today metadata | `IMPLEMENTED` | deployed parser v3: bounded pagination, work+audiobook и stable coauthor profiles; 19/19 production rules ok after quiet baseline (ADR-0019/0024/0025) |
+| Author.Today metadata | `IMPLEMENTED` | deployed parser v3: bounded pagination, work+audiobook и stable coauthor profiles; 4/4 preferred-root production rules ok after quiet reanalysis, 15 candidates (ADR-0019/0024/0025/0026) |
 | Litnet | `ABSENT` | намеренно отключён: пользовательское соглашение запрещает automated collection (ADR-0020) |
 | Flibusta OPDS metadata | `IMPLEMENTED` | отдельный профиль поверх OPDS; acquisition=false, фоновые скачивания отсутствуют |
 | OPDS 1.2 каталог | `IMPLEMENTED` | /opds (root/new/unread/series/authors/observations/search), ADR-0012 |

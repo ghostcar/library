@@ -2,6 +2,74 @@
 
 Краткие факты завершённых сессий. Без chain-of-thought.
 
+## Сессия 52 — 2026-09-04 — candidate review deploy and source cleanup
+
+- Release `e03dfa9` (notification filtering, provenance graph, candidate review and
+  quiet observation enrichment) прошёл 300 tests + Ruff/format/mypy и развёрнут в
+  GHCR/test VPS; schema осталась `0014`.
+- Проверены два полных backup: pre-deploy `20260904-085831` и pre-cleanup
+  `20260904-090220`. Guarded transaction удалила ровно 15 auto-created source-only
+  authors/endpoints/rules; targets не имели work, alias, preferred или
+  source-author-record связей.
+- Fingerprints 6 assets, 7 works, 9 series, 13 WorkAuthor, 7 memberships, пяти
+  защищённых авторов и всего storage совпали до/после; файлы не изменялись.
+- Quiet reanalysis 4/4 preferred roots завершён с parser v3/status ok/new=0.
+  Удалённые профили снова появились как 15 derived candidates с root/book evidence;
+  число notifications осталось 56.
+- Local/external health и ready green; authenticated authors/full graph/focused
+  candidate smoke = 200; свежие web/worker logs без ERROR/Traceback/500.
+
+## Сессия 51 — 2026-09-04 — author candidate review boundary
+
+- Poll reconciliation перестал materialize неизвестные stable coauthor profiles.
+  До решения владельца они существуют только как derived candidates из persisted
+  observations; SourceEndpoint/SourceLink/WatchRule не создаются.
+- `/library/authors` получил отдельный блок кандидатов. Клик ведёт на focused graph
+  кандидата с parent authors и deduplicated book evidence; CSRF accept повторно
+  валидирует owner-scoped candidate, создаёт/reuses author/source/rule и WorkAuthor.
+- Принятый кандидат остаётся non-preferred child source и не порождает следующий
+  слой кандидатов. Старые auto-created данные не изменялись.
+- ADR-0026 фиксирует новую review boundary. Проверено: source/watch integration 13
+  passed; полный `scripts/test.sh` 300 passed; Ruff/format/mypy green. Миграция и
+  deploy не выполнялись.
+
+## Сессия 50 — 2026-09-04 — author discovery provenance graph
+
+- Добавлен owner-scoped `AuthorProvenanceService`: preferred Author.Today author
+  sources становятся ручными roots, observations со stable profile identity —
+  ребрами к найденным авторам, а source/canonical work — книгами-evidence.
+- Для старых deduplicated observations без `raw.authors` происхождение ограниченно
+  восстанавливается через canonical coauthorship только к non-preferred AT profile
+  и явно маркируется как reconstructed; недоказуемые авторы остаются unknown.
+- `/library/authors/graph` показывает весь граф, а карточка автора — входящие и
+  исходящие связи. Экран адаптивный и не использует inline CSS/JS.
+- Проверено: source/watch integration 13 passed; полный `scripts/test.sh` 300
+  passed; Ruff/format/mypy green. Миграция и deploy не выполнялись.
+
+## Сессия 49 — 2026-09-04 — tracked-series release notifications
+
+- Устранён flood Author.Today: `new_release` теперь создаётся только для новой
+  observation, детерминированно связанной с enabled watch-backed канонической
+  серией. Остальной каталог автора продолжает сохраняться для discovery и
+  reconciliation; семантика явно подключённых OPDS-лент не менялась.
+- Regression test покрывает один poll с наблюдаемым и посторонним циклами и
+  подтверждает сохранение observations обоих при единственном уведомлении.
+- Проверено: source integration 9 passed; полный `scripts/test.sh` 300 passed;
+  Ruff/format/mypy green. Миграция и deploy не требуются и не выполнялись.
+
+## Сессия 48 — 2026-09-01 — cleanup missing test asset placeholders
+
+- По явному подтверждению владельца удалены ровно две тестовые `assets`-записи,
+  не связанные с work и с отсутствующими storage objects, а также две их видимые
+  `stored_unmatched` строки импорта. Файлы и книжные сущности не удалялись.
+- Перед операцией проверен backup `backups/pre-cleanup/*-20260901-170016.*`:
+  DB gzip 171422 bytes, storage tar 15701004 bytes, schema `0014`.
+- Удаление выполнено одной транзакцией с проверками точных ID/SHA, количества и
+  отсутствия FK-зависимостей. После очистки осталось 6 asset rows / 6 originals;
+  все файлы доступны и все шесть содержат читаемую embedded cover.
+- Web Docker-healthy, worker running; `/healthz` = `ok`, `/readyz` = `ready`.
+  Образ и схема не менялись: `f404df8`, schema `0014`.
+
 ## Сессия 47 — 2026-09-01 — deploy canonical entity navigation
 
 - Опубликован и развёрнут `ghcr.io/ghostcar/library:f404df8`, digest
