@@ -252,6 +252,32 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .observation-details summary { cursor: pointer; color: var(--secondary); }
 .observation-details ul { padding-left: 20px; }
 
+/* Explainable author-discovery graph. */
+.provenance-graph { display: grid; gap: var(--space-3); }
+.provenance-edge {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+.provenance-node { min-width: 0; }
+.provenance-arrow { color: var(--secondary); font: 28px var(--font-display); }
+.provenance-evidence {
+  grid-column: 1 / -1;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--outline-variant);
+}
+.provenance-evidence ul { margin-bottom: 0; padding-left: 20px; }
+.provenance-summary { padding-left: var(--space-3); border-left: 1px solid var(--secondary); }
+.candidate-card {
+  padding: var(--space-3);
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-left: 2px solid var(--warning);
+}
+.candidate-card:hover { border-color: var(--warning); }
+.candidate-edge { margin-top: var(--space-3); padding: var(--space-3); border: 1px solid var(--outline-variant); }
+
 /* tables */
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table th {
@@ -314,6 +340,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   .bottom-nav__link.is-active { color: var(--primary); background: var(--surface-container-low); }
   button, .btn { width: 100%; }
   form button { width: auto; }
+  .provenance-edge { grid-template-columns: 1fr; }
+  .provenance-arrow { transform: rotate(90deg); justify-self: start; }
+  .provenance-evidence { grid-column: 1; }
 }
 
 /* Layout utilities for SSR templates. Kept local so CSP needs no inline styles. */

@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block content %}
+<h1 class="u-display u-weight-normal">Происхождение авторов</h1>
+<p class="meta">Граф восстановлен из сохранённых наблюдений Author.Today. Стрелка означает: профиль слева привёл к обнаружению стабильного профиля справа; книги под стрелкой — сохранённые доказательства связи.</p>
+<p><a href="/library/authors">← Все авторы</a></p>
+<div class="card">
+  <p class="meta">СВОДКА</p>
+  <p><span class="chip chip--ok">{{ graph.manual_roots | length }} подключено вручную</span> <span class="chip">{{ graph.edges | length }} связей обнаружения</span> <span class="chip chip--warn">{{ graph.unattributed | length }} без установленного происхождения</span></p>
+</div>
+<div class="provenance-graph">
+{% for edge in graph.edges %}
+  <article class="card provenance-edge">
+    <div class="provenance-node"><span class="chip chip--ok">исходный профиль</span><br><a class="entity-link u-display u-text-18" href="/library/authors/{{ edge.source_author_id }}">{{ edge.source_author_name }}</a></div>
+    <div class="provenance-arrow" aria-hidden="true">→</div>
+    <div class="provenance-node"><span class="chip{% if edge.target_manually_connected %} chip--ok{% endif %}">{{ 'также подключён вручную' if edge.target_manually_connected else 'обнаруженный профиль' }}</span><br><a class="entity-link u-display u-text-18" href="/library/authors/{{ edge.target_author_id }}">{{ edge.target_author_name }}</a></div>
+    <div class="provenance-evidence"><p class="meta u-m-0">ЧЕРЕЗ КНИГИ</p><ul>{% for book in edge.books %}<li>{% if book.work_id %}<a class="entity-link" href="/library/works/{{ book.work_id }}">{{ book.title }}</a>{% elif book.source_url %}<a href="{{ book.source_url }}" target="_blank" rel="noopener noreferrer">{{ book.title }}</a>{% else %}{{ book.title }}{% endif %} {% if book.direct_profile_evidence %}<span class="chip chip--ok">профиль указан источником</span>{% else %}<span class="chip">восстановлено по соавторству</span>{% endif %}</li>{% endfor %}</ul></div>
+  </article>
+{% else %}
+  <div class="card"><p class="meta">Связей автоматического обнаружения пока нет.</p></div>
+{% endfor %}
+</div>
+{% if graph.manual_roots %}<div class="card"><p class="meta">РУЧНЫЕ ТОЧКИ ВХОДА</p><p>{% for author in graph.manual_roots %}<a class="entity-link" href="/library/authors/{{ author.author_id }}">{{ author.author_name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p></div>{% endif %}
+{% if graph.unattributed %}<div class="card"><p class="meta">ПРОИСХОЖДЕНИЕ НЕ УСТАНОВЛЕНО</p><p class="meta">Эти авторы есть в каталоге, но сохранённые данные не доказывают путь автоматического обнаружения.</p><p>{% for author in graph.unattributed %}<a class="entity-link" href="/library/authors/{{ author.author_id }}">{{ author.author_name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p></div>{% endif %}
+{% endblock %}

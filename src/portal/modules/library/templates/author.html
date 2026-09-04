@@ -1,6 +1,17 @@
 {% extends "base.html" %}{% block content %}
 <h1 class="u-display u-weight-normal">{{ author.name }}</h1>
 <div class="card">
+  <div class="u-flex u-between u-wrap u-gap-8 u-items-center"><p class="meta u-m-0">ПРОИСХОЖДЕНИЕ АВТОРА</p><a href="/library/authors/graph">весь граф</a></div>
+  {% if provenance.manually_connected %}<p><span class="chip chip--ok">подключён вручную</span> {% if provenance.source_url %}<a href="{{ provenance.source_url }}" target="_blank" rel="noopener noreferrer">профиль Author.Today</a>{% endif %}</p>{% endif %}
+  {% for edge in provenance.incoming %}
+  <div class="provenance-summary"><p class="u-my-4">{% if edge.target_manually_connected %}Связь найдена через{% else %}Обнаружен через{% endif %} <a class="entity-link" href="/library/authors/{{ edge.source_author_id }}">{{ edge.source_author_name }}</a></p>
+    <p class="meta u-my-4">Доказательство: {% for book in edge.books %}{% if book.work_id %}<a class="entity-link" href="/library/works/{{ book.work_id }}">{{ book.title }}</a>{% elif book.source_url %}<a href="{{ book.source_url }}" target="_blank" rel="noopener noreferrer">{{ book.title }}</a>{% else %}{{ book.title }}{% endif %}{% if not book.direct_profile_evidence %} (восстановлено по соавторству){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  </div>
+  {% endfor %}
+  {% if not provenance.manually_connected and not provenance.incoming %}<p class="meta">Источник появления не зафиксирован: автор мог быть создан при импорте или вручную, либо относится к старым данным без полной цепочки.</p>{% endif %}
+  {% if provenance.outgoing %}<p class="meta">Из этого профиля обнаружены: {% for edge in provenance.outgoing %}<a class="entity-link" href="/library/authors/{{ edge.target_author_id }}">{{ edge.target_author_name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}.</p>{% endif %}
+</div>
+<div class="card">
   <p class="meta">НАБЛЮДЕНИЕ ЗА АВТОРОМ</p>
   {% if source_error == 'url' %}<p class="chip chip--warn">Нужна публичная страница автора вида https://author.today/u/имя.</p>{% endif %}
   <form method="post" action="/library/authors/{{ author.id }}/sources" class="u-flex u-gap-8 u-wrap u-items-end">

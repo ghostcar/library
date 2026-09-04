@@ -14,6 +14,9 @@ from sqlalchemy import select
 from portal.core.auth.dependencies import CSRFProtected, CurrentUser
 from portal.modules.library.adapters.author_today_adapter import AuthorTodayParseError
 from portal.modules.library.adapters.source_orm import SourceEndpointModel
+from portal.modules.library.application.author_provenance_service import (
+    AuthorProvenanceService,
+)
 from portal.modules.library.application.source_link_service import SourceLinkService
 from portal.modules.library.application.source_onboarding_service import SourceOnboardingService
 from portal.modules.library.application.source_profiles import AUTHOR_SOURCE_PROFILES
@@ -184,6 +187,7 @@ async def authors_page(request: Request, current: CurrentUser, session: SessionD
     from portal.modules.library.application.opds_catalog_service import OpdsCatalogService
 
     authors = await OpdsCatalogService(session).authors_list(current.user.id)
+    graph = await AuthorProvenanceService(session).graph(current.user.id)
     return _templates.TemplateResponse(
         request,
         "authors.html",
@@ -191,8 +195,59 @@ async def authors_page(request: Request, current: CurrentUser, session: SessionD
             "user": current.user,
             "title": "Авторы — Библиотека",
             "authors": authors,
+            "author_candidates": graph.candidates,
         },
     )
+
+
+@router.get("/authors/graph", response_class=HTMLResponse)
+async def authors_graph_page(
+    request: Request, current: CurrentUser, session: SessionDep
+) -> HTMLResponse:
+    graph = await AuthorProvenanceService(session).graph(current.user.id)
+    return _templates.TemplateResponse(
+        request,
+        "authors_graph.html",
+        {
+            "user": current.user,
+            "title": "Происхождение авторов — Библиотека",
+            "graph": graph,
+        },
+    )
+
+
+@router.get("/authors/candidates/{slug}", response_class=HTMLResponse)
+async def author_candidate_page(
+    request: Request, slug: str, current: CurrentUser, session: SessionDep
+) -> HTMLResponse:
+    graph = await AuthorProvenanceService(session).graph(current.user.id)
+    candidate = next((item for item in graph.candidates if item.slug == slug), None)
+    if candidate is None:
+        return _templates.TemplateResponse(
+            request,
+            "not_found.html",
+            {"user": current.user, "title": "Не найдено"},  # noqa: RUF001
+            status_code=404,
+        )
+    return _templates.TemplateResponse(
+        request,
+        "author_candidate.html",
+        {
+            "user": current.user,
+            "title": f"Кандидат {candidate.name} — Библиотека",
+            "candidate": candidate,
+        },
+    )
+
+
+@router.post("/authors/candidates/{slug}/accept")
+async def accept_author_candidate(
+    slug: str, current: CSRFProtected, session: SessionDep
+) -> RedirectResponse:
+    author_id = await AuthorProvenanceService(session).accept_candidate(current.user.id, slug)
+    if author_id is None:
+        return RedirectResponse(f"/library/authors/candidates/{slug}", status_code=303)
+    return RedirectResponse(f"/library/authors/{author_id}", status_code=303)
 
 
 @router.get("/authors/{author_id}", response_class=HTMLResponse)
@@ -212,6 +267,10 @@ async def author_page(
             status_code=404,
         )
     onboarding = SourceOnboardingService(session)
+    provenance_graph = await AuthorProvenanceService(session).graph(current.user.id)
+    provenance = next(
+        (node for node in provenance_graph.authors if node.author_id == author_id), None
+    )
     return _templates.TemplateResponse(
         request,
         "author.html",
@@ -229,5 +288,6 @@ async def author_page(
             "source_error": request.query_params.get("source_error"),
             "refresh_result": request.query_params.get("refresh"),
             "author_source_profiles": AUTHOR_SOURCE_PROFILES,
+            "provenance": provenance,
         },
     )

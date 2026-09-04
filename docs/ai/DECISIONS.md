@@ -29,3 +29,4 @@
 | 0023 | accepted | Catalog-first onboarding: страница автора → кандидаты циклов → карточки и source links |
 | 0024 | accepted | Source refresh/observability и полный bounded Author.Today catalog parser v2 |
 | 0025 | accepted | Отслеживание канонической серии и ограниченное распространение источников по соавторам |
+| 0026 | accepted | Найденные профили соавторов остаются кандидатами до явного подтверждения владельца |

@@ -23,7 +23,7 @@ Phase 6 (master prompt §9): наблюдение за источниками н
 
 5. **Backoff** (§9.3): успех → интервал правила; неудача → 5 мин × 2^(n-1) + jitter 0–60 с, cap 6 ч. `degraded` после 2 подряд неудач + диагностическое уведомление **один раз** на переход. Временная ошибка не удаляет наблюдения.
 
-6. **Observations** (`source_observations`): unique `(watch_rule_id, external_id)` — дедупликация на уровне БД. Уведомление «Новая публикация» создаётся только при первой вставке (реальный переход, §9.3).
+6. **Observations** (`source_observations`): unique `(watch_rule_id, external_id)` — дедупликация на уровне БД. Уведомление «Новая публикация» может создаваться только при первой вставке (реальный переход, §9.3) и после adapter-specific eligibility filter. Для явно подключённой OPDS-ленты eligible все новые элементы; Author.Today ограничен правилами ADR-0019.
 
 7. **In-app уведомления** (`notifications`): kind (new_release/source_degraded), title/body/data, read_at; страница `/library/notifications`, счётчик непрочитанных в topbar. Telegram/email — будущие адаптеры (§9.4).
 

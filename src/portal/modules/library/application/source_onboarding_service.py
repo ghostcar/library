@@ -307,12 +307,7 @@ class SourceOnboardingService:
         endpoint_id: UUID,
         entries: list[object],
     ) -> dict[str, int]:
-        """Propagate canonical tracking and stable coauthor identities after a poll.
-
-        Only a manually preferred author endpoint may create one-hop coauthor
-        cards/rules. Auto-discovered endpoints still contribute a second series
-        source, but cannot recursively expand the owner's catalog.
-        """
+        """Reconcile tracked series and already accepted stable coauthor identities."""
         endpoint = await self._session.get(SourceEndpointModel, endpoint_id)
         if (
             endpoint is None
@@ -320,20 +315,7 @@ class SourceOnboardingService:
             or endpoint.adapter_id != "author_today"
         ):
             return {"authors": 0, "series_links": 0, "work_authors": 0}
-        may_discover = (
-            await self._session.execute(
-                select(SourceLinkModel.id).where(
-                    SourceLinkModel.owner_id == owner_id,
-                    SourceLinkModel.source_endpoint_id == endpoint_id,
-                    SourceLinkModel.entity_type == "author",
-                    SourceLinkModel.role == "metadata",
-                    SourceLinkModel.is_preferred.is_(True),
-                )
-            )
-        ).scalar_one_or_none() is not None
-
         author_ids_by_url: dict[str, UUID] = {}
-        authors_created = 0
         discovered_identities: dict[str, str] = {}
         entry_authors_by_work_key: dict[str, list[tuple[str, str]]] = {}
         for entry in entries:
@@ -349,15 +331,14 @@ class SourceOnboardingService:
             for name, url in identities:
                 discovered_identities.setdefault(url, name)
         for url, name in discovered_identities.items():
-            author_id, created = await self._resolve_author_today_author(
+            author_id, _created = await self._resolve_author_today_author(
                 owner_id,
                 name,
                 url,
-                allow_create=may_discover,
+                allow_create=False,
             )
             if author_id is not None:
                 author_ids_by_url[url] = author_id
-            authors_created += int(created)
 
         observations = list(
             (
@@ -472,10 +453,22 @@ class SourceOnboardingService:
                 work_authors_added += 1
         await self._session.flush()
         return {
-            "authors": authors_created,
+            "authors": 0,
             "series_links": series_links_added,
             "work_authors": work_authors_added,
         }
+
+    async def accept_author_today_candidate(
+        self, owner_id: UUID, name: str, url: str
+    ) -> UUID | None:
+        """Materialize one candidate without turning it into a recursive discovery root."""
+        author_id, _created = await self._resolve_author_today_author(
+            owner_id,
+            name,
+            normalize_author_works_url(url),
+            allow_create=True,
+        )
+        return author_id
 
     async def _tracked_series_ids(self, owner_id: UUID) -> set[UUID]:
         return set(

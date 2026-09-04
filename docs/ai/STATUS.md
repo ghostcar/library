@@ -60,7 +60,7 @@ authenticated entity-link smoke, auth-session persistence and logs green)
 | OPDS source adapter | `IMPLEMENTED` | adapters/opds_adapter.py, conditional GET, XXE-тест |
 | Watch rules + scheduler | `IMPLEMENTED` | worker tick 30s, backoff+jitter, degraded, persistent last outcome/duration/parser version, deduplicated manual refresh |
 | Service console | `IMPLEMENTED` | `/library/service`: owner-scoped jobs/outbox/watch status and manual source refresh; deployed |
-| In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar |
+| In-app уведомления | `IMPLEMENTED` | /library/notifications + счётчик в topbar; Author.Today `new_release` только для включённых канонических циклов, OPDS — для всей явно подключённой ленты |
 | Author.Today metadata | `IMPLEMENTED` | deployed parser v3: bounded pagination, work+audiobook и stable coauthor profiles; 19/19 production rules ok after quiet baseline (ADR-0019/0024/0025) |
 | Litnet | `ABSENT` | намеренно отключён: пользовательское соглашение запрещает automated collection (ADR-0020) |
 | Flibusta OPDS metadata | `IMPLEMENTED` | отдельный профиль поверх OPDS; acquisition=false, фоновые скачивания отсутствуют |
@@ -82,7 +82,9 @@ authenticated entity-link smoke, auth-session persistence and logs green)
 | Abstract source endpoints | `IMPLEMENTED` | product UI разделён на OPDS/сайты; OPDS one-step создаёт endpoint+rule; toggle/delete синхронно управляют правилом; технический CRUD сохранён для диагностики |
 | Entity source links | `IMPLEMENTED` | owner-scoped CRUD, preferred/priority и независимое наследование metadata/acquisition: work→series→author→global; UI у author/series/work |
 | Author catalog UI | `IMPLEMENTED` | `/library/authors`, именованная карточка автора, произведения и управление источниками |
-| Guided source onboarding | `PARTIAL` | deployed: canonical tracked-state серии общий для соавторов, подтверждённые AT profiles создаются/связываются одним bounded шагом и добавляют второй series source. Второй разрешённый HTML auto-adapter отсутствует (ADR-0023/0025) |
+| Author discovery provenance | `IMPLEMENTED` | `/library/authors/graph`, карточка автора и focused candidate graph: manual roots, derived parent→child edges, книги-evidence и явный unknown state; без новой таблицы |
+| Author candidate review | `IMPLEMENTED` | stable AT coauthors остаются derived candidates на `/library/authors`; canonical author/source/rule создаются только owner-confirmed POST, child source не расширяет discovery (ADR-0026) |
+| Guided source onboarding | `PARTIAL` | canonical tracked-state серии общий для соавторов; новые AT profiles проходят candidate review вместо auto-create. Второй разрешённый HTML auto-adapter отсутствует (ADR-0023/0025/0026) |
 | FB2 continuation-link candidates | `IMPLEMENTED` | local FB2 context extraction → manual HTTPS title check with robots/public-host guards → exact catalog match or review candidate; migration 0013 deployed (ADR-0021/runbook) |
 
 ## Инфраструктурные факты

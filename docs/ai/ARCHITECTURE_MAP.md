@@ -102,6 +102,16 @@ scripts/                 — dev/test/lint
   discovery от manually preferred author source. Auto-discovered sources не
   расширяют граф рекурсивно; name-only/conflicting identity не merge-ится
   (ADR-0025).
+- `AuthorProvenanceService` строит owner-scoped read-only граф происхождения без
+  отдельной таблицы: preferred author source = ручной root; root watch observation
+  + stable child profile = direct edge; для старых deduplicated observations edge
+  восстанавливается через canonical work coauthorship только к non-preferred AT
+  profile. Каждое ребро несёт дедуплицированные книги-evidence и уровень доказательства.
+- Тот же read model выделяет неизвестные stable profiles из observations preferred
+  roots как `AuthorCandidate`. `/library/authors` показывает их отдельно, focused
+  `/authors/candidates/{slug}` раскрывает parent→candidate evidence, а CSRF POST
+  повторно валидирует owner-scoped candidate и только затем создаёт author/source/rule
+  и canonical WorkAuthor links. Poll reconciliation сам авторов больше не создаёт.
 - Для missing/ambiguous source entry карточка серии ведёт на отдельный
   `/series/{series_id}/source-works/{observation_id}/assign`: начальный запрос равен
   source title, дальнейший поиск использует общий normalized title/author/series
@@ -117,6 +127,10 @@ scripts/                 — dev/test/lint
 - `WatchService._match_canonical` связывает новую отсутствующую локально книгу с
   принятой серией по точному owner-scoped названию из source metadata; поэтому
   новые релизы продолжают появляться на карточке серии.
+- Author.Today сохраняет observations всего авторского каталога для discovery и
+  reconciliation, но создаёт `new_release` только если observation связана с
+  канонической серией, у которой есть enabled watch-backed metadata source. Явно
+  подключённые OPDS-ленты сохраняют feed-wide уведомления.
 - `ContinuationLinkService`: не мониторинг источников, а ручная title-only
   проверка ссылки из локального FB2. Перед одним HTML GET проверяет public HTTPS
   host и applicable rules из `robots.txt`; детали — ADR-0021 и runbook.

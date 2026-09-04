@@ -1,4 +1,20 @@
 {% extends "base.html" %}{% block content %}
 <h1 class="u-display u-weight-normal">Авторы</h1>
+<p><a class="btn u-block u-w-auto" href="/library/authors/graph">Показать граф происхождения</a></p>
+<section class="card">
+  <p class="meta">НОВЫЕ КАНДИДАТЫ · {{ author_candidates | length }}</p>
+  <p>Эти соавторы найдены в книгах подключённых вами авторов, но ещё не добавлены в каталог и не создают собственных источников.</p>
+  {% if author_candidates %}
+  <div class="u-grid u-card-grid u-gap-12">
+  {% for candidate in author_candidates %}
+    <a class="candidate-card u-block u-no-decoration u-color-inherit" href="/library/authors/candidates/{{ candidate.slug }}">
+      <p class="u-display u-text-18 u-m-0">{{ candidate.name }}</p>
+      <p class="meta u-my-4">Найден через {{ candidate.incoming | length }} авторов · открыть граф связи →</p>
+    </a>
+  {% endfor %}
+  </div>
+  {% else %}<p class="meta">Новых кандидатов пока нет.</p>{% endif %}
+</section>
+<p class="meta u-mt-24">АВТОРЫ В КАТАЛОГЕ</p>
 <div class="u-grid u-card-grid u-gap-16 u-mt-24">{% for a in authors %}<a class="card u-block u-no-decoration u-color-inherit" href="/library/authors/{{ a.id }}"><p class="u-display u-text-18 u-m-0">{{ a.title }}</p><p class="meta">{{ a.count }} произведений</p></a>{% else %}<div class="card"><p class="meta">Авторов пока нет.</p></div>{% endfor %}</div>
 {% endblock %}

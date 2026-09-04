@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block content %}
+<p class="meta"><a href="/library/authors">← К кандидатам</a></p>
+<h1 class="u-display u-weight-normal">{{ candidate.name }}</h1>
+<p><span class="chip chip--warn">кандидат</span> <a href="{{ candidate.source_url }}" target="_blank" rel="noopener noreferrer">профиль Author.Today</a></p>
+<div class="card">
+  <p class="meta">ОТКУДА ВЗЯЛСЯ КАНДИДАТ</p>
+  <p>Профиль найден как соавтор в сохранённых публикациях:</p>
+  <div class="provenance-graph">
+  {% for edge in candidate.incoming %}
+    <article class="provenance-edge candidate-edge">
+      <div class="provenance-node"><span class="chip chip--ok">подключённый автор</span><br><a class="entity-link u-display u-text-18" href="/library/authors/{{ edge.source_author_id }}">{{ edge.source_author_name }}</a></div>
+      <div class="provenance-arrow" aria-hidden="true">→</div>
+      <div class="provenance-node"><span class="chip chip--warn">кандидат</span><br><strong class="u-display u-text-18">{{ candidate.name }}</strong></div>
+      <div class="provenance-evidence"><p class="meta u-m-0">КНИГИ-ДОКАЗАТЕЛЬСТВА</p><ul>{% for book in edge.books %}<li>{% if book.work_id %}<a class="entity-link" href="/library/works/{{ book.work_id }}">{{ book.title }}</a>{% elif book.source_url %}<a href="{{ book.source_url }}" target="_blank" rel="noopener noreferrer">{{ book.title }}</a>{% else %}{{ book.title }}{% endif %}</li>{% endfor %}</ul></div>
+    </article>
+  {% endfor %}
+  </div>
+</div>
+<div class="card">
+  <p class="meta">РЕШЕНИЕ</p>
+  <p>После подтверждения появятся карточка автора и его наблюдаемый источник. До этого портал не опрашивает профиль кандидата отдельно.</p>
+  <form method="post" action="/library/authors/candidates/{{ candidate.slug }}/accept">{% include "_csrf.html" %}<button>Добавить автора и источник</button></form>
+</div>
+{% endblock %}

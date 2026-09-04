@@ -23,6 +23,8 @@ from portal.modules.library.adapters.opds_adapter import (
 )
 from portal.modules.library.adapters.source_orm import (
     NotificationModel,
+    SourceEndpointModel,
+    SourceLinkModel,
     SourceObservationModel,
     WatchRuleModel,
 )
@@ -290,16 +292,25 @@ class WatchService:
             initial_author_today_baseline = rule.adapter_id == "author_today" and (
                 rule.last_polled_at is None or rule.parser_version != adapter.parser_version
             )
+            tracked_series_ids = (
+                await self._tracked_series_ids(session, owner_id)
+                if rule.adapter_id == "author_today" and not initial_author_today_baseline
+                else set()
+            )
             if result.not_modified:
                 new_count = 0
             else:
                 for entry in result.entries:
-                    inserted = await self._insert_observation(
+                    observation = await self._insert_observation(
                         session, rule, entry, adapter.parser_version
                     )
-                    if inserted:
+                    if observation is not None:
                         new_count += 1
-                    if inserted and not initial_author_today_baseline:
+                    should_notify = observation is not None and (
+                        rule.adapter_id != "author_today"
+                        or observation.series_id in tracked_series_ids
+                    )
+                    if should_notify and not initial_author_today_baseline:
                         session.add(
                             NotificationModel(
                                 owner_id=owner_id,
@@ -359,40 +370,80 @@ class WatchService:
         rule: WatchRuleModel,
         entry: Any,  # SourceEntry
         parser_version: str,
-    ) -> bool:
-        """Insert observation; False when already seen (dedup)."""
+    ) -> SourceObservationModel | None:
+        """Insert and return an observation; None when already seen (dedup)."""
         from portal.modules.library.adapters.sources import SourceEntry
 
         assert isinstance(entry, SourceEntry)
-        exists = (
+        existing = (
             await session.execute(
-                select(SourceObservationModel.id).where(
+                select(SourceObservationModel).where(
                     SourceObservationModel.watch_rule_id == rule.id,
                     SourceObservationModel.external_id == entry.external_id,
                 ),
             )
         ).scalar_one_or_none()
-        if exists is not None:
-            return False
+        if existing is not None:
+            work_id, series_id, evidence = await self._match_canonical(
+                session, rule.owner_id, entry
+            )
+            existing.title = entry.title
+            existing.author_name = entry.author_name
+            existing.url = entry.url
+            existing.parser_version = parser_version
+            existing.raw = dict(entry.raw)
+            if existing.work_id is None and work_id is not None:
+                existing.work_id = work_id
+            if existing.series_id is None and series_id is not None:
+                existing.series_id = series_id
+            if not existing.match_evidence and evidence:
+                existing.match_evidence = evidence
+            await session.flush()
+            return None
         work_id, series_id, evidence = await self._match_canonical(session, rule.owner_id, entry)
-        session.add(
-            SourceObservationModel(
-                owner_id=rule.owner_id,
-                watch_rule_id=rule.id,
-                adapter_id=rule.adapter_id,
-                external_id=entry.external_id,
-                title=entry.title,
-                author_name=entry.author_name,
-                url=entry.url,
-                parser_version=parser_version,
-                raw=dict(entry.raw),
-                work_id=work_id,
-                series_id=series_id,
-                match_evidence=evidence,
-            ),
+        observation = SourceObservationModel(
+            owner_id=rule.owner_id,
+            watch_rule_id=rule.id,
+            adapter_id=rule.adapter_id,
+            external_id=entry.external_id,
+            title=entry.title,
+            author_name=entry.author_name,
+            url=entry.url,
+            parser_version=parser_version,
+            raw=dict(entry.raw),
+            work_id=work_id,
+            series_id=series_id,
+            match_evidence=evidence,
         )
+        session.add(observation)
         await session.flush()
-        return True
+        return observation
+
+    async def _tracked_series_ids(self, session: AsyncSession, owner_id: UUID) -> set[UUID]:
+        """Return canonical series with an enabled watch-backed metadata source."""
+        return set(
+            (
+                await session.execute(
+                    select(SourceLinkModel.entity_id)
+                    .join(
+                        SourceEndpointModel,
+                        SourceEndpointModel.id == SourceLinkModel.source_endpoint_id,
+                    )
+                    .join(
+                        WatchRuleModel,
+                        WatchRuleModel.source_endpoint_id == SourceEndpointModel.id,
+                    )
+                    .where(
+                        SourceLinkModel.owner_id == owner_id,
+                        SourceLinkModel.entity_type == "series",
+                        SourceLinkModel.role == "metadata",
+                        SourceEndpointModel.enabled.is_(True),
+                        WatchRuleModel.enabled.is_(True),
+                    )
+                    .distinct()
+                )
+            ).scalars()
+        )
 
     async def _match_canonical(
         self, session: AsyncSession, owner_id: UUID, entry: Any

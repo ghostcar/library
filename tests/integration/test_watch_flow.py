@@ -200,12 +200,116 @@ class TestPollFlow:
         revision["value"] = "2026-08-28T03:00:00Z"
         outcome = await service.poll_rule(owner, rule_id)
         assert outcome["new"] == 1
-        notifications = await service.notifications(owner)
-        assert len(notifications) == 1
-        assert "Новая книга AT" in notifications[0]["title"]
+        assert await service.notifications(owner) == []
         await at_client.aclose()
 
-    async def test_author_today_propagates_tracked_series_to_discovered_coauthor(
+    async def test_author_today_notifies_only_for_tracked_series(self, authed) -> None:
+        client, owner = authed
+        fake = FastAPI()
+        revision = {"value": "2026-09-04T01:00:00Z"}
+
+        @fake.get("/u/test/works")
+        async def works() -> Response:
+            rows = "".join(
+                (
+                    '<div class="book-row"><div class="book-title">'
+                    f'<a href="/work/{work_id}">{title}</a></div>'
+                    f'<a href="/work/series/{series_id}">{series_title}</a>'
+                    '<span data-hint="Обновление " '
+                    f'data-time="{revision["value"]}"></span></div>'
+                )
+                for work_id, title, series_id, series_title in (
+                    ("701", "Релиз наблюдаемого цикла", "51", "Наблюдаемый цикл"),
+                    ("702", "Посторонний релиз", "52", "Другой цикл"),
+                )
+            )
+            return Response(
+                content=(
+                    '<html><head><meta charset="utf-8"></head><body>'
+                    '<script type="application/ld+json">'
+                    '{"@type":"Person","name":"Автор AT"}</script>'
+                    f"{rows}</body></html>"
+                ),
+                media_type="text/html",
+            )
+
+        container = client._transport.app.state.container
+        async with container["session_factory"]() as session, session.begin():
+            tracked = SeriesModel(
+                owner_id=owner,
+                title="Наблюдаемый цикл",
+                title_normalized="наблюдаемый цикл",
+            )
+            untracked = SeriesModel(
+                owner_id=owner,
+                title="Другой цикл",
+                title_normalized="другой цикл",
+            )
+            endpoint = SourceEndpointModel(
+                owner_id=owner,
+                name="Автор AT",
+                source_type="website",
+                role="metadata",
+                adapter_id="author_today",
+                url="https://author.today/u/test/works",
+            )
+            session.add_all([tracked, untracked, endpoint])
+            await session.flush()
+            tracked_id = tracked.id
+            untracked_id = untracked.id
+            endpoint_id = endpoint.id
+            session.add(
+                SourceLinkModel(
+                    owner_id=owner,
+                    source_endpoint_id=endpoint_id,
+                    entity_type="series",
+                    entity_id=tracked_id,
+                    role="metadata",
+                    external_url="https://author.today/work/series/51",
+                    is_preferred=True,
+                )
+            )
+
+        at_client = httpx.AsyncClient(transport=httpx.ASGITransport(app=fake))
+        service = WatchService(
+            session_factory=container["session_factory"],
+            adapters={"author_today": AuthorTodayAdapter(client=at_client)},
+        )
+        rule_id = await service.create_rule(
+            owner,
+            adapter_id="author_today",
+            name="Автор AT",
+            url="https://author.today/u/test/works",
+            source_endpoint_id=endpoint_id,
+        )
+        assert rule_id is not None
+
+        assert (await service.poll_rule(owner, rule_id))["new"] == 2
+        assert await service.notifications(owner) == []
+
+        revision["value"] = "2026-09-04T02:00:00Z"
+        assert (await service.poll_rule(owner, rule_id))["new"] == 2
+        notifications = await service.notifications(owner)
+        assert len(notifications) == 1
+        assert "Релиз наблюдаемого цикла" in notifications[0]["title"]
+
+        async with container["session_factory"]() as session:
+            observations = list(
+                (
+                    await session.execute(
+                        select(SourceObservationModel).where(
+                            SourceObservationModel.watch_rule_id == rule_id
+                        )
+                    )
+                ).scalars()
+            )
+        assert {observation.series_id for observation in observations} == {
+            tracked_id,
+            untracked_id,
+        }
+        await at_client.aclose()
+
+    async def test_author_today_reviews_coauthor_candidate_before_source_propagation(
         self, authed
     ) -> None:
         client, owner = authed
@@ -276,27 +380,6 @@ class TestPollFlow:
                     )
                 )
             ).scalar_one()
-            session.add(
-                SourceObservationModel(
-                    owner_id=owner,
-                    watch_rule_id=root_rule_id,
-                    adapter_id="author_today",
-                    external_id="author-today:work:777:revision:published",
-                    title=work.title,
-                    author_name=root_author.name,
-                    url="https://author.today/work/777",
-                    parser_version="author-today-public-html-v2",
-                    work_id=work.id,
-                    series_id=series.id,
-                    match_evidence={"match": "exact_title_author"},
-                    raw={
-                        "work_id": "777",
-                        "publication_kind": "work",
-                        "series": series.title,
-                        "series_url": "https://author.today/work/series/55",
-                    },
-                )
-            )
             series_id = series.id
             work_id = work.id
 
@@ -329,6 +412,77 @@ class TestPollFlow:
         assert (await service.poll_rule(owner, root_rule_id))["status"] == "ok"
 
         async with container["session_factory"]() as session:
+            assert (
+                await session.execute(
+                    select(AuthorModel.id).where(
+                        AuthorModel.owner_id == owner,
+                        AuthorModel.name_normalized == "соавтор",
+                    )
+                )
+            ).scalar_one_or_none() is None
+            assert (
+                len(
+                    list(
+                        (
+                            await session.execute(
+                                select(SourceEndpointModel).where(
+                                    SourceEndpointModel.owner_id == owner,
+                                    SourceEndpointModel.adapter_id == "author_today",
+                                )
+                            )
+                        ).scalars()
+                    )
+                )
+                == 1
+            )
+
+        # A parser refresh enriches an already-seen publication without treating
+        # it as a new release or materializing the coauthor automatically.
+        async with container["session_factory"]() as session, session.begin():
+            observation = (
+                await session.execute(
+                    select(SourceObservationModel).where(
+                        SourceObservationModel.watch_rule_id == root_rule_id
+                    )
+                )
+            ).scalar_one()
+            observation.raw = {**observation.raw, "authors": []}
+            rule = await session.get(WatchRuleModel, root_rule_id)
+            assert rule is not None
+            rule.parser_version = "author-today-public-html-v2"
+
+        refreshed = await service.poll_rule(owner, root_rule_id)
+        assert refreshed == {"status": "ok", "not_modified": False, "new": 0}
+        assert await service.notifications(owner) == []
+        async with container["session_factory"]() as session:
+            observation = (
+                await session.execute(
+                    select(SourceObservationModel).where(
+                        SourceObservationModel.watch_rule_id == root_rule_id
+                    )
+                )
+            ).scalar_one()
+            assert {author["url"] for author in observation.raw["authors"]} == {
+                "https://author.today/u/root/works",
+                "https://author.today/u/coauthor/works",
+            }
+
+        authors_page = await client.get("/library/authors")
+        assert authors_page.status_code == 200
+        assert "НОВЫЕ КАНДИДАТЫ · 1" in authors_page.text
+        assert 'href="/library/authors/candidates/coauthor"' in authors_page.text
+
+        candidate_page = await client.get("/library/authors/candidates/coauthor")
+        assert candidate_page.status_code == 200
+        assert "ОТКУДА ВЗЯЛСЯ КАНДИДАТ" in candidate_page.text
+        assert "Корневой Автор" in candidate_page.text
+        assert "Совместная книга" in candidate_page.text
+        assert "До этого портал не опрашивает профиль кандидата отдельно" in candidate_page.text
+
+        accepted = await client.post("/library/authors/candidates/coauthor/accept")
+        assert accepted.status_code == 303
+
+        async with container["session_factory"]() as session:
             coauthor = (
                 await session.execute(
                     select(AuthorModel).where(
@@ -352,6 +506,16 @@ class TestPollFlow:
                     )
                 )
             ).scalar_one()
+            coauthor_link = (
+                await session.execute(
+                    select(SourceLinkModel).where(
+                        SourceLinkModel.source_endpoint_id == coauthor_endpoint.id,
+                        SourceLinkModel.entity_type == "author",
+                        SourceLinkModel.entity_id == coauthor.id,
+                    )
+                )
+            ).scalar_one()
+            assert coauthor_link.is_preferred is False
             work_author_ids = set(
                 (
                     await session.execute(
@@ -360,6 +524,8 @@ class TestPollFlow:
                 ).scalars()
             )
             assert coauthor.id in work_author_ids
+            coauthor_id = coauthor.id
+        assert accepted.headers["location"] == f"/library/authors/{coauthor_id}"
 
         assert (await service.poll_rule(owner, coauthor_rule_id))["status"] == "ok"
         async with container["session_factory"]() as session:
@@ -390,6 +556,27 @@ class TestPollFlow:
                     )
                 )
             ).scalar_one_or_none() is None
+
+        candidates_page = await client.get("/library/authors")
+        assert "НОВЫЕ КАНДИДАТЫ · 0" in candidates_page.text
+        assert 'href="/library/authors/candidates/third"' not in candidates_page.text
+        assert 'href="/library/authors/candidates/coauthor"' not in candidates_page.text
+
+        graph_page = await client.get("/library/authors/graph")
+        assert graph_page.status_code == 200
+        assert "Происхождение авторов" in graph_page.text
+        assert "Корневой Автор" in graph_page.text
+        assert "Соавтор" in graph_page.text
+        assert "Совместная книга" in graph_page.text
+        assert "1 связей обнаружения" in graph_page.text
+        assert "профиль указан источником" in graph_page.text
+
+        coauthor_page = await client.get(f"/library/authors/{coauthor_id}")
+        assert coauthor_page.status_code == 200
+        assert "ПРОИСХОЖДЕНИЕ АВТОРА" in coauthor_page.text
+        assert "Обнаружен через" in coauthor_page.text
+        assert "Корневой Автор" in coauthor_page.text
+        assert "Совместная книга" in coauthor_page.text
         await at_client.aclose()
 
     async def test_rule_keeps_selected_endpoint(self, authed) -> None:
